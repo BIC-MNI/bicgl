@@ -184,7 +184,7 @@ public  Status  X_create_overlay_window(
 public  void  X_delete_window(
     X_window_struct  *window )
 {
-    XFree( window->visual );
+    XFree( (void *) window->visual );
 
     if( window->colour_map_mode )
         XFreeColormap( X_get_display(), window->colour_map );
@@ -278,7 +278,7 @@ private  BOOLEAN  translate_key(
     int      *key )
 {
     int             char_count;
-    unsigned  char  buffer[10];
+    char            buffer[10];
     KeySym          keysym;
     XComposeStatus  compose;
 

@@ -126,7 +126,7 @@ public  Status  WS_create_window(
             else
             {
                 min_size = mid;
-                XFree( visual );
+                XFree( (void *) visual );
             }
         }
 
@@ -205,7 +205,7 @@ public  Status  WS_create_window(
             }
             else
             {
-                XFree( visual );
+                XFree( (void *) visual );
                 visual = NULL;
             }
         }
@@ -301,7 +301,7 @@ public  int    WS_get_n_overlay_planes()
             max_size = mid-1;
         else
         {
-            XFree( visual );
+            XFree( (void *) visual );
             min_size = mid;
         }
     }
