@@ -26,6 +26,7 @@ int  main(
     initialize_argument_processing( argc, argv );
     (void) get_string_argument( "/nil/david/big_data/sphere.fre", &filename );
 
+    set_default_minc_input_options( &options );
     set_minc_input_vector_to_colour_flag( &options, TRUE );
 
     status = input_volume( filename, 3, dim_names, NC_UNSPECIFIED, FALSE,
