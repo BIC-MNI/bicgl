@@ -66,8 +66,11 @@ public  void  set_current_window( Gwindow   window )
     if( window != current_window )
     {
         if( window != (Gwindow) NULL )
-            GS_set_current_window( window->GS_window,
-                                   window->current_bitplanes );
+        {
+            GS_set_current_window( window->GS_window );
+            GS_set_bitplanes( window->GS_window, window->current_bitplanes );
+        }
+
         current_window = window;
     }
 }
@@ -93,12 +96,56 @@ private  void  check_graphics_initialized( void )
 
 #define  DEFAULT_N_CURVE_SEGMENTS  8
 
+private  void  reinitialize_window(
+    Gwindow   window )
+{
+    int            n_segments;
+    Shading_types  type;
+    static  Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
+    set_current_window( window );
+
+    GS_set_matrix_mode( VIEWING_MATRIX );
+
+    type = window->shading_type;
+    ++window->shading_type;
+    G_set_shading_type( window, type );
+
+    window->lighting_state = !window->lighting_state;
+    G_set_lighting_state( window, !window->lighting_state );
+
+    window->transparency_state = !window->transparency_state;
+    G_set_transparency_state( window, !window->transparency_state );
+
+    window->backface_culling_state = !window->backface_culling_state;
+    G_backface_culling_state( window, !window->backface_culling_state );
+
+    n_segments = window->n_curve_segments;
+    ++window->n_curve_segments;
+    G_set_n_curve_segments( window, n_segments );
+
+    window->marker_labels_visibility = !window->marker_labels_visibility;
+    G_set_markers_labels_visibility( window, !window->marker_labels_visibility);
+
+    GS_set_depth_function( LESS_OR_EQUAL );
+
+    GS_set_depth_buffer_state( window->zbuffer_state );
+
+    GS_set_surface_property( window->GS_window, WHITE, &spr );
+
+    initialize_graphics_lights( window );
+
+    initialize_callbacks_for_window( window );
+
+    update_transforms( window );
+}
+
 private  void  initialize_window(
     Gwindow   window )
 {
     Colour     default_background_col;
 
-    default_background_col = BLACK;
+    default_background_col = make_Colour( 0, 0, 0 );
 
     set_current_window( window );
 
@@ -118,29 +165,22 @@ private  void  initialize_window(
     window->bitplanes_cleared[NORMAL_PLANES] = FALSE;
     window->bitplanes_cleared[OVERLAY_PLANES] = FALSE;
 
-    GS_set_matrix_mode( VIEWING_MATRIX );
-
     G_set_shaded_state( window, ON );
-    G_set_shading_type( window, GOURAUD_SHADING );
-    G_set_lighting_state( window, OFF );
-    G_set_transparency_state( window, ON );
-    G_backface_culling_state( window, OFF );
     G_set_render_lines_as_curves_state( window, OFF );
-    G_set_n_curve_segments( window, DEFAULT_N_CURVE_SEGMENTS );
-    G_set_markers_labels_visibility( window, ON );
-
-    GS_set_depth_function( LESS_OR_EQUAL );
-
-    if( window->zbuffer_state )
-        GS_set_depth_buffer_state( window->zbuffer_state );
+    window->shading_type = GOURAUD_SHADING;
+    window->lighting_state = OFF;
+    window->transparency_state = ON;
+    window->backface_culling_state = OFF;
+    window->n_curve_segments = DEFAULT_N_CURVE_SEGMENTS;
+    window->marker_labels_visibility = ON;
 
     GS_initialize_surface_property( window->GS_window );
-
-    initialize_graphics_lights( window );
 
     initialize_display_interrupts( window );
 
     initialize_window_view( window );
+
+    reinitialize_window( window );
 }
 
 public  Status  G_create_window(
@@ -172,7 +212,8 @@ public  Status  G_create_window(
                                colour_map_desired,
                                double_buffer_desired,
                                depth_buffer_desired,
-                               n_overlay_planes_desired,
+                               MIN( n_overlay_planes_desired,
+                                    G_get_n_overlay_planes() ),
                                &actual_colour_map_flag,
                                &actual_double_buffer_flag,
                                &actual_depth_buffer_flag,
@@ -204,6 +245,12 @@ public  Status  G_delete_window(
     Status    status;
 
     set_current_window( window );
+
+    if( window->n_overlay_planes > 0 )
+    {
+        GS_set_bitplanes( window->GS_window, OVERLAY_PLANES );
+        G_clear_window( window );
+    }
 
     status = GS_delete_window( window->GS_window );
 
@@ -287,7 +334,10 @@ public  void  G_set_double_buffer_state(
 
         G_set_bitplanes( window, NORMAL_PLANES );
 
-        window->double_buffer_state = GS_set_double_buffer_state( flag );
+        window->double_buffer_state = GS_set_double_buffer_state(
+                                                    window->GS_window, flag );
+
+        reinitialize_window( window );
 
         restore_bitplanes( window, save_bitplane );
     }
@@ -378,11 +428,12 @@ public  void  G_set_colour_map_state(
 
         G_set_bitplanes( window, NORMAL_PLANES );
 
-        GS_set_colour_map_state( flag );
+        window->colour_map_state = GS_set_colour_map_state( window->GS_window,
+                                                            flag );
+
+        reinitialize_window( window );
 
         restore_bitplanes( window, save_bitplane );
-
-        window->colour_map_state = flag;
     }
 }
 
@@ -391,7 +442,8 @@ public  int  G_get_n_colour_map_entries(
 {
     set_current_window( window );
 
-    return( GS_get_n_colour_map_entries( window->GS_window ) );
+    return( GS_get_n_colour_map_entries( window->GS_window,
+                                         G_get_double_buffer_state(window) ) );
 }
 
 public  void  G_set_colour_map_entry(
@@ -408,7 +460,7 @@ public  void  G_set_colour_map_entry(
     if( save_bitplane != NORMAL_PLANES )
         G_set_bitplanes( window, NORMAL_PLANES );
 
-    GS_set_colour_map_entry( window->GS_window, ind, colour );
+    GS_set_colour_map_entry( window->current_bitplanes, ind, colour );
 
     if( save_bitplane != NORMAL_PLANES )
         restore_bitplanes( window, save_bitplane );
@@ -571,6 +623,8 @@ public  void  G_clear_window(
         colour = window->background_colour;
 
     GS_clear_window( window->GS_window,
+                     window->x_size,
+                     window->y_size,
                      window->current_bitplanes,
                      G_get_colour_map_state(window),
                      G_get_zbuffer_state(window), colour );
@@ -626,7 +680,7 @@ public  void  G_update_window( Gwindow   window )
     if( window->current_bitplanes == NORMAL_PLANES )
     {
         if( window->double_buffer_state )
-            GS_swap_buffers( window->GS_window );
+            GS_swap_buffers();
         GS_flush();
     }
     else
@@ -729,10 +783,19 @@ public  void  G_set_overlay_colour_map(
     int             ind,
     Colour          colour )
 {
+    Bitplane_types   save_bitplane;
+
     if( window->n_overlay_planes > 0 )
     {
         set_current_window( window );
+
+        save_bitplane = G_get_bitplanes( window );
+
+        GS_set_bitplanes( window->GS_window, OVERLAY_PLANES );
+
         GS_set_overlay_colour_map( window->GS_window, ind, colour );
+
+        restore_bitplanes( window, save_bitplane );
     }
 }
 
@@ -740,7 +803,7 @@ public  void  G_append_to_last_update(
      Gwindow   window )
 {
     set_current_window( window );
-    GS_append_to_last_update( window->GS_window,
+    GS_append_to_last_update( window->GS_window, G_get_zbuffer_state(window),
                               window->x_size, window->y_size );
     set_continuation_flag( window, TRUE );
     window->bitplanes_cleared[NORMAL_PLANES] = TRUE;
