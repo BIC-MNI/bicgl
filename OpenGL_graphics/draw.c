@@ -43,15 +43,19 @@ public  void  GS_set_ambient_and_diffuse_mode(
         glDisable( GL_COLOR_MATERIAL );
 }
 
+/* ARGSUSED */
+
 public  void  GS_initialize_surface_property(
-    Gwindow        window  /* ARGSUSED */ )
+    Gwindow        window )
 {
 }
+
+/* ARGSUSED */
 
 public  void  GS_set_surface_property(
     Gwindow        window,
     Colour         col,
-    Surfprop       *surfprop )   /* ARGSUSED */
+    Surfprop       *surfprop )
 {
 #ifndef  TWO_D_ONLY
     float  props[4];
@@ -85,7 +89,9 @@ public  void  GS_set_line_width(
     glLineWidth( (GLfloat) line_width );
 }
 
-public  void  GS_curve(       /* ARGSUSED */
+/* ARGSUSED */
+
+public  void  GS_curve(
     float  geom[4][3] )
 {
 }
@@ -148,7 +154,9 @@ public  void  GS_set_raster_position(
     glRasterPos3d( (double) x, (double) y, (double) z );
 }
 
-public  BOOLEAN  GS_set_font(        /* ARGSUSED */
+/* ARGSUSED */
+
+public  BOOLEAN  GS_set_font(
     Gwindow         window,
     int             font_index,
     WS_font_info    *font )
@@ -156,7 +164,9 @@ public  BOOLEAN  GS_set_font(        /* ARGSUSED */
     return( WS_set_font( window->WS_window, font_index ) );
 }
 
-public  void  GS_draw_text(      /* ARGSUSED */
+/* ARGSUSED */
+
+public  void  GS_draw_text(
     Font_types   type,
     char         string[] )
 {
@@ -170,8 +180,10 @@ public  void  GS_set_pixel_zoom(
     glPixelZoom( (GLfloat) x_zoom, (GLfloat) y_zoom );
 }
 
+/* ARGSUSED */
+
 public  void  GS_draw_colour_map_pixels(
-    Gwindow         window,       /* ARGSUSED */
+    Gwindow         window,
     pixels_struct   *pixels )
 {
     int       x, y, x_size, y_size;
@@ -203,9 +215,11 @@ public  void  GS_draw_colour_map_pixels(
     }
 }
 
+/* ARGSUSED */
+
 public  void  GS_draw_rgb_pixels(
     Gwindow         window,
-    pixels_struct   *pixels )    /* ARGSUSED */
+    pixels_struct   *pixels )
 {
     int       x, y, x_size, y_size;
     void      *void_ptr;

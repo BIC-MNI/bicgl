@@ -474,9 +474,11 @@ public  Status  GS_delete_window(
     return( status );
 }
 
+/* ARGSUSED */
+
 public  void  WS_set_current_window(
     WS_window_struct  *window,
-    Bitplane_types    current_bitplanes )  /* ARGSUSED */
+    Bitplane_types    current_bitplanes )
 {
     winset( window->window_id );
 }
@@ -604,8 +606,10 @@ public  void  GS_flush()
     gflush();
 }
 
+/* ARGSUSED */
+
 public  void  WS_swap_buffers(
-    WS_window_struct  *window )    /* ARGSUSED */
+    WS_window_struct  *window )
 {
     swapbuffers();
 }

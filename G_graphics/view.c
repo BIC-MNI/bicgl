@@ -246,8 +246,8 @@ private  void  define_3D_projection(
         GS_set_matrix_mode( PROJECTION_MATRIX );
 
         GS_ortho( -window_width / 2.0, window_width / 2.0,
-               -window_height / 2.0, window_height / 2.0,
-               front_clip_distance, back_clip_distance );
+                  -window_height / 2.0, window_height / 2.0,
+                  front_clip_distance, back_clip_distance );
 
         GS_set_matrix_mode( PROJECTION_MATRIX );
         GS_get_transform( &window->projection_matrices[WORLD_VIEW] );
@@ -396,11 +396,8 @@ private  void  define_pixel_view(
 
     GS_set_matrix_mode( PROJECTION_MATRIX );
 
-    GS_ortho( -0.5,
-              (Real) (window->x_viewport_max - window->x_viewport_min) + 0.5,
-              -0.5,
-              (Real) (window->y_viewport_max - window->y_viewport_min) + 0.5,
-              -1.0, 1.0 );
+    GS_ortho_2d( 0, window->x_viewport_max - window->x_viewport_min,
+                 0, window->y_viewport_max - window->y_viewport_min );
 
     GS_get_transform( &window->projection_matrices[PIXEL_VIEW] );
 

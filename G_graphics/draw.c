@@ -976,7 +976,7 @@ typedef  struct
 private  int  n_fonts = 0;
 private  font_struct    *fonts;
 
-private  BOOLEAN  lookup_font(
+private  BOOLEAN  lookup_a_font(
     Font_types       type,
     Real             size,
     WS_font_info     **font_info,
@@ -1031,10 +1031,34 @@ private  BOOLEAN  lookup_font(
 
         set_current_window( current_window );
     }
-    else
-        print_error( "Could not find font: %d %g\n", (int) type, size );
 
     return( exists );
+}
+
+private  BOOLEAN  lookup_font(
+    Font_types       type,
+    Real             size,
+    WS_font_info     **font_info,
+    int              *font_index )
+{
+    static  BOOLEAN  first = TRUE;
+    BOOLEAN          found;
+
+    if( first )
+    {
+        first = FALSE;
+        (void) lookup_a_font( FIXED_FONT, 0.0, font_info, font_index );
+    }
+
+    found = lookup_a_font( type, size, font_info, font_index );
+
+    if( !found )
+        found = lookup_a_font( FIXED_FONT, 0.0, font_info, font_index );
+
+    if( !found )
+        print_error( "Could not find font: %d %g\n", (int) type, size );
+
+    return( found );
 }
 
 public  void  add_fonts_for_window(
@@ -1098,31 +1122,17 @@ private  BOOLEAN  set_font(
     Font_types       type,
     Real             size )
 {
-    static  BOOLEAN  first = TRUE;
     int              font_index;
     WS_font_info     *font_info;
     BOOLEAN          found;
 
     if( type != FIXED_FONT && type != SIZED_FONT )
-    {
         print_error( "Invalid font type: %d\n", type );
-    }
 
     if( type == SIZED_FONT && ( size < 1.0 || size > 100.0 ) )
-    {
         print_error( "Invalid font size: %g\n", size );
-    }
-
-    if( first )
-    {
-        first = FALSE;
-        (void) lookup_font( FIXED_FONT, 0.0, &font_info, &font_index );
-    }
 
     found = lookup_font( type, size, &font_info, &font_index );
-
-    if( !found )
-        found = lookup_font( FIXED_FONT, 0.0, &font_info, &font_index );
 
     if( found )
         found = GS_set_font( win, font_index, font_info );

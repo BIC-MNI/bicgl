@@ -25,8 +25,10 @@ public  void  GS_turn_on_blend_function()
     glEnable( GL_BLEND );
 }
 
+/* ARGSUSED */
+
 public  void  GS_set_lighting_state(
-    Gwindow      window,     /* ARGSUSED */
+    Gwindow      window,
     BOOLEAN      state )
 {
 #ifndef  TWO_D_ONLY
@@ -51,8 +53,10 @@ public  void  GS_backface_culling_state(
 #endif
 }
 
+/* ARGSUSED */
+
 public  void  GS_set_n_curve_segments(
-    int      n_segments      /* ARGSUSED */ )
+    int      n_segments )
 {
 #ifndef  TWO_D_ONLY
 #ifdef  TO_DO

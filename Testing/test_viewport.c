@@ -26,6 +26,14 @@ private  void  draw_region(
     int       y_min,
     int       y_max );
 
+private  void  draw_pixels(
+    Gwindow   window,
+    Colour    colour,
+    int       x1,
+    int       y1,
+    int       x2,
+    int       y2 );
+
 int main(
     int    argc,
     char   *argv[] )
@@ -56,6 +64,9 @@ int main(
     draw_rectangle( window, BLUE, X_MIN_VIEWPORT-2, X_MAX_VIEWPORT+2,
                             Y_MIN_VIEWPORT-2, Y_MAX_VIEWPORT+2 );
 
+    draw_pixels( window, RED, ROUND( X_SIZE / 2), 0,
+                              ROUND( X_SIZE / 2) + 2, Y_SIZE - 1 );
+
     G_update_window( window );
 
     print( "Hit return: " );
@@ -82,6 +93,9 @@ int main(
                                      0, Y_MAX_VIEWPORT - Y_MIN_VIEWPORT );
     draw_rectangle( window, YELLOW, 1, X_MAX_VIEWPORT - X_MIN_VIEWPORT-1,
                                     1, Y_MAX_VIEWPORT - Y_MIN_VIEWPORT-1 );
+    draw_pixels( window, RED, ROUND( (X_MAX_VIEWPORT+X_MIN_VIEWPORT)/ 2), 0,
+                              ROUND( (X_MAX_VIEWPORT+X_MIN_VIEWPORT)/ 2)+2,
+                              Y_MAX_VIEWPORT - Y_MIN_VIEWPORT );
     G_update_window( window );
 
     print( "Viewport redrawn:  Hit return: " );
@@ -159,4 +173,49 @@ private  void  draw_region(
     G_draw_polygons( window, &polygons );
 
     delete_polygons( &polygons );
+}
+
+private  void  draw_pixel(
+    Gwindow   window,
+    Colour    colour,
+    Real      x,
+    Real      y )
+{
+    lines_struct  lines;
+
+    initialize_lines( &lines, colour );
+
+    lines.n_points = 1;
+    ALLOC( lines.points, 1 );
+    fill_Point( lines.points[0], x, y, 0.0 );
+
+    lines.n_items = 1;
+    ALLOC( lines.end_indices, lines.n_items );
+    lines.end_indices[0] = 1;
+
+    ALLOC( lines.indices, lines.end_indices[lines.n_items-1] );
+    lines.indices[0] = 0;
+
+    G_draw_lines( window, &lines );
+
+    delete_lines( &lines );
+}
+
+private  void  draw_pixels(
+    Gwindow   window,
+    Colour    colour,
+    int       x1,
+    int       y1,
+    int       x2,
+    int       y2 )
+{
+    int   i;
+    Real  x;
+
+    for_inclusive( i, y1, y2 )
+    {
+        x = x1 + (Real) (x2 - x1) *
+            ((Real) i - (Real) y1) / ((Real) y2 - (Real) y1);
+        draw_pixel( window, colour, x, (Real) i );
+    }
 }

@@ -2,8 +2,10 @@
 #include  <internal_volume_io.h>
 #include  <gs_specific.h>
 
+/* ARGSUSED */
+
 public  void  GS_initialize_lights(
-    Gwindow        window )  /* ARGSUSED */
+    Gwindow        window )
 {
     static  float ambient_light[] = { 1.0, 1.0, 1.0, 1.0 };
 
@@ -13,8 +15,10 @@ public  void  GS_initialize_lights(
 
 }
 
+/* ARGSUSED */
+
 public  void  GS_set_ambient_light(
-    Gwindow        window,     /* ARGSUSED */
+    Gwindow        window,
     Colour         colour )
 {
 #ifndef  TWO_D_ONLY
@@ -29,8 +33,10 @@ public  void  GS_set_ambient_light(
 #endif
 }
 
+/* ARGSUSED */
+
 public  void  GS_define_light(
-    Gwindow         window,       /* ARGSUSED */
+    Gwindow         window,
     int             light_index,
     Light_types     type,
     Colour          colour,
@@ -104,8 +110,10 @@ public  void  GS_define_light(
 #endif
 }
 
+/* ARGSUSED */
+
 public  void  GS_set_light_state(
-    Gwindow         window,   /* ARGSUSED */
+    Gwindow         window,
     int             light_index,
     BOOLEAN         state )
 {

@@ -66,6 +66,16 @@ public  void  GS_ortho(
     ortho( x_min, x_max, y_min, y_max, z_min, z_max );
 }
 
+public  void  GS_ortho_2d(
+    int   x_min,
+    int   x_max,
+    int   y_min,
+    int   y_max )
+{
+    ortho( (Real) x_min - 0.5, (Real) x_max + 0.5,
+           (Real) y_min - 0.5, (Real) y_max + 0.5, -1.0, 1.0 );
+}
+
 public  void  GS_frustum(
     Real   x_min,
     Real   x_max,

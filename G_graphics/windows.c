@@ -630,8 +630,10 @@ public  void  G_update_window( Gwindow   window )
     window->bitplanes_cleared[window->current_bitplanes] = FALSE;
 }
 
+/* ARGSUSED */
+
 public  void  check_window_cleared(
-     Gwindow    window  )   /* ARGSUSED */
+     Gwindow    window  )
 {
     if( window->automatic_clear_flag &&
         !window->bitplanes_cleared[window->current_bitplanes] )

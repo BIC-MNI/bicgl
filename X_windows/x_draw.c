@@ -1,6 +1,8 @@
 #include  <internal_volume_io.h>
 #include  <x_windows.h>
 
+/* ARGSUSED */
+
 public  Status  X_create_window(
     char             title[],
     int              initial_x_pos,
@@ -10,7 +12,7 @@ public  Status  X_create_window(
     BOOLEAN          colour_map_mode,  
     BOOLEAN          double_buffer_flag,  
     BOOLEAN          depth_buffer_flag,  
-    int              n_overlay_planes,     /* ARGSUSED */
+    int              n_overlay_planes,
     X_window_struct  *window )
 {
     int              depth, class;

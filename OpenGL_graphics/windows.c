@@ -119,8 +119,10 @@ public  Status  GS_create_window(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
+/* ARGSUSED */
+
 private  void  initialize_window(
-    Gwindow   window      /* ARGSUSED */ )
+    Gwindow   window )
 {
 }
 
@@ -165,15 +167,19 @@ public  BOOLEAN  GS_has_rgb_mode()
     return( r_bits > 0 && g_bits > 0 && b_bits > 0 );
 }
 
+/* ARGSUSED */
+
 public  BOOLEAN  GS_set_double_buffer_state(
-    BOOLEAN        flag   /* ARGSUSED */ )
+    BOOLEAN        flag )
 {
     print_error( "GS_set_double_buffer_state(): OpenGL cannot change state.\n");
     return( FALSE );
 }
 
+/* ARGSUSED */
+
 public  void  GS_set_colour_map_state(
-    BOOLEAN        flag /*    ARGSUSED */ )
+    BOOLEAN        flag )
 {
     print_error( "GS_set_colour_map_state():  OpenGL cannot change state.\n" );
 }
@@ -192,8 +198,10 @@ public  void  GS_set_colour_map_state(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
+/* ARGSUSED */
+
 public  int  GS_get_n_colour_map_entries(
-    Gwindow  window   /* ARGSUSED */ )
+    Gwindow  window )
 {
     GLint  n_bits;
     int    n_colours;
@@ -459,9 +467,7 @@ public  void  GS_append_to_last_update(
 
     glMatrixMode( GL_PROJECTION );
     glPushMatrix();
-    GS_ortho( -0.5, (Real) window->x_size - 0.5,
-              -0.5, (Real) window->y_size - 0.5,
-              -1.0, 1.0 );
+    GS_ortho_2d( 0, window->x_size - 1, 0, window->y_size - 1 );
 
     glMatrixMode( GL_MODELVIEW );
     glPushMatrix();

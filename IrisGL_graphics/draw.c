@@ -251,22 +251,28 @@ private  BOOLEAN  fonts_present( void )
     return( base_font_handle != (fmfonthandle) 0 );
 }
 
+/* ARGSUSED */
+
 public  void  WS_build_font_in_window(
     WS_window_struct     *window,
     int                  font_index,
-    WS_font_info         *font_info )   /* ARGSUSED */
+    WS_font_info         *font_info )
 {
 }
+
+/* ARGSUSED */
 
 public  void  WS_delete_font_in_window(
     WS_window_struct     *window,
     int                  font_index,
-    WS_font_info         *font_info )   /* ARGSUSED */
+    WS_font_info         *font_info )
 {
 }
 
+/* ARGSUSED */
+
 public  void  WS_delete_font(
-    WS_font_info  *info )      /* ARGSUSED */
+    WS_font_info  *info )
 {
 }
 
@@ -333,9 +339,11 @@ public  Real  WS_get_character_height(
     return( height );
 }
 
+/* ARGSUSED */
+
 public  BOOLEAN  GS_set_font(
     Gwindow            window,
-    int                font_index,  /* ARGSUSED */
+    int                font_index,
     WS_font_info       *font )
 {
     if( font->type != FIXED_FONT )

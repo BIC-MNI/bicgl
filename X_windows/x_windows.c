@@ -13,6 +13,12 @@ public  Display   *X_get_display()
     {
         first = FALSE;
         display = XOpenDisplay( 0 );
+
+        if( display == NULL )
+        {
+            print_error( "Aborting, could not open X display.\n" );
+            exit( 1 );
+        }
     }
 
     return( display );
@@ -32,8 +38,10 @@ public  int  X_get_screen()
     return( default_screen );
 }
 
+/* ARGSUSED */
+
 private   int   wait_for_window(
-    Display *display,    /* ARGSUSED */
+    Display *display,
     XEvent  *event,
     char    *arg )
 {
