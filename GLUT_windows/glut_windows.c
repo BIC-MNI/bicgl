@@ -1,8 +1,8 @@
 #include  <internal_volume_io.h>
 #include  <WS_graphics.h>
 
-private  int        n_windows = 0;
-private  WSwindow   *windows = NULL;
+private  int         n_windows_to_delete = 0;
+private  Window_id   *windows_to_delete = NULL;
 
 private  void  set_event_callbacks_for_current_window( BOOLEAN );
 private  void  resize_function(
@@ -24,11 +24,12 @@ public  void  WS_initialize( void )
     }
 }
 
-private  void  ignore_display( void )
-{
-}
-
-private  Window_id  create_sub_window(
+private  Window_id  create_GLUT_window(
+    STRING                 title,
+    int                    initial_x_pos,
+    int                    initial_y_pos,
+    int                    initial_x_size,
+    int                    initial_y_size,
     BOOLEAN                colour_map_mode,
     BOOLEAN                double_buffer_flag,
     BOOLEAN                depth_buffer_flag,
@@ -36,11 +37,10 @@ private  Window_id  create_sub_window(
     BOOLEAN                *actual_colour_map_mode,
     BOOLEAN                *actual_double_buffer_flag,
     BOOLEAN                *actual_depth_buffer_flag,
-    int                    *actual_n_overlay_planes,
-    WSwindow               window )
+    int                    *actual_n_overlay_planes )
 {
     unsigned  int      mode;
-    int                width, height;
+    int                width, height, used_size;
     Window_id          window_id;
 
     mode = 0;
@@ -59,14 +59,22 @@ private  Window_id  create_sub_window(
         mode |= GLUT_DEPTH;
 
     glutInitDisplayMode( mode );
-
     
-    glutSetWindow( window->top_level_window_id );
-    width = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
-    height = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
+    if( initial_x_pos >= 0 && initial_y_pos >= 0 )
+    {
+        if( initial_y_size <= 0 )
+            used_size = glutGet( (GLenum) GLUT_INIT_WINDOW_HEIGHT );
+        else
+            used_size = initial_y_size;
 
-    window_id = glutCreateSubWindow( window->top_level_window_id,
-                                     0, 0, width, height );
+        glutInitWindowPosition( initial_x_pos,
+                                flip_screen_y( initial_y_pos + used_size - 1) );
+    }
+
+    if( initial_x_size > 0 && initial_y_size > 0 )
+        glutInitWindowSize( initial_x_size, initial_y_size );
+
+    window_id = glutCreateWindow( title );
 
     if( window_id < 1 )
     {
@@ -83,31 +91,13 @@ private  Window_id  create_sub_window(
     *actual_double_buffer_flag = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
     *actual_depth_buffer_flag = (glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE) > 0);
 
-    ADD_ELEMENT_TO_ARRAY( windows, n_windows, window, 1 );
-
     return( window_id );
 }
 
-private  void  delete_sub_window(
-    WSwindow   window )
+private  void  delete_GLUT_window(
+    Window_id   window_id )
 {
-    int  i;
-
-    for_less( i, 0, n_windows )
-    {
-        if( windows[i] == window )
-            break;
-    }
-
-    if( i >= n_windows )
-    {
-        handle_internal_error( "WS_delete_window" );
-        return;
-    }
-
-    DELETE_ELEMENT_FROM_ARRAY( windows, n_windows, i, 1 );
-
-    glutDestroyWindow( window->window_id );
+    glutDestroyWindow( window_id );
 }
 
 public  Status  WS_create_window(
@@ -129,70 +119,25 @@ public  Status  WS_create_window(
     unsigned  int      mode;
     int                used_size;
 
-    if( initial_x_pos >= 0 && initial_y_pos >= 0 )
-    {
-        if( initial_y_size <= 0 )
-            used_size = glutGet( (GLenum) GLUT_INIT_WINDOW_HEIGHT );
-        else
-            used_size = initial_y_size;
+    window->window_id = create_GLUT_window( title, 
+                                            initial_x_pos,
+                                            initial_y_pos,
+                                            initial_x_size,
+                                            initial_y_size,
+                                            colour_map_mode,
+                                            double_buffer_flag,
+                                            depth_buffer_flag,
+                                            n_overlay_planes,
+                                            actual_colour_map_mode,
+                                            actual_double_buffer_flag,
+                                            actual_depth_buffer_flag,
+                                            actual_n_overlay_planes );
 
-        glutInitWindowPosition( initial_x_pos, 
-                                flip_screen_y( initial_y_pos + used_size - 1) );
-    }
-
-    if( initial_x_size > 0 && initial_y_size > 0 )
-        glutInitWindowSize( initial_x_size, initial_y_size );
-
-    mode = 0;
-
-    if( colour_map_mode )
-        mode |= GLUT_INDEX;
-    else
-        mode |= GLUT_RGB;
-
-    if( double_buffer_flag )
-        mode |= GLUT_DOUBLE;
-    else
-        mode |= GLUT_SINGLE;
-
-    if( depth_buffer_flag )
-        mode |= GLUT_DEPTH;
-
-/*
-    mode |= GLUT_ALPHA;
-*/
-
-    glutInitDisplayMode( mode );
-
-    window->top_level_window_id = glutCreateWindow( title );
-
-    if( window->top_level_window_id < 1 )
-    {
-        print_error( "Could not open GLUT window for OpenGL\n" );
-        return( ERROR );
-    }
-
-    glutDisplayFunc( ignore_display );
-    glutReshapeFunc( resize_function );
-
-#ifdef OLD
-    window->window_id = window->top_level_window_id;
-#else
-    window->window_id = create_sub_window( colour_map_mode,
-                                           double_buffer_flag,
-                                           depth_buffer_flag,
-                                           n_overlay_planes,
-                                           actual_colour_map_mode,
-                                           actual_double_buffer_flag,
-                                           actual_depth_buffer_flag,
-                                           actual_n_overlay_planes, window );
 
     if( window->window_id < 1 )
-    {
-        print_error( "Could not open GLUT window for OpenGL\n" );
         return( ERROR );
-    }
-#endif
+
+    window->title = create_string( title );
 
     return( OK );
 }
@@ -203,8 +148,12 @@ public  BOOLEAN  WS_set_double_buffer_state(
 {
     BOOLEAN    colour_map_mode, depth_buffer_flag;
     int        n_overlay_planes, actual_n_overlay_planes;
+    int        x_pos, y_pos, x_size, y_size;
     BOOLEAN    actual_colour_map_mode, actual_double_buffer_flag;
     BOOLEAN    actual_depth_buffer_flag;
+    Window_id  old_window_id;
+
+    old_window_id = window->window_id;
 
     glutSetWindow( window->window_id );
 
@@ -212,22 +161,35 @@ public  BOOLEAN  WS_set_double_buffer_state(
     depth_buffer_flag = glutGet( (GLenum) GLUT_WINDOW_DEPTH_SIZE ) > 0;
     n_overlay_planes = 0;
 
-    delete_sub_window( window );
+    x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
+    y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
+    x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
+    y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
 
-    window->window_id = create_sub_window( colour_map_mode,
-                                           double_buffer_flag,
-                                           depth_buffer_flag,
-                                           n_overlay_planes,
-                                           &actual_colour_map_mode,
-                                           &actual_double_buffer_flag,
-                                           &actual_depth_buffer_flag,
-                                           &actual_n_overlay_planes, window );
+    y_pos = flip_screen_y( y_pos + y_size - 1 );
+
+    window->window_id = create_GLUT_window( window->title,
+                                            x_pos,
+                                            y_pos,
+                                            x_size,
+                                            y_size,
+                                            colour_map_mode,
+                                            double_buffer_flag,
+                                            depth_buffer_flag,
+                                            n_overlay_planes,
+                                            &actual_colour_map_mode,
+                                            &actual_double_buffer_flag,
+                                            &actual_depth_buffer_flag,
+                                            &actual_n_overlay_planes );
 
     if( window->window_id < 1 )
     {
         print_error( "Could not open GLUT window for OpenGL\n" );
         return( ERROR );
     }
+
+    ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
+                          old_window_id, 1 );
 
     return( actual_double_buffer_flag );
 }
@@ -238,25 +200,36 @@ public  BOOLEAN  WS_set_colour_map_state(
 {
     BOOLEAN    double_buffer_state, depth_buffer_flag;
     int        n_overlay_planes, actual_n_overlay_planes;
+    int        x_pos, y_pos, x_size, y_size;
     BOOLEAN    actual_colour_map_mode, actual_double_buffer_flag;
     BOOLEAN    actual_depth_buffer_flag;
+    Window_id  old_window_id;
 
+    old_window_id = window->window_id;
     glutSetWindow( window->window_id );
 
     double_buffer_state = glutGet( (GLenum) GLUT_WINDOW_DOUBLEBUFFER ) != 0;
     depth_buffer_flag = glutGet( (GLenum) GLUT_WINDOW_DEPTH_SIZE ) > 0;
     n_overlay_planes = 0;
 
-    delete_sub_window( window );
+    x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
+    y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
+    x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
+    y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
 
-    window->window_id = create_sub_window( colour_map_flag,
-                                           double_buffer_state,
-                                           depth_buffer_flag,
-                                           n_overlay_planes,
-                                           &actual_colour_map_mode,
-                                           &actual_double_buffer_flag,
-                                           &actual_depth_buffer_flag,
-                                           &actual_n_overlay_planes, window );
+    y_pos = flip_screen_y( y_pos + y_size - 1 );
+
+    window->window_id = create_GLUT_window( window->title,
+                                            x_pos, y_pos,
+                                            x_size, y_size,
+                                            colour_map_flag,
+                                            double_buffer_state,
+                                            depth_buffer_flag,
+                                            n_overlay_planes,
+                                            &actual_colour_map_mode,
+                                            &actual_double_buffer_flag,
+                                            &actual_depth_buffer_flag,
+                                            &actual_n_overlay_planes );
 
     if( window->window_id < 1 )
     {
@@ -264,15 +237,17 @@ public  BOOLEAN  WS_set_colour_map_state(
         return( ERROR );
     }
 
+    ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
+                          old_window_id, 1 );
+
     return( actual_colour_map_mode );
 }
 
 public  void  WS_delete_window(
     WSwindow  window )
 {
-    delete_sub_window( window );
-
-    glutDestroyWindow( window->top_level_window_id );
+    delete_GLUT_window( window->window_id );
+    delete_string( window->title );
 }
 
 private  Window_id  get_current_event_window( void )
@@ -327,38 +302,20 @@ public  int    WS_get_n_overlay_planes( void )
 }
 
 public  void  WS_get_window_position(
-    WSwindow     window,
     int          *x_pos,
     int          *y_pos )
 {
-    Window_id  save_id;
-
-    save_id = glutGetWindow();
-
-    set_window_normal_planes( window );
-
     *x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
     *y_pos = flip_screen_y( glutGet( (GLenum) GLUT_WINDOW_Y ) +
                             glutGet( (GLenum) GLUT_WINDOW_HEIGHT ) - 1 );
-
-    glutSetWindow( save_id );
 }
 
 public  void  WS_get_window_size(
-    WSwindow     window,
     int          *x_size,
     int          *y_size )
 {
-    Window_id  save_id;
-
-    save_id = glutGetWindow();
-
-    set_window_normal_planes( window );
-
     *x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
     *y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
-
-    glutSetWindow( save_id );
 }
 
 public  void  WS_set_colour_map_entry(
@@ -367,13 +324,9 @@ public  void  WS_set_colour_map_entry(
     int               ind,
     Colour            colour )
 {
-    glutSetWindow( window->top_level_window_id );
-
     glutSetColor( ind, (float) get_Colour_r_0_1(colour),
                        (float) get_Colour_g_0_1(colour),
                        (float) get_Colour_b_0_1(colour) );
-
-    glutSetWindow( window->window_id );
 }
 
 public  void  WS_set_overlay_colour_map_entry(
@@ -648,6 +601,17 @@ private  int  flip_screen_y(
 
 private  void  display_function( void )
 {
+    int   i;
+
+    if( n_windows_to_delete > 0 )
+    {
+        for_less( i, 0, n_windows_to_delete )
+            delete_GLUT_window( windows_to_delete[i] );
+
+        FREE( windows_to_delete );
+        n_windows_to_delete = 0;
+    }
+
     (*display_callback) ( get_current_event_window() );
 }
 
@@ -660,34 +624,15 @@ private  void  resize_function(
     int   width,
     int   height )
 {
-    WSwindow   window;
     Window_id  window_id;
-    int        x, y, i;
+    int        x, y;
 
     x = glutGet( (GLenum) GLUT_WINDOW_X );
     y = glutGet( (GLenum) GLUT_WINDOW_Y );
 
     window_id = get_current_event_window();
 
-    for_less( i, 0, n_windows )
-    {
-        if( windows[i]->top_level_window_id == window_id )
-            break;
-    }
-
-    if( i >= n_windows )
-    {
-        handle_internal_error( "resize_function" );
-        return;
-    }
-
-    window = windows[i];
-
-    glutSetWindow( window->window_id );
-    glutPositionWindow( 0, 0 );
-    glutReshapeWindow( width, height );
-
-    (*resize_callback) ( window->window_id, x, y, width, height );
+    (*resize_callback) ( window_id, x, y, width, height );
 }
 
 private  void  keyboard_function(
@@ -787,6 +732,7 @@ private  void  set_event_callbacks_for_current_window(
     int        n_overlay_planes )
 {
     glutDisplayFunc( display_function );
+    glutReshapeFunc( resize_function );
 
     if( n_overlay_planes > 0 )
         glutOverlayDisplayFunc( display_overlay_function );
