@@ -153,7 +153,6 @@ private  Real                min_time;
 private  void   recompute_min_time( void )
 {
     int   i;
-    Real  min_time;
 
     min_time = -1.0;
 
