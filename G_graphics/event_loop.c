@@ -1,4 +1,4 @@
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <graphics.h>
 
 static  BOOLEAN    left_button_state = FALSE;
@@ -113,6 +113,7 @@ private  void  assign_mouse_position(
     }
 }
 
+
 private  Gwindow  get_key_or_mouse_event_window(
     Window_id   window_id,
     int         x,
@@ -126,16 +127,14 @@ private  Gwindow  get_key_or_mouse_event_window(
     if( window != NULL )
     {
         assign_mouse_position( window, x, y );
-        if( modifier >= 0 )
-            keyboard_modifiers = modifier;
+        keyboard_modifiers = modifier;
     }
 
     return( window );
 }
 
 private  void  update_the_window(
-    Gwindow  window,
-    BOOLEAN  full_redraw_required )
+    Gwindow  window )
 {
     --n_windows_to_update_on_idle;
     if( n_windows_to_update_on_idle == 0 )
@@ -145,8 +144,7 @@ private  void  update_the_window(
 
     if( window->update_callback != NULL )
     {
-        (*window->update_callback)( window, full_redraw_required,
-                                    window->update_data );
+        (*window->update_callback)( window, window->update_data );
     }
 
     window->last_update_time = current_realtime_seconds();;
@@ -157,9 +155,7 @@ private  void  update_the_window(
 }
 
 private  void  global_update_function(
-    Window_id  window_id,
-    int        x_pos,
-    int        y_pos )
+    Window_id  window_id )
 {
     Gwindow     window;
 
@@ -167,10 +163,7 @@ private  void  global_update_function(
     if( window == NULL )
         return;
 
-    window->x_origin = x_pos;
-    window->y_origin = y_pos;
-
-    update_the_window( window, TRUE );
+    update_the_window( window );
 }
 
 private  void  update_the_overlay_window(
@@ -264,13 +257,14 @@ private  void  global_mouse_movement_function(
 {
     Gwindow     window;
 
-    window = get_key_or_mouse_event_window( window_id, x, y, -1 );
+    window = get_event_window( window_id );
     if( window == NULL )
         return;
 
+    assign_mouse_position( window, x, y );
+
     if( window->mouse_movement_callback != NULL )
-        (*window->mouse_movement_callback)( window,
-                                            current_mouse_x, current_mouse_y,
+        (*window->mouse_movement_callback)( window, x, y,
                                             window->mouse_movement_data );
 }
 
@@ -290,8 +284,7 @@ private  void  global_left_mouse_down_function(
     left_button_state = TRUE;
 
     if( window->left_mouse_down_callback != NULL )
-        (*window->left_mouse_down_callback)( window,
-                                             current_mouse_x, current_mouse_y,
+        (*window->left_mouse_down_callback)( window, x, y,
                                              window->left_mouse_down_data );
 }
 
@@ -310,8 +303,7 @@ private  void  global_left_mouse_up_function(
     left_button_state = FALSE;
 
     if( window->left_mouse_up_callback != NULL )
-        (*window->left_mouse_up_callback)( window,
-                                           current_mouse_x, current_mouse_y,
+        (*window->left_mouse_up_callback)( window, x, y,
                                            window->left_mouse_up_data );
 }
 
@@ -330,8 +322,7 @@ private  void  global_middle_mouse_down_function(
     middle_button_state = TRUE;
 
     if( window->middle_mouse_down_callback != NULL )
-        (*window->middle_mouse_down_callback)( window,
-                                               current_mouse_x, current_mouse_y,
+        (*window->middle_mouse_down_callback)( window, x, y,
                                                window->middle_mouse_down_data );
 }
 
@@ -350,8 +341,7 @@ private  void  global_middle_mouse_up_function(
     middle_button_state = FALSE;
 
     if( window->middle_mouse_up_callback != NULL )
-        (*window->middle_mouse_up_callback)( window,
-                                             current_mouse_x, current_mouse_y,
+        (*window->middle_mouse_up_callback)( window, x, y,
                                              window->middle_mouse_up_data );
 }
 
@@ -370,8 +360,7 @@ private  void  global_right_mouse_down_function(
     right_button_state = TRUE;
 
     if( window->right_mouse_down_callback != NULL )
-        (*window->right_mouse_down_callback)( window,
-                                              current_mouse_x, current_mouse_y,
+        (*window->right_mouse_down_callback)( window, x, y,
                                               window->right_mouse_down_data );
 }
 
@@ -390,8 +379,7 @@ private  void  global_right_mouse_up_function(
     right_button_state = FALSE;
 
     if( window->right_mouse_up_callback != NULL )
-        (*window->right_mouse_up_callback)( window,
-                                            current_mouse_x, current_mouse_y,
+        (*window->right_mouse_up_callback)( window, x, y,
                                             window->right_mouse_up_data );
 }
 
@@ -483,7 +471,7 @@ private  void  initialize_callbacks( void )
 
 public  void  G_set_update_function(
     Gwindow                 window,
-    void                    (*func) ( Gwindow, BOOLEAN, void * ),
+    void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
 {
     window->update_callback = func;
@@ -684,17 +672,8 @@ private  void  timer_update_window(
 
     if( window->update_required_flag )
     {
-        update_the_window( window, FALSE );
+        update_the_window( window );
     }
-}
-
-public  void  terminate_callbacks_for_window(
-    Gwindow                 window )
-{
-    int   i;
-
-    for_less( i, 0, window->n_update_timers )
-        G_delete_timer_function( timer_update_window, (void *) window );
 }
 
 /* ARGSUSED */
@@ -714,7 +693,7 @@ private  void  check_update_windows(
 
         if( window->update_required_flag )
         {
-            update_the_window( window, FALSE );
+            update_the_window( window );
         }
     }
 
@@ -727,8 +706,6 @@ public  void  G_set_update_flag(
 
     if( window->update_required_flag )
         return;
-
-    set_current_window( window );
 
     window->update_required_flag = TRUE;
 
@@ -744,12 +721,16 @@ public  void  G_set_update_flag(
     time_remaining = window->min_update_time -
                      (current_time - window->last_update_time);
 
-    if( time_remaining < 0.0 )
-        time_remaining = 0.0;
-
-    G_add_timer_function( time_remaining, timer_update_window,
-                          (void *) window );
-    ++window->n_update_timers;
+    if( time_remaining <= 0.0 )
+    {
+        GS_set_update_flag( window->GS_window );
+    }
+    else
+    {
+        G_add_timer_function( time_remaining, timer_update_window,
+                              (void *) window );
+        ++window->n_update_timers;
+    }
 }
 
 public  void  G_add_timer_function(
@@ -758,13 +739,6 @@ public  void  G_add_timer_function(
     void          *data )
 {
     GS_add_timer_function( seconds, func, data );
-}
-
-public  void  G_delete_timer_function(
-    void          (*func) ( void * ),
-    void          *data )
-{
-    GS_delete_timer_function( func, data );
 }
 
 public  void  G_add_idle_function(

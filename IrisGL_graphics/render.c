@@ -1,5 +1,5 @@
  
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <GS_graphics.h>
 
 public  void  GS_set_shade_model(
@@ -42,13 +42,3 @@ public  void  GS_set_n_curve_segments(
 {
     curveprecision( (short) n_segments );
 }
-
-public  void  GS_set_dither_state(
-    BOOLEAN      state )
-{
-    if( state )
-        dither( DT_ON );
-    else
-        dither( DT_OFF );
-}
-

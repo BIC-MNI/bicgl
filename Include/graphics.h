@@ -47,7 +47,6 @@ typedef  struct   window_struct
     BOOLEAN                render_lines_as_curves_state;
     int                    n_curve_segments;
     BOOLEAN                marker_labels_visibility;
-    BOOLEAN                dither_state;
 
     int                    x_viewport_min;
     int                    x_viewport_max;
@@ -75,7 +74,7 @@ typedef  struct   window_struct
 
     Real                   min_update_time;
 
-    void    (*update_callback) ( struct window_struct *, BOOLEAN, void * );
+    void    (*update_callback) ( struct window_struct *, void * );
     void    *update_data;
 
     void    (*update_overlay_callback) ( struct window_struct *, void * );

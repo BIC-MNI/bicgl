@@ -1,5 +1,18 @@
 2001-05-22  Steve M. Robbins  <steve@nyongwa.montreal.qc.ca>
 
+	* branch-1_3 merge: Many autoconfig files added.
+
+	* various: Changed include from "foo.h" to "volume_io/foo.h",
+	to "bicpl/foo.h", or to "GL/foo.h" to match current practice.
+
+	* Makefile: Include one other file, namely ../Makefile.include
+	which is provided by either Register or Display.  Removed many
+	extraneous targets; will only build "opengl" library now.
+
+	* Makefile.include: removed.
+
+2001-05-22  Steve M. Robbins  <steve@nyongwa.montreal.qc.ca>
+
 	* GLUT_windows/Makefile:
 	* G_graphics/Makefile:
 	* OpenGL_graphics/Makefile:

@@ -2,7 +2,7 @@
 #define  DEF_GLUT_WINDOWS
 
 #include  <graphics_base.h>
-#include  <glut.h>
+#include  <GL/glut.h>
 
 typedef  int  Window_id;
 

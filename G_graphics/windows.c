@@ -1,4 +1,4 @@
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <graphics.h>
 
 /*--------------- maintaining list of known windows ------------------------ */
@@ -120,9 +120,6 @@ private  void  reinitialize_window(
     window->backface_culling_state = !window->backface_culling_state;
     G_backface_culling_state( window, !window->backface_culling_state );
 
-    window->dither_state = !window->dither_state;
-    G_set_dither_state( window, !window->dither_state );
-
     n_segments = window->n_curve_segments;
     ++window->n_curve_segments;
     G_set_n_curve_segments( window, n_segments );
@@ -173,9 +170,6 @@ private  void  initialize_window(
 
     window->shaded_mode_state = OFF;
     G_set_shaded_state( window, ON );
-
-    window->dither_state = OFF;
-    G_set_dither_state( window, ON );
 
     G_set_render_lines_as_curves_state( window, OFF );
 
@@ -260,8 +254,6 @@ public  Status  G_delete_window(
         GS_set_bitplanes( window->GS_window, OVERLAY_PLANES );
         G_clear_window( window );
     }
-
-    terminate_callbacks_for_window( window );
 
     status = GS_delete_window( window->GS_window );
 
@@ -843,32 +835,4 @@ public  void  G_set_transparency_state(
         window->transparency_state = state;
         update_blend_function( window, window->current_bitplanes );
     }
-}
-
-public  void  G_raise_window(
-    Gwindow        window )
-{
-    set_current_window( window );
-    GS_raise_window( window->GS_window );
-}
-
-public  void  G_lower_window(
-    Gwindow        window )
-{
-    set_current_window( window );
-    GS_lower_window( window->GS_window );
-}
-
-public  void  G_iconify_window(
-    Gwindow        window )
-{
-    set_current_window( window );
-    GS_iconify_window( window->GS_window );
-}
-
-public  void  G_deiconify_window(
-    Gwindow        window )
-{
-    set_current_window( window );
-    GS_deiconify_window( window->GS_window );
 }

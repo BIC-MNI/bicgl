@@ -1,7 +1,7 @@
 #ifndef  DEF_GRAPHICS_STRUCT
 #define  DEF_GRAPHICS_STRUCT
 
-#include  <basic.h>
+#include  <volume_io/basic.h>
 #include  <graphics.h>
 
 typedef  struct
