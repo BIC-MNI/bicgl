@@ -1,6 +1,5 @@
 #include  <internal_volume_io.h>
 #include  <WS_windows.h>
-#include  <GL/glx.h>
 
 private  BOOLEAN  GLX_supported()
 {
@@ -19,10 +18,10 @@ private  BOOLEAN  GLX_supported()
 
 public  Status  WS_create_window(
     char                   title[],
-    char                   initial_x_pos,
-    char                   initial_y_pos,
-    char                   initial_x_size,
-    char                   initial_y_size,
+    int                    initial_x_pos,
+    int                    initial_y_pos,
+    int                    initial_x_size,
+    int                    initial_y_size,
     BOOLEAN                colour_map_mode,
     BOOLEAN                double_buffer_flag,
     BOOLEAN                depth_buffer_flag,
@@ -33,151 +32,91 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WS_window_struct       *window )
 {
-    int                      i, n_config, nret;
+    int                      *attrib, n_attrib, flag;
     Status                   status;
-    long                     glxlink_ret;
-    GLXconfig                *glxConfig, *retconfig, element;
     Colormap                 cmap;
-    XVisualInfo              *visual, templ;
+    XVisualInfo              *visual;
 
     if( !GLX_supported() )
     {
         return( ERROR );
     }
 
+    n_attrib = 0;
+
     if( n_overlay_planes > 0 )
     {
-        print( "WS_create_window():  Sorry, cannot handle overlay planes.\n" );
+        print( "WS_create_window(): cannot handle overlay planes yet.\n" );
     }
-    *actual_n_overlay_planes = 0;
 
-    n_config = 0;
-
-    if( !colour_map_mode )
+    if( colour_map_mode )
     {
-        element.buffer = GLX_NORMAL;
-        element.mode = GLX_RGB;
-        element.arg = TRUE;
-        ADD_ELEMENT_TO_ARRAY( glxConfig, n_config, element, DEFAULT_CHUNK_SIZE);
+/*
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_BUFFER_SIZE,
+                              DEFAULT_CHUNK_SIZE);
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 4096, DEFAULT_CHUNK_SIZE);
+*/
+    }
+    else
+    {
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_RGBA, DEFAULT_CHUNK_SIZE);
     }
 
     if( double_buffer_flag )
     {
-        element.buffer = GLX_NORMAL;
-        element.mode = GLX_DOUBLE;
-        element.arg = TRUE;
-        ADD_ELEMENT_TO_ARRAY( glxConfig, n_config, element, DEFAULT_CHUNK_SIZE);
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_DOUBLEBUFFER,
+                              DEFAULT_CHUNK_SIZE);
     }
 
     if( depth_buffer_flag )
     {
-        element.buffer = GLX_NORMAL;
-        element.mode = GLX_ZSIZE;
-        element.arg = GLX_NOCONFIG;
-        ADD_ELEMENT_TO_ARRAY( glxConfig, n_config, element, DEFAULT_CHUNK_SIZE);
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_DEPTH_SIZE,
+                              DEFAULT_CHUNK_SIZE);
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 1, DEFAULT_CHUNK_SIZE);
     }
 
-    element.buffer = 0;
-    element.mode = 0;
-    element.arg = 0;
-    ADD_ELEMENT_TO_ARRAY( glxConfig, n_config, element, DEFAULT_CHUNK_SIZE );
+    ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, None, DEFAULT_CHUNK_SIZE);
+
+    visual = glXChooseVisual( X_get_display(), X_get_screen(), attrib );
+
+    FREE( attrib );
+
+    if( visual == NULL )
+    {
+        print( "Cannot find matching visual.\n" );
+        return( ERROR );
+    }
+
+    glXGetConfig( X_get_display(), visual, GLX_RGBA, &flag );
+    *actual_colour_map_mode = (flag == GL_FALSE);
+
+    glXGetConfig( X_get_display(), visual, GLX_DOUBLEBUFFER, &flag );
+    *actual_double_buffer_flag = (flag == GL_TRUE);
+
+    glXGetConfig( X_get_display(), visual, GLX_DEPTH_SIZE, &flag );
+    *actual_depth_buffer_flag = (flag > 0);
+
+    *actual_n_overlay_planes = 0;
 
 /*
-    retconfig = GLXgetconfig( X_get_display(), X_get_screen(),
-                              glxConfig );
+    cmap = DefaultColormap( X_get_display(), X_get_screen() );
 */
+    cmap = XCreateColormap( X_get_display(), RootWindow(X_get_display(),
+                                                        X_get_screen()),
+                            visual->visual, AllocNone );
 
-    if( n_config > 0 )
-        FREE( glxConfig );
 
-    if( retconfig == NULL )
-    {
-        print( "Cannot get glxconfig of desired configuration\n" );
-        status = ERROR;
-    }
+    status = X_create_window_with_visual( title,
+                              initial_x_pos, initial_y_pos,
+                              initial_x_size, initial_y_size, 
+                              colour_map_mode, visual, cmap,
+                              &window->x_window );
 
     if( status == OK )
     {
-        *actual_colour_map_mode = colour_map_mode;
-        *actual_double_buffer_flag = double_buffer_flag;
-        *actual_depth_buffer_flag = depth_buffer_flag;
-
-        cmap = DefaultColormap( X_get_display(), X_get_screen() );
-
-        i = 0;
-        while( retconfig[i].buffer != 0 )
-        {
-            switch( retconfig[i].mode )
-            {
-            case GLX_DOUBLE:
-                if( retconfig[i].buffer == GLX_NORMAL && retconfig[i].arg == 0 )
-                    double_buffer_flag = FALSE;
-                break;
-
-            case GLX_RGB:
-                if( retconfig[i].buffer == GLX_NORMAL && retconfig[i].arg == 0 )
-                    colour_map_mode = TRUE;
-                break;
-
-            case GLX_ZSIZE:
-                if( retconfig[i].buffer == GLX_NORMAL && retconfig[i].arg == 0 )
-                    depth_buffer_flag = FALSE;
-                break;
-
-            case GLX_COLORMAP:
-                if( retconfig[i].buffer == GLX_NORMAL )
-                    cmap = retconfig[i].arg;
-                break;
-
-            case GLX_VISUAL:
-                if( retconfig[i].buffer == GLX_NORMAL )
-                {
-                    templ.visualid = retconfig[i].arg;
-                    templ.screen = X_get_screen();
-                    visual = XGetVisualInfo( X_get_display(),
-                                              VisualScreenMask|VisualIDMask,
-                                              &templ, &nret );
-                }
-                break;
-
-            }
-
-            ++i;
-        }
-
-        status = X_create_window_with_visual( title,
-                                  initial_x_pos, initial_y_pos,
-                                  initial_x_size, initial_y_size, 
-                                  colour_map_mode, visual, cmap,
-                                  &window->x_window );
+        window->graphics_context = glXCreateContext( X_get_display(),
+                                                     visual, NULL, TRUE );
     }
-
-    if( status == OK )
-    {
-        i = 0;
-        while( retconfig[i].buffer != 0 )
-        {
-            if( retconfig[i].buffer == GLX_NORMAL &&
-                retconfig[i].mode == GLX_WINDOW )
-            {
-                retconfig[i].arg = (int) window->x_window.window_id;
-            }
-            ++i;
-        }
-
-/*
-        glxlink_ret = GLXlink( X_get_display(), retconfig );
-*/
-
-        if( glxlink_ret < 0 )
-        {
-            print( "GLXlink returned %d\n", glxlink_ret );
-            status = ERROR;
-        }
-    }
-
-    if( retconfig != NULL )
-        free( retconfig );
 
     return( status );
 }
@@ -185,18 +124,15 @@ public  Status  WS_create_window(
 public  void  WS_delete_window(
     WS_window_struct  *window )
 {
-/*
-    GLXunlink( X_get_display(), window->x_window.window_id );
-*/
+    glXDestroyContext( X_get_display(), window->graphics_context );
     X_delete_window( &window->x_window );
 }
 
 public  void  WS_make_window_current(
     WS_window_struct  *window )
 {
-/*
-    GLXwinset( X_get_display(), window->x_window.window_id );
-*/
+    glXMakeCurrent( X_get_display(), window->x_window.window_id,
+                    window->graphics_context );
 }
 
 public  BOOLEAN  WS_get_event(
