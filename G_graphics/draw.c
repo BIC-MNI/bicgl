@@ -139,9 +139,7 @@ public  void  set_continuation_flag(
 }
 
 #ifndef TWO_D_ONLY
-#define  ALLOW_DRAWING_INTERRUPT
-
-#ifdef   ALLOW_DRAWING_INTERRUPT
+#ifndef   DISALLOW_DRAWING_INTERRUPT
 
 /*  macro for drawing objects with interrupts  */
 
