@@ -1,4 +1,4 @@
-#include  <def_mni.h>
+#include  <def_graphics.h>
 
 int  main(
     int   argc,
