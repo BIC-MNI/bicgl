@@ -428,12 +428,9 @@ public  BOOLEAN  WS_set_double_buffer_state(
     depth_buffer_flag = glutGet( (GLenum) GLUT_WINDOW_DEPTH_SIZE ) > 0;
     n_overlay_planes = 0;
 
-    x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
-    y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
+    WS_get_window_position( &x_pos, &y_pos );
     x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
     y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
-
-    y_pos = flip_screen_y( y_pos + y_size - 1 );
 
     window->window_id = create_GLUT_window( window->title,
                                             x_pos,
@@ -484,12 +481,10 @@ public  BOOLEAN  WS_set_colour_map_state(
     depth_buffer_flag = glutGet( (GLenum) GLUT_WINDOW_DEPTH_SIZE ) > 0;
     n_overlay_planes = 0;
 
-    x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
-    y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
+    WS_get_window_position( &x_pos, &y_pos );
+
     x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
     y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
-
-    y_pos = flip_screen_y( y_pos + y_size - 1 );
 
     window->window_id = create_GLUT_window( window->title,
                                             x_pos, y_pos,
@@ -754,7 +749,7 @@ public  void  WS_set_mouse_position(
 {
 }
 
-static  void  (*display_callback) ( Window_id );
+static  void  (*display_callback) ( Window_id, int, int );
 static  void  (*display_overlay_callback) ( Window_id );
 static  void  (*resize_callback) ( Window_id, int, int, int, int );
 static  void  (*key_down_callback) ( Window_id, int, int, int, int );
@@ -773,7 +768,7 @@ static  void  (*leave_callback) ( Window_id );
 static  void  (*quit_callback) ( Window_id );
 
 public  void  WS_set_update_function(
-    void  (*func)( Window_id ) )
+    void  (*func)( Window_id, int, int ) )
 {
     display_callback = func;
 }
@@ -905,7 +900,7 @@ private  int  flip_screen_y(
 
 private  void  display_function( void )
 {
-    int   i, save_window_id;
+    int   i, x, y, save_window_id;
 
     if( n_windows_to_delete > 0 )
     {
@@ -928,7 +923,9 @@ private  void  display_function( void )
             glutSetWindow( save_window_id );
     }
 
-    (*display_callback) ( get_current_event_window() );
+    WS_get_window_position( &x, &y );
+
+    (*display_callback) ( get_current_event_window(), x, y );
 }
 
 private  void  display_overlay_function( void )
@@ -943,10 +940,9 @@ private  void  resize_function(
     Window_id  window_id;
     int        x, y;
 
-    x = glutGet( (GLenum) GLUT_WINDOW_X );
-    y = glutGet( (GLenum) GLUT_WINDOW_Y );
-
     window_id = get_current_event_window();
+
+    WS_get_window_position( &x, &y );
 
     (*resize_callback) ( window_id, x, y, width, height );
 }
