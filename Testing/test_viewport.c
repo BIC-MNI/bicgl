@@ -1,113 +1,162 @@
+
+#include  <internal_volume_io.h>
 #include  <graphics.h>
 
-main()
+#define  X_SIZE  300
+#define  Y_SIZE  300
+
+#define  X_MIN_VIEWPORT    10
+#define  X_MAX_VIEWPORT   290
+#define  Y_MIN_VIEWPORT    10
+#define  Y_MAX_VIEWPORT   290
+
+private  void  draw_rectangle(
+    Gwindow   window,
+    Colour    colour,
+    int       x_min,
+    int       x_max,
+    int       y_min,
+    int       y_max );
+
+private  void  draw_region(
+    Gwindow   window,
+    Colour    colour,
+    int       x_min,
+    int       x_max,
+    int       y_min,
+    int       y_max );
+
+int main(
+    int    argc,
+    char   *argv[] )
 {
-    Status            status;
-    window_struct     *window;
-    text_struct       text;
-    lines_struct      lines;
-    polygons_struct   polygons;
-    pixels_struct     pixels;
-    Point             point;
-    int               i, j, pixels_x_size, pixels_y_size, x_position, y_position;
+    Gwindow           window;
 
-    status = G_create_window( "Test Window", -1, -1, -1, -1, &window );
-
-    /* ------- define text to be drawn (text.string filled in later ----- */
-
-    fill_Point( point, 10.0, 10.0, 0.0 );
-    initialize_text( &text, &point, make_Colour(255,0,255), SIZED_FONT, 14.0 );
-    text.string[0] = (char) 0;
-
-    /* ------------ define line to be drawn  ------------- */
-
-    initialize_lines( &lines, make_Colour(255,255,0) );
-
-    lines.n_points = 4;
-    ALLOC( lines.points, 4 );
-    fill_Point( lines.points[0], 0.0, 0.0, 0.0 );
-    fill_Point( lines.points[1], 100.0, 100.0, 0.0 );
-    fill_Point( lines.points[2], 30.0, 100.0, 0.0 );
-    fill_Point( lines.points[3], 100.0, 30.0, 0.0 );
-
-    lines.n_items = 3;
-    ALLOC( lines.end_indices, lines.n_items );
-    lines.end_indices[0] = 2;
-    lines.end_indices[1] = 4;
-    lines.end_indices[2] = 6;
-
-    ALLOC( lines.indices, lines.end_indices[lines.n_items-1] );
-    lines.indices[0] = 0;
-    lines.indices[1] = 1;
-
-    lines.indices[2] = 0;
-    lines.indices[3] = 2;
-
-    lines.indices[4] = 0;
-    lines.indices[5] = 3;
-
-    /* ------------ define pixels to be drawn  ------------- */
-
-    pixels_x_size = 256;
-    pixels_y_size = 256;
-
-    x_position = 10;
-    y_position = 10;
-    initialize_pixels( &pixels, x_position, y_position,
-                       pixels_x_size, pixels_y_size, 1.0, 1.0, RGB_PIXEL );
-
-    for_less( i, 0, pixels_x_size )
-    {
-        for_less( j, 0, pixels_y_size )
-        {
-            PIXEL_RGB_COLOUR(pixels,i,j) = make_Colour( i % 256, j % 256, 0 );
-        }
-    }
-
-    /* ------------ define polygons to be drawn  ------------- */
-
-    initialize_polygons( &polygons, make_Colour(0,255,255), (Surfprop *) NULL );
-
-    fill_Point( point, 10.0, 10.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
-    fill_Point( point, 90.0, 10.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
-    fill_Point( point, 90.0, 90.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
-    fill_Point( point, 10.0, 90.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
-
-    G_set_viewport( window, 100, 300, 100, 300 );
-
-/*
-    G_draw_pixels( window, &pixels );
-*/
-
+    if( G_create_window( "Test Window",
+                         100, 600, X_SIZE, Y_SIZE,
+                         FALSE, FALSE, FALSE, 0, &window ) != OK )
+        return( 1 );
+    G_set_zbuffer_state( window, OFF );
+    G_set_lighting_state( window, OFF );
     G_set_view_type( window, PIXEL_VIEW );
-/*
-    ortho2( -0.5, 200.5, -0.5, 200.5 );
-    viewport( 100, 300, 100, 300 );
-*/
-    G_draw_polygons( window, &polygons );
-    G_draw_lines( window, &lines );
+    G_set_automatic_clear_state( window, FALSE );
 
-    G_set_view_type( window, PIXEL_VIEW );
-    G_draw_text( window, &text );
+    G_clear_window( window );
+
+    draw_rectangle( window, YELLOW, 1, X_SIZE-2, 1, Y_SIZE-2 );
+    draw_rectangle( window, ORANGE, 0, X_SIZE-1, 0, Y_SIZE-1 );
+    draw_rectangle( window, BLUE, -1, X_SIZE, -1, Y_SIZE );
+
+    draw_rectangle( window, RED, X_MIN_VIEWPORT-1, X_MAX_VIEWPORT+1,
+                            Y_MIN_VIEWPORT-1, Y_MAX_VIEWPORT+1 );
+    draw_rectangle( window, GREEN, X_MIN_VIEWPORT, X_MAX_VIEWPORT,
+                            Y_MIN_VIEWPORT, Y_MAX_VIEWPORT );
+    draw_rectangle( window, CYAN, X_MIN_VIEWPORT+1, X_MAX_VIEWPORT-1,
+                            Y_MIN_VIEWPORT+1, Y_MAX_VIEWPORT-1 );
+    draw_rectangle( window, BLUE, X_MIN_VIEWPORT-2, X_MAX_VIEWPORT+2,
+                            Y_MIN_VIEWPORT-2, Y_MAX_VIEWPORT+2 );
 
     G_update_window( window );
 
     print( "Hit return: " );
     (void) getchar();
 
-    /* delete drawing objects and window (text does not need to be deleted */
+    G_set_viewport( window, X_MIN_VIEWPORT, X_MAX_VIEWPORT,
+                            Y_MIN_VIEWPORT, Y_MAX_VIEWPORT );
+
+    G_clear_viewport( window, make_Colour_0_1( .2, .2, .2 ) );
+
+    draw_rectangle( window, BLUE, -10, X_MAX_VIEWPORT - X_MIN_VIEWPORT + 10,
+                                  -10, (Y_MAX_VIEWPORT + Y_MIN_VIEWPORT)/2 );
+    draw_rectangle( window, BLUE, -10, (X_MAX_VIEWPORT + X_MIN_VIEWPORT)/2,
+                                  -10, Y_MAX_VIEWPORT - Y_MIN_VIEWPORT + 10 );
+
+    G_update_window( window );
+
+    print( "Viewport cleared:  Hit return: " );
+    (void) getchar();
+
+    draw_rectangle( window, WHITE, -1, X_MAX_VIEWPORT - X_MIN_VIEWPORT + 1,
+                                   -1, Y_MAX_VIEWPORT - Y_MIN_VIEWPORT + 1 );
+    draw_rectangle( window, MAGENTA, 0, X_MAX_VIEWPORT - X_MIN_VIEWPORT,
+                                     0, Y_MAX_VIEWPORT - Y_MIN_VIEWPORT );
+    draw_rectangle( window, YELLOW, 1, X_MAX_VIEWPORT - X_MIN_VIEWPORT-1,
+                                    1, Y_MAX_VIEWPORT - Y_MIN_VIEWPORT-1 );
+    G_update_window( window );
+
+    print( "Viewport redrawn:  Hit return: " );
+    (void) getchar();
+
+    (void) G_delete_window( window );
+
+    return( 0 );
+}
+
+private  void  draw_rectangle(
+    Gwindow   window,
+    Colour    colour,
+    int       x_min,
+    int       x_max,
+    int       y_min,
+    int       y_max )
+{
+    lines_struct  lines;
+
+    initialize_lines( &lines, colour );
+
+    lines.n_points = 4;
+    ALLOC( lines.points, 4 );
+    fill_Point( lines.points[0], (Real) x_min, (Real) y_min, 0.0 );
+    fill_Point( lines.points[1], (Real) x_max, (Real) y_min, 0.0 );
+    fill_Point( lines.points[2], (Real) x_max, (Real) y_max, 0.0 );
+    fill_Point( lines.points[3], (Real) x_min, (Real) y_max, 0.0 );
+
+    lines.n_items = 1;
+    ALLOC( lines.end_indices, lines.n_items );
+    lines.end_indices[0] = 5;
+
+    ALLOC( lines.indices, lines.end_indices[lines.n_items-1] );
+    lines.indices[0] = 0;
+    lines.indices[1] = 1;
+    lines.indices[2] = 2;
+    lines.indices[3] = 3;
+    lines.indices[4] = 0;
+
+    G_draw_lines( window, &lines );
 
     delete_lines( &lines );
+}
+
+private  void  draw_region(
+    Gwindow   window,
+    Colour    colour,
+    int       x_min,
+    int       x_max,
+    int       y_min,
+    int       y_max )
+{
+    polygons_struct  polygons;
+
+    initialize_polygons( &polygons, colour, NULL );
+
+    polygons.n_points = 4;
+    ALLOC( polygons.points, 4 );
+    fill_Point( polygons.points[0], (Real) x_min, (Real) y_min, 0.0 );
+    fill_Point( polygons.points[1], (Real) x_max, (Real) y_min, 0.0 );
+    fill_Point( polygons.points[2], (Real) x_max, (Real) y_max, 0.0 );
+    fill_Point( polygons.points[3], (Real) x_min, (Real) y_max, 0.0 );
+
+    polygons.n_items = 1;
+    ALLOC( polygons.end_indices, polygons.n_items );
+    polygons.end_indices[0] = 4;
+
+    ALLOC( polygons.indices, polygons.end_indices[polygons.n_items-1] );
+    polygons.indices[0] = 0;
+    polygons.indices[1] = 1;
+    polygons.indices[2] = 2;
+    polygons.indices[3] = 3;
+
+    G_draw_polygons( window, &polygons );
 
     delete_polygons( &polygons );
-
-    delete_pixels( &pixels );
-
-    status = G_delete_window( window );
-
-    return( status != OK );
 }
