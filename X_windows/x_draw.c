@@ -4,7 +4,7 @@
 /* ARGSUSED */
 
 public  Status  X_create_window(
-    char             title[],
+    STRING           title,
     int              initial_x_pos,
     int              initial_y_pos,
     int              initial_x_size,

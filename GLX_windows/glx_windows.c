@@ -21,7 +21,7 @@ private  BOOLEAN  GLX_supported()
 }
 
 public  Status  WS_create_window(
-    char                   title[],
+    STRING                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
     int                    initial_x_size,
@@ -367,7 +367,7 @@ public  BOOLEAN  WS_get_font(
 #else
     Font         x_font;
 
-    if( X_get_font_name( type, (int) size, font_info->font_name ) )
+    if( X_get_font_name( type, (int) size, &font_info->font_name ) )
     {
         x_font = XLoadFont( X_get_display(), font_info->font_name );
         font_info->x_font_info = XQueryFont( X_get_display(), x_font );
@@ -467,6 +467,7 @@ public  void  WS_delete_font(
 #ifdef USE_STORED_FONT_ONLY
 #else
     XFreeFont( X_get_display(), info->x_font_info );
+    delete_string( info->font_name );
 #endif
 }
 
@@ -482,7 +483,7 @@ public  Real  WS_get_character_height(
 
 public  Real  WS_get_text_length(
     WS_font_info     *font_info,
-    char             str[] )
+    STRING           str )
 {
     int    i, len, min_char, max_char;
 

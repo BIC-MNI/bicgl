@@ -1170,7 +1170,7 @@ public  Real  G_get_text_height(
 }
 
 public  Real  G_get_text_length(
-    char             str[],
+    STRING           str,
     Font_types       type,
     Real             size )
 {

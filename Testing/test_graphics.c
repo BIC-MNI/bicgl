@@ -88,7 +88,7 @@ int main(
 
     fill_Point( point, 10.0, 10.0, 0.0 );
     initialize_text( &text, &point, make_Colour(255,0,255), SIZED_FONT, 14.0 );
-    text.string[0] = (char) 0;
+    text.string = alloc_string( 2000 );
 
     for_less( i, 0, N_FONTS )
     {
@@ -97,12 +97,16 @@ int main(
                          font_types[i], font_sizes[i] );
 
         if( font_types[i] == FIXED_FONT )
-            (void) strcpy( font_examples[i].string, "Fixed font: " );
+            font_examples[i].string = create_string( "Fixed font: " );
         else
+        {
+            font_examples[i].string = alloc_string( 1000 );
             (void) sprintf( font_examples[i].string, "Sized font %g points: ",
                             font_sizes[i] );
+        }
 
-        (void) strcat( font_examples[i].string, "abcdefghijklmnopqrstuvwxyz" );
+        concat_to_string( &font_examples[i].string,
+                          "abcdefghijklmnopqrstuvwxyz" );
     }
 
     /* ------------ define line to be drawn  ------------- */
@@ -378,12 +382,22 @@ int main(
     /* delete drawing objects and window (text does not need to be deleted */
 
     delete_lines( &lines );
+    delete_lines( &lines_2d );
 
     delete_polygons( &polygons );
 
     delete_pixels( &pixels );
 
+    delete_text( &text );
+
+    for_less( i, 0, N_FONTS )
+        delete_text( &font_examples[i] );
+
     status = G_delete_window( window );
+
+    G_terminate();
+
+    output_alloc_to_file( NULL );
 
     return( status != OK );
 }

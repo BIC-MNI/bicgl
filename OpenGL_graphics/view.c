@@ -78,17 +78,9 @@ public  void  GS_ortho_2d(
     int   y_max )
 {
     glLoadIdentity();
-#ifdef MESA_OPENGL
-    glOrtho( (Real) x_min - 1.0, (Real) x_max+0.0,
-             (Real) y_min - 1.0, (Real) y_max+0.0, -1.0, 1.0 );
-#else
-/*
-    glOrtho( (Real) x_min - 0.5, (Real) x_max+0.5,
-             (Real) y_min - 0.5, (Real) y_max+0.5, -1.0, 1.0 );
-*/
-    glOrtho( (Real) x_min, (Real) x_max+1.0,
-             (Real) y_min, (Real) y_max+1.0, -1.0, 1.0 );
-#endif
+
+    glOrtho( (Real) x_min, (Real) x_max + 1.0,
+             (Real) y_min, (Real) y_max + 1.0, -1.0, 1.0 );
 }
 
 public  void  GS_frustum(
@@ -139,11 +131,7 @@ public  void  GS_set_viewport(
     int            y_min,
     int            y_max )
 {
-#ifdef MESA_OPENGL
-    glViewport( x_min, y_min, x_max - x_min + 0, y_max - y_min + 0 );
-#else
     glViewport( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1 );
-#endif
 }
 
 public  void  clear_overlay_planes()

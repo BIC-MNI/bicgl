@@ -155,7 +155,7 @@ public  long  G_get_window_id(
 }
 
 public  Status  G_create_window(
-    char           title[],
+    STRING         title,
     int            x_pos,
     int            y_pos,
     int            width,
@@ -240,7 +240,7 @@ public  Status  G_delete_window(
 
 public  void  G_set_window_title(
     Gwindow   window,
-    char      title[] )
+    STRING    title )
 {
     set_current_window( window );
 

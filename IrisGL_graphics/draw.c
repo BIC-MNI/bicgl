@@ -244,7 +244,7 @@ public  void  GS_read_pixels(
 #endif
 }
 
-private  const  char  font_name[] = "Helvetica";
+private  const  STRING  font_name = "Helvetica";
 
 private  fmfonthandle   base_font_handle;
 
@@ -316,7 +316,7 @@ public  BOOLEAN  WS_get_font(
 
 public  Real  WS_get_text_length(
     WS_font_info    *font_info,
-    char            str[] )
+    STRING          str )
 {
     Real   width;
 
@@ -356,7 +356,7 @@ public  BOOLEAN  GS_set_font(
 
 public  void   GS_draw_text(
     Font_types   type,
-    char         string[] )
+    STRING       string )
 {
     if( type == SIZED_FONT )
         fmprstr( string );

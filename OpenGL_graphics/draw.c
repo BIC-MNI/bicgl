@@ -168,7 +168,7 @@ public  BOOLEAN  GS_set_font(
 
 public  void  GS_draw_text(
     Font_types   type,
-    char         string[] )
+    STRING       string )
 {
     glCallLists( strlen( string ), GL_UNSIGNED_BYTE, (GLubyte *) string );
 }

@@ -78,7 +78,7 @@ public  BOOLEAN  GS_can_switch_colour_map_mode()
 
 public  Status  GS_create_window(
     Gwindow        window,
-    char           title[],
+    STRING         title,
     int            x_pos,
     int            y_pos,
     int            width,
@@ -132,7 +132,7 @@ private  void  initialize_window(
 
 public  void  GS_set_window_title(
     Gwindow   window,
-    char      title[] )
+    STRING    title )
 {
 }
 

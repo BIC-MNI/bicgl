@@ -56,7 +56,7 @@ private   int   wait_for_window(
 }
 
 public  Status  X_create_window_with_visual(
-    char             title[],
+    STRING           title,
     int              initial_x_pos,
     int              initial_y_pos,
     int              initial_x_size,
@@ -471,11 +471,11 @@ private  void  bind_special_keys()
 private  BOOLEAN  find_font(
     Font_types       type,
     int              size,
-    STRING           font_name )
+    STRING           *font_name )
 {
     int      n_returned;
     BOOLEAN  found;
-    STRING   pattern;
+    char     pattern[EXTREMELY_LARGE_STRING_SIZE];
     char     **names;
     int      dpi, family, width, slant, weight;
 #ifdef NOT_NEEDED
@@ -545,7 +545,7 @@ private  BOOLEAN  find_font(
 
     if( found )
     {
-        (void) strcpy( font_name, names[0] );
+        *font_name = create_string( names[0] );
         XFreeFontNames( names );
     }
 
@@ -555,7 +555,7 @@ private  BOOLEAN  find_font(
 public  BOOLEAN  X_get_font_name(
     Font_types       type,
     int              size,
-    STRING           font_name )
+    STRING           *font_name )
 {
     BOOLEAN  found;
     int      offset;
