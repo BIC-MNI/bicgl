@@ -1,25 +1,26 @@
 
-#include  <internal_volume_io.h>
-#include  <graphics.h>
-#include  <GS_graphics.h>
-#include  <WS_graphics.h>
+#include  <glut.h>
+#include  <stdio.h>
 
-private  void  display_function( void )
+#define  ENABLE_BUG
+
+static  void  display_function( void )
 {
-    print( "Display callback\n" );
+    (void) printf( "In Display callback of window %d:   rgb mode: %d\n",
+                    glutGetWindow(),
+                    glutGet( (GLenum) GLUT_WINDOW_RGBA ) );
 }
 
-private  void  create_GLUT_window(
-    STRING                 title,
+static  void  create_GLUT_window(
+    char                   title[],
     int                    initial_x_pos,
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                rgb_mode )
+    int                    rgb_mode )
 {
     int                rgba;
     unsigned  int      mode;
-    int                used_size;
     int                window_id;
 
     mode = 0;
@@ -33,25 +34,15 @@ private  void  create_GLUT_window(
     mode |= GLUT_DEPTH;
     
     glutInitWindowPosition( initial_x_pos, initial_y_pos );
-
     glutInitWindowSize( initial_x_size, initial_y_size );
-
     glutInitDisplayMode( mode );
 
+#ifdef ENABLE_BUG
     if( !glutGet( (GLenum) GLUT_DISPLAY_MODE_POSSIBLE ) )
-    {
-        print_error( "Double buffer mode unavailable, trying single buffer\n" );
-        mode -= GLUT_DOUBLE;
-        mode |= GLUT_SINGLE;
-        glutInitDisplayMode( mode );
-    }
-
+        (void) printf( "Display mode NOT possible\n" );
     if( !glutGet( (GLenum) GLUT_DISPLAY_MODE_POSSIBLE ) )
-    {
-        print_error( "Could not open GLUT window in rgb mode=%d for OpenGL\n",
-                     rgb_mode );
-        return;
-    }
+        (void) printf( "Display mode NOT possible\n" );
+#endif
 
     window_id = glutCreateWindow( title );
 
@@ -61,24 +52,15 @@ private  void  create_GLUT_window(
         return;
     }
 
-    rgba = glutGet((GLenum) GLUT_WINDOW_RGBA);
+    glutDisplayFunc( display_function );
 
     glutUseLayer( (GLenum) GLUT_NORMAL );
 
-    glutPopWindow();
+    rgba = glutGet((GLenum) GLUT_WINDOW_RGBA);
 
-    glutDisplayFunc( display_function );
-
-    if( rgba && !rgb_mode || !rgba && rgb_mode )
-    {
-        print_error( "Could not get requested rgb_mode(%d), got(%d,%d)\n",
-                     rgb_mode,
-                     glutGet( (GLenum) GLUT_WINDOW_RGBA ),
-                     glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE ) );
-
-    }
-
-    return;
+    (void) printf( "Requested rgb mode: %d   ", rgb_mode );
+    (void) printf( "Acquired rgb mode: %d\n",
+                   glutGet( (GLenum) GLUT_WINDOW_RGBA ) );
 }
 
 int main(
@@ -87,8 +69,8 @@ int main(
 {
     glutInit( &argc, argv );
 
-    create_GLUT_window( "Test Window", 100, 600, 300, 300, FALSE );
-    create_GLUT_window( "Second Window", 500, 600, 200, 200, TRUE );
+    create_GLUT_window( "First Window",  100, 100, 300, 300, 1 );
+    create_GLUT_window( "Second Window", 500, 100, 200, 200, 0 );
 
     glutMainLoop();
 

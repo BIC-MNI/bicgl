@@ -8,7 +8,7 @@ static  int        keyboard_modifiers = 0;
 static  int        current_mouse_x = 0;
 static  int        current_mouse_y = 0;
 static  Gwindow    current_window = NULL;
-static  Real       default_min_update_time = 0.0;
+static  Real       default_min_update_time = 0.01;  /* max 100 frames per sec */
 static  int        n_windows_to_update_on_idle = 0;
 
 private  void  check_update_windows(
@@ -136,18 +136,22 @@ private  Gwindow  get_key_or_mouse_event_window(
 private  void  update_the_window(
     Gwindow  window )
 {
+/*
     if( !window->last_update_was_idle )
     {
         --n_windows_to_update_on_idle;
         if( n_windows_to_update_on_idle == 0 )
             G_remove_idle_function( check_update_windows, NULL );
     }
+*/
+
+    window->last_update_time = current_realtime_seconds();;
 
     if( window->update_callback != NULL )
         (*window->update_callback)( window, window->update_data );
 
+    window->n_update_timers_to_ignore += window->n_update_timers;
     window->update_required_flag = FALSE;
-    window->last_update_time = current_realtime_seconds();;
     window->last_update_was_idle = FALSE;
 }
 
@@ -625,6 +629,8 @@ public  void  initialize_callbacks_for_window(
     window->update_required_flag = FALSE;
     window->last_update_time = -1.0e30;
     window->last_update_was_idle = FALSE;
+    window->n_update_timers = 0;
+    window->n_update_timers_to_ignore = 0;
 
     window->overlay_update_required_flag = FALSE;
     window->last_overlay_update_time = -1.0e30;
@@ -658,6 +664,14 @@ private  void  timer_update_window(
 
     window = (Gwindow) void_ptr;
 
+    --window->n_update_timers;
+
+    if( window->n_update_timers_to_ignore > 0 )
+    {
+        --window->n_update_timers_to_ignore;
+        return;
+    }
+
     if( window->update_required_flag )
         update_the_window( window );
 }
@@ -689,11 +703,14 @@ private  void  check_update_windows(
 public  void  G_set_update_flag(
     Gwindow  window )
 {
-    Real   time_remaining;
+    Real   current_time, time_remaining;
 
     if( window->update_required_flag )
         return;
 
+    window->update_required_flag = TRUE;
+
+/*
     if( !window->last_update_was_idle )
     {
         if( n_windows_to_update_on_idle == 0 )
@@ -701,17 +718,23 @@ public  void  G_set_update_flag(
 
         ++n_windows_to_update_on_idle;
     }
+*/
 
-    window->update_required_flag = TRUE;
+    current_time = current_realtime_seconds();
 
     time_remaining = window->min_update_time -
-                     (current_realtime_seconds() - window->last_update_time);
+                     (current_time - window->last_update_time);
 
     if( time_remaining <= 0.0 )
-        time_remaining = 0.0;
-
-    G_add_timer_function( time_remaining, timer_update_window,
-                          (void *) window );
+    {
+        GS_set_update_flag( window->GS_window );
+    }
+    else
+    {
+        G_add_timer_function( time_remaining, timer_update_window,
+                              (void *) window );
+        ++window->n_update_timers;
+    }
 }
 
 public  void  G_add_timer_function(

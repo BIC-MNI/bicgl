@@ -262,7 +262,8 @@ private  BOOLEAN  check_redraw_viewport(
 
     for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
     {
-        if( (bitplane != OVERLAY_PLANES || G_has_overlay_planes()) &&
+        if( (bitplane != OVERLAY_PLANES ||
+             G_window_has_overlay_planes(window)) &&
             viewport->bitplanes[bitplane].update_flag[current_buffer] )
         {
             G_set_bitplanes( window, bitplane );
@@ -301,7 +302,8 @@ public  BOOLEAN  redraw_out_of_date_viewports(
 
     for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
     {
-        if( (bitplane != OVERLAY_PLANES || G_has_overlay_planes()) &&
+        if( (bitplane != OVERLAY_PLANES ||
+             G_window_has_overlay_planes(window)) &&
             graphics->clear_bitplane_flags[bitplane][current_buffer] )
         {
             G_set_bitplanes( window, bitplane );

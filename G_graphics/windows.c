@@ -712,6 +712,12 @@ public  BOOLEAN  G_has_overlay_planes( void )
     return( G_get_n_overlay_planes() > 0 );
 }
 
+public  BOOLEAN  G_window_has_overlay_planes(
+    Gwindow   window )
+{
+    return( window->n_overlay_planes > 0 );
+}
+
 private  void  update_blend_function(
     Gwindow         window,
     Bitplane_types  bitplane )

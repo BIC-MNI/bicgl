@@ -10,10 +10,12 @@
 #define  N_FONTS             13
 #define  N_FONTS_TO_DRAW      N_FONTS
 
-#define  TIMER_INCREMENT  0.1
+#define  TIMER_INCREMENT  0.01
 
 #define  X_VELOCITY  10.23
 #define  Y_VELOCITY  7.325
+
+#define  MAX_FRAMES_PER_SECOND  60
 
 typedef struct
 {
@@ -42,6 +44,11 @@ private  void  update(
     Gwindow    window,
     void       *update_data )
 {
+static  BOOLEAN   first = TRUE;
+static  int   count = 0;
+static  Real  start_time = 0;
+Real  end_time;
+
     int           i;
     main_struct   *info;
 
@@ -52,9 +59,12 @@ private  void  update(
     G_set_zbuffer_state( window, OFF );
     G_set_lighting_state( window, OFF );
     G_set_view_type( window, PIXEL_VIEW );
+/*
     G_draw_pixels( window, &info->pixels ); 
+*/
     G_draw_pixels( window, &info->ball ); 
 
+/*
     G_set_zbuffer_state( window, ON );
     G_set_lighting_state( window, ON );
     G_set_view_type( window, MODEL_VIEW );
@@ -70,8 +80,25 @@ private  void  update(
 
     for_less( i, 0, N_FONTS_TO_DRAW )
         G_draw_text( window, &info->font_examples[i] );
+*/
 
     G_update_window( window );
+
+    if( first )
+    {
+        first = FALSE;
+        start_time = current_realtime_seconds();
+    }
+    ++count;
+
+    if( count >= 100 )
+    {
+        end_time = current_realtime_seconds();
+        (void) printf( "%6.2f frames per second\n",
+                    (Real) count / (end_time - start_time) );
+        count = 0;
+        start_time = end_time;
+    }
 }
 
 private  void  resize_window(
@@ -158,15 +185,29 @@ private  void  middle_mouse_down(
     void       *update_data )
 {
     main_struct   *info;
-    Gwindow       second;
+    static  Gwindow       second;
+    static  BOOLEAN  first = TRUE;
 
     info = (main_struct *) update_data;
 
     print( "MIDDLE mouse down\n" );
 
-    (void) G_create_window( "Second Window",
+    if( first )
+    {
+        first = FALSE;
+        (void) G_create_window( "Second Window",
                             500, 600, 200, 200,
-                            TRUE, TRUE, TRUE, 0, &second );
+                            FALSE, TRUE, TRUE, 0, &second );
+    }
+
+    G_clear_window( second );
+
+    G_set_zbuffer_state( second, OFF );
+    G_set_lighting_state( second, OFF );
+    G_set_view_type( second, PIXEL_VIEW );
+    G_draw_pixels( second, &info->ball ); 
+    G_update_window( second );
+
 }
 
 private  void  middle_mouse_up(
@@ -442,14 +483,15 @@ int main(
         eye_separation = 0.0;
 
     status = G_create_window( "Test Window",
-                              100, 600, 300, 300,
+                              100, 600, 100, 100,
                               FALSE, info.double_buffer_flag, TRUE, 0,
                               &info.window );
 
     G_set_transparency_state( info.window, ON );
 
-    G_set_window_update_min_interval( info.window, 1.0 / 30.0 );
-    G_set_window_update_min_interval( info.window, 1.0 / 100.0 );
+/*
+    G_set_window_update_min_interval( info.window, 1.0 / (Real) MAX_FRAMES_PER_SECOND );
+*/
 
     if( status != OK )
         return( 1 );
@@ -584,7 +626,7 @@ int main(
 
     /* ------------ define bouncing ball ------------- */
 
-    ball_size = 50;
+    ball_size = 5;
 
     info.ball_x = (Real) x_size / 2.0;
     info.ball_y = (Real) y_size / 2.0;

@@ -15,9 +15,9 @@ GLUT_LIB = -L$(SRC_DIRECTORY)/GLUT/$(ARCH_DIR) -lglut
 #-------------------------- OpenGl with glX windows --------------------------
 
 OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics \
-                             $(GLUT_LIB) -lGL -lGLU $(X11_LIBS) $(BIC_PL_LIBS)
+                             $(GLUT_LIB) -lGL -lGLU $(X11_LIBS) -lXmu $(BIC_PL_LIBS)
 OPENGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics-O3 \
-                            $(GLUT_LIB) -lGL -lGLU $(X11_LIBS) $(BIC_PL_LIBS-O3)
+                            $(GLUT_LIB) -lGL -lGLU $(X11_LIBS) -lXmu $(BIC_PL_LIBS-O3)
 OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 
 #----------------------- MESA/OpenGl with glX windows ------------------------

@@ -65,6 +65,8 @@ typedef  struct   window_struct
     BOOLEAN                update_required_flag;
     Real                   last_update_time;
     BOOLEAN                last_update_was_idle;
+    int                    n_update_timers;
+    int                    n_update_timers_to_ignore;
 
     BOOLEAN                overlay_update_required_flag;
     Real                   last_overlay_update_time;

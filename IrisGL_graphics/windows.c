@@ -9,12 +9,6 @@ public  Window_id  GS_get_window_id(
     return( window->window_id );
 }
 
-public  Window_id  GS_get_current_window_id( 
-    GSwindow  window )
-{
-    return( winget() );
-}
-
 public  void  GS_set_current_window(
     GSwindow          window )
 {
@@ -132,7 +126,10 @@ public  Status  GS_create_window(
     BOOLEAN        *actual_depth_buffer_flag,
     int            *actual_n_overlay_planes )
 {
-    Status   status;
+    Status     status;
+    Window_id  save_window_id;
+
+    save_window_id = winget();
 
     if( width > 0 && height > 0 )
     {
@@ -150,6 +147,8 @@ public  Status  GS_create_window(
     foreground();
 
     window->window_id = winopen( title );
+
+    GS_set_current_window( window );
 
     if( width > 0 && height > 0 )
     {
@@ -180,6 +179,9 @@ public  Status  GS_create_window(
     else
         status = ERROR;
 
+    if( save_window_id >= 0 )
+        winset( save_window_id );
+
     return( status );
 }
 
@@ -205,8 +207,6 @@ private  void  initialize_window(
     BOOLEAN        depth_buffer_desired,
     int            n_overlay_planes_desired )
 {
-    GS_set_current_window( window );
-
     (void) GS_set_double_buffer_state( window, double_buffer_desired );
 
     (void) GS_set_colour_map_state( window, colour_map_desired );
@@ -682,8 +682,6 @@ public  void  GS_set_bitplanes(
     GSwindow         window,
     Bitplane_types   bitplanes )
 {
-    GS_set_current_window( window );
-
     switch( bitplanes )
     {
     case NORMAL_PLANES:
