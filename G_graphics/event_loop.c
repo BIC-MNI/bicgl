@@ -36,8 +36,8 @@ public  BOOLEAN  G_get_alt_key_state( void )
     return( (keyboard_modifiers & ALT_KEY_BIT) != 0 );
 }
 
-private  Gwindow  lookup_window_for_window_id(
-    Window_id  window_id )
+private  Gwindow  lookup_event_window_for_window_id(
+    Window_id  event_window_id )
 {
     int       i, n_windows;
     Gwindow   window;
@@ -45,7 +45,8 @@ private  Gwindow  lookup_window_for_window_id(
     window = get_current_window();
 
     if( window != NULL &&
-        GS_get_window_id( window->GS_window ) == window_id )
+        (GS_get_event_window_id( window->GS_window ) == event_window_id ||
+         GS_get_window_id( window->GS_window ) == event_window_id) )
         return( window );
 
     n_windows = get_n_graphics_windows();
@@ -54,7 +55,8 @@ private  Gwindow  lookup_window_for_window_id(
     {
         window = get_nth_graphics_window( i );
 
-        if( GS_get_window_id( window->GS_window ) == window_id )
+        if( GS_get_event_window_id( window->GS_window ) == event_window_id ||
+        if( GS_get_window_id( window->GS_window ) == event_window_id )
             break;
     }
 
@@ -65,11 +67,11 @@ private  Gwindow  lookup_window_for_window_id(
 }
 
 private  Gwindow  get_event_window(
-    Window_id   window_id )
+    Window_id   event_window_id )
 {
     Gwindow     window;
 
-    window = lookup_window_for_window_id( window_id );
+    window = lookup_event_window_for_window_id( event_window_id );
 
     if( window == NULL )
         handle_internal_error( "get_event_window" );
@@ -103,6 +105,8 @@ private  void  global_update_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->update_callback != NULL )
         (*window->update_callback)( window, window->update_data );
@@ -114,6 +118,8 @@ private  void  global_update_overlay_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->update_overlay_callback != NULL )
         (*window->update_overlay_callback)( window,
@@ -130,6 +136,9 @@ private  void  global_resize_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+
+    if( window == NULL )
+        return;
 
     window->x_origin = x;
     window->y_origin = y;
@@ -153,6 +162,8 @@ private  void  global_key_down_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     if( window->key_down_callback != NULL )
         (*window->key_down_callback)( window, key, window->key_down_data );
@@ -168,6 +179,8 @@ private  void  global_key_up_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     if( window->key_up_callback != NULL )
         (*window->key_up_callback)( window, key, window->key_up_data );
@@ -181,6 +194,8 @@ private  void  global_mouse_movement_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     window->x_mouse_pos = x;
     window->y_mouse_pos = y;
@@ -199,6 +214,8 @@ private  void  global_left_mouse_down_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     left_button_state = TRUE;
 
@@ -216,6 +233,8 @@ private  void  global_left_mouse_up_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     left_button_state = FALSE;
 
@@ -233,6 +252,8 @@ private  void  global_middle_mouse_down_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     middle_button_state = TRUE;
 
@@ -250,6 +271,8 @@ private  void  global_middle_mouse_up_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     middle_button_state = FALSE;
 
@@ -267,6 +290,8 @@ private  void  global_right_mouse_down_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     right_button_state = TRUE;
 
@@ -284,6 +309,8 @@ private  void  global_right_mouse_up_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+    if( window == NULL )
+        return;
 
     right_button_state = FALSE;
 
@@ -298,6 +325,8 @@ private  void  global_iconify_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->iconify_callback != NULL )
         (*window->iconify_callback)( window, window->iconify_data );
@@ -309,6 +338,8 @@ private  void  global_deiconify_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->deiconify_callback != NULL )
         (*window->deiconify_callback)( window, window->deiconify_data );
@@ -320,6 +351,8 @@ private  void  global_enter_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->enter_callback != NULL )
         (*window->enter_callback)( window, window->enter_data );
@@ -331,6 +364,8 @@ private  void  global_leave_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->leave_callback != NULL )
         (*window->leave_callback)( window, window->leave_data );
@@ -342,6 +377,8 @@ private  void  global_quit_function(
     Gwindow     window;
 
     window = get_event_window( window_id );
+    if( window == NULL )
+        return;
 
     if( window->quit_callback != NULL )
         (*window->quit_callback)( window, window->quit_data );
