@@ -356,28 +356,44 @@ public  BOOLEAN  WS_get_font(
     return( FALSE );
 }
 
+/* ARGSUSED */
+
 public  void  WS_build_font_in_window(
-    WS_window_struct  *window,     /* ARGSUSED */
+    WS_window_struct  *window,
     int               font_index,
     WS_font_info      *font_info )
 {
-    int   i, first, last, listBase;
-    Font  x_font;
+    BOOLEAN  text_disabled;
+    int      i, first, last, listBase;
+    Font     x_font;
 
     first = font_info->x_font_info->min_char_or_byte2;
     last = font_info->x_font_info->max_char_or_byte2;
 
-    listBase = glGenLists( last + 1 );
+    text_disabled = ENV_EXISTS( "DISABLE_TEXT" );
 
-    if( listBase == 0 )
+#ifdef DISABLE_TEXT
+    text_disabled = TRUE;
+#endif
+
+    if( text_disabled )
     {
-        print_error( "WS_build_font_in_window(): out of display lists.\n" );
+        listBase = 0;
     }
     else
     {
-        x_font = XLoadFont( X_get_display(), font_info->font_name );
+        listBase = glGenLists( last + 1 );
 
-        glXUseXFont( x_font, first, last-first+1, listBase+first );
+        if( listBase == 0 )
+        {
+            print_error( "WS_build_font_in_window(): out of display lists.\n" );
+        }
+        else
+        {
+            x_font = XLoadFont( X_get_display(), font_info->font_name );
+
+            glXUseXFont( x_font, first, last-first+1, listBase+first );
+        }
     }
 
     if( font_index >= window->n_fonts )
@@ -392,8 +408,10 @@ public  void  WS_build_font_in_window(
     window->font_list_bases[font_index] = listBase;
 }
 
+/* ARGSUSED */
+
 public  void  WS_delete_font_in_window(
-    WS_window_struct     *window,     /* ARGSUSED */
+    WS_window_struct     *window,
     int                  font_index,
     WS_font_info         *font_info )
 {
@@ -409,8 +427,10 @@ public  void  WS_delete_font_in_window(
     window->font_list_bases[font_index] = -1;
 }
 
+/* ARGSUSED */
+
 public  BOOLEAN  WS_set_font(
-    WS_window_struct     *window,     /* ARGSUSED */
+    WS_window_struct     *window,
     int                  font_index )
 {
     if( window->font_list_bases[font_index] > 0 )
