@@ -101,11 +101,6 @@ public  Status  X_create_window_with_visual(
             initial_y_pos = screen_y_size - 1 - initial_y_pos;
 
         setting_position = TRUE;
-
-/*
-        cwa.override_redirect = TRUE;
-        cwa_mask |= CWOverrideRedirect;
-*/
     }
 
     window->window_id = XCreateWindow( X_get_display(),
@@ -248,13 +243,15 @@ public  void  X_get_window_geometry(
 {
     int           x, y;
     unsigned int  width, height, border_width, depth;
+    int           screen_width, screen_height;
     Window        root;
 
     if( XGetGeometry( X_get_display(), window->window_id,
                       &root, &x, &y, &width, &height, &border_width, &depth ) )
     {
+        X_get_screen_size( &screen_width, &screen_height );
         *x_position = x;
-        *y_position = y;
+        *y_position = screen_height - 1 - y;
         *x_size = width;
         *y_size = height;
     }
@@ -271,22 +268,27 @@ public  void  X_get_screen_size(
     int    *x_size,
     int    *y_size )
 {
-    int           x, y;
-    unsigned int  width, height, border_width, depth;
-    Window        root;
+    static  unsigned   int  width, height, border_width, depth;
+    static  BOOLEAN    first = TRUE;
+    int                x, y;
+    Window             root;
 
-    if( XGetGeometry( X_get_display(), RootWindow(X_get_display(),
-                                                  X_get_screen()),
-                      &root, &x, &y, &width, &height, &border_width, &depth ) )
+    if( first )
     {
-        *x_size = width;
-        *y_size = height;
+        first = FALSE;
+
+        if( !XGetGeometry( X_get_display(), RootWindow(X_get_display(),
+                                                       X_get_screen()),
+                           &root, &x, &y, &width, &height, &border_width,
+                           &depth ) )
+        {
+            width = 1000;
+            height = 1000;
+        }
     }
-    else
-    {
-        *x_size = 1000;
-        *y_size = 1000;
-    }
+
+    *x_size = width;
+    *y_size = height;
 }
 
 /*--------------------------------- events ----------------------------- */

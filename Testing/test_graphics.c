@@ -235,13 +235,15 @@ int main(
                 switch( event_type )
                 {
                 case KEY_DOWN_EVENT:
-                    print( "Key pressed down: \"%c\"\n", key_pressed );
+                    print( "Key pressed down: \"%c\" (%d)\n", key_pressed,
+                            key_pressed );
                     if( key_pressed == '' )
                         done = TRUE;
                     break;
 
                 case KEY_UP_EVENT:
-                    print( "Key released: \"%c\"\n", key_pressed );
+                    print( "Key released: \"%c\"   (%d)\n", key_pressed,
+                            key_pressed );
                     break;
 
                 case LEFT_MOUSE_DOWN_EVENT:
