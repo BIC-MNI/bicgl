@@ -15,7 +15,7 @@ int  main(
     Real           scale;
     Colour         *rgb_map;
     char           *filename;
-    static String  dim_names[] = { MIxspace, MIyspace, MIzspace };
+    static char    *dim_names[] = { MIxspace, MIyspace, MIzspace };
 
     initialize_argument_processing( argc, argv );
     (void) get_string_argument( "/nil/david/big_data/sphere.fre", &filename );
