@@ -1,3 +1,4 @@
 Makefile.in
 .deps
 dummy.c
+Makefile
