@@ -1,6 +1,8 @@
 #include  <internal_volume_io.h>
 #include  <WS_graphics.h>
 
+private  void  set_event_callbacks_for_current_window( BOOLEAN );
+
 public  void  WS_initialize( void )
 {
     static  BOOLEAN  initialized = FALSE;
@@ -30,10 +32,20 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {
-    unsigned  int           mode;
+    unsigned  int      mode;
+    int                screen_width, screen_height, used_size;
 
     if( initial_x_pos >= 0 && initial_y_pos >= 0 )
-        glutInitWindowPosition( initial_x_pos, initial_y_pos );
+    {
+        WS_get_screen_size( &screen_width, &screen_height );
+        if( initial_y_size <= 0 )
+            used_size = glutGet( (GLenum) GLUT_INIT_WINDOW_HEIGHT );
+        else
+            used_size = initial_y_size;
+
+        glutInitWindowPosition( initial_x_pos, screen_height -
+                                (initial_y_pos+used_size) );
+    }
 
     if( initial_x_size > 0 && initial_y_size > 0 )
         glutInitWindowSize( initial_x_size, initial_y_size );
@@ -69,6 +81,8 @@ public  Status  WS_create_window(
     *actual_double_buffer_flag = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
     *actual_depth_buffer_flag = (glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE) > 1);
     *actual_n_overlay_planes = 0;
+
+    set_event_callbacks_for_current_window( *actual_n_overlay_planes );
 
     return( OK );
 }
@@ -422,6 +436,12 @@ private  int  get_keyboard_modifiers( void )
     return( modifier );
 }
 
+private  int  flip_mouse_y(
+    int   mouse_y )
+{
+    return( glutGet( (GLenum) GLUT_WINDOW_HEIGHT ) - 1 - mouse_y );
+}
+
 private  void  display_function( void )
 {
     (*display_callback) ( WS_get_current_window_id() );
@@ -449,6 +469,7 @@ private  void  keyboard_function(
     int             x,
     int             y )
 {
+    y = flip_mouse_y( y );
     (*key_down_callback) ( WS_get_current_window_id(), (int) key, x, y,
                            get_keyboard_modifiers() );
 }
@@ -459,6 +480,8 @@ private  void  special_keyboard_function(
     int     y )
 {
     int   translated;
+
+    y = flip_mouse_y( y );
 
     translated = -1000;
 
@@ -471,8 +494,8 @@ private  void  special_keyboard_function(
     }
 
     if( translated != -1000 )
-        (*key_down_callback) ( WS_get_current_window_id(), translated, x, y,
-                               get_keyboard_modifiers() );
+        (*key_down_callback) ( WS_get_current_window_id(), translated,
+                               x, y, get_keyboard_modifiers() );
 }
 
 private  void  mouse_button_function(
@@ -486,6 +509,7 @@ private  void  mouse_button_function(
 
     window_id = WS_get_current_window_id();
     modifiers = get_keyboard_modifiers();
+    y = flip_mouse_y( y );
 
     switch( button )
     {
@@ -516,6 +540,7 @@ private  void  mouse_motion_function(
     int     x,
     int     y )
 {
+    y = flip_mouse_y(y);
     (*mouse_motion_callback) ( WS_get_current_window_id(), x, y );
 }
 
@@ -532,10 +557,14 @@ private  void  entry_function(
         (*enter_callback) ( window_id );
 }
 
-public  void  WS_event_loop( void )
+private  void  set_event_callbacks_for_current_window(
+    int   n_overlay_planes )
 {
     glutDisplayFunc( display_function );
-    glutOverlayDisplayFunc( display_overlay_function );
+
+    if( n_overlay_planes > 0 )
+        glutOverlayDisplayFunc( display_overlay_function );
+
     glutReshapeFunc( resize_function );
     glutKeyboardFunc( keyboard_function );
     glutSpecialFunc( special_keyboard_function );
@@ -543,7 +572,10 @@ public  void  WS_event_loop( void )
     glutMotionFunc( mouse_motion_function );
     glutPassiveMotionFunc( mouse_motion_function );
     glutEntryFunc( entry_function );
+}
 
+public  void  WS_event_loop( void )
+{
     glutMainLoop();
 }
 
