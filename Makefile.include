@@ -7,15 +7,15 @@ X_DIRECTORY = $(TOP_DIR)/X_windows
 GLX_DIRECTORY = $(TOP_DIR)/GLX_windows
 G_DIRECTORY = $(TOP_DIR)/G_graphics
 
-MESA_DIR = /scratch2/david/Mesa
+MESA_DIR = /scratch/david/Mesa
+
+
+GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include \
+                     $(BIC_PL_INCLUDE)
 
 #-------------------------- OpenGl with glX windows --------------------------
 
-OPENGL_GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include \
-                            -I$(GLX_DIRECTORY)/Include \
-                            -I$(X_DIRECTORY)/Include \
-                            -I$(OPENGL_DIRECTORY)/Include \
-                            $(BIC_PL_INCLUDE)
+OPENGL_GRAPHICS_INCLUDE   = $(MAIN_INCLUDE)
 OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR) -lopengl_x_graphics -lGL -lX11 $(BIC_PL_LIBS)
 OPENGL_GRAPHICS_LIBS_2D   = -L$(GRAPHICS_DIRECTORY) \
                             -lopengl_x_graphics-DTWO_D_ONLY \
@@ -24,11 +24,7 @@ OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 
 #----------------------- MESA/OpenGl with glX windows ------------------------
 
-MESA_GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include \
-                          -I$(GLX_DIRECTORY)/Include \
-                          -I$(X_DIRECTORY)/Include \
-                          -I$(OPENGL_DIRECTORY)/Include \
-                          $(BIC_PL_INCLUDE) \
+MESA_GRAPHICS_INCLUDE   = $(MAIN_INCLUDE) \
                           -I$(MESA_DIR)/include
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR) -lmesa_x_graphics \
                           -L$(MESA_DIR)/lib -lMesaGL -lX11 -lXext $(BIC_PL_LIBS)
@@ -39,10 +35,7 @@ MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------
 
-IRISGL_GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include \
-                            -I$(GL_WINDOWS_DIRECTORY)/Include \
-                            -I$(GL_DIRECTORY)/Include \
-                             $(BIC_PL_INCLUDE)
+IRISGL_GRAPHICS_INCLUDE   = $(MAIN_INCLUDE)
 IRISGL_GRAPHICS_LIBS      = -L$(TOP_DIR) -lirisgl_graphics -lfm_s -lgl_s \
                             $(BIC_PL_LIBS)
 IRISGL_GRAPHICS_LIBS_2D   = -L$(TOP_DIR) -lirisgl_graphics-DTWO_D_ONLY \
