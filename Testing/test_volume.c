@@ -12,7 +12,8 @@ int  main(
     pixels_struct  pixels;
     Volume         volume;
     window_struct  *window;
-    Real           scale;
+    Real           x_scale, y_scale, x_translation, y_translation;
+    Real           slice_fit_oversize = 0.1;
     Colour         *rgb_map;
     char           *filename;
     static char    *dim_names[] = { MIxspace, MIyspace, MIzspace };
@@ -54,13 +55,14 @@ int  main(
         rgb_map[i] = make_Colour_0_1( intensity, intensity, intensity );
     }
 
-    scale = (Real) x_size / ((Real) sizes[X] * separations[X]);
-    if( (Real) y_size / ((Real) sizes[Y] * separations[Y]) < scale )
-        scale = (Real) y_size / ((Real) sizes[Y] * separations[Y]);
+    fit_volume_slice_to_viewport( volume, X, Y,
+               FALSE, FALSE, x_size, y_size,
+               slice_fit_oversize,
+               &x_scale, &y_scale, &x_translation, &y_translation );
 
     create_volume_slice( BOX_FILTER, (Real) n_slices_displayed,
                          volume, (Real) (sizes[Z] - 1) / 2.0,
-                         0.0, 0.0, scale, scale,
+                         x_translation, y_translation, x_scale, y_scale,
                          (Volume) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
                          X, Y, Z, x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,

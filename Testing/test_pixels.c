@@ -1,5 +1,5 @@
 
-#include  <def_mni.h>
+#include  <def_graphics.h>
 
 #define  N_ITER   1
 
@@ -51,7 +51,7 @@ main()
                                 i + COLOUR_MAP_INDEX_OFFSET,
                                 make_Colour(i,i,i) );
 
-    initialize_pixels( &pixels, 10, 10, pixels_x_size, pixels_y_size,
+    initialize_pixels( &pixels, 10, 10, pixels_x_size, pixels_y_size, 1.0, 1.0,
                        pixel_type );
 
     start = current_realtime_seconds();

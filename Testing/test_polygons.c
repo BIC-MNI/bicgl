@@ -1,4 +1,4 @@
-#include  <def_mni.h>
+#include  <def_graphics.h>
 
 private  void  process_polygons( polygons_struct * );
 private  void  display_polygons( polygons_struct * );
@@ -71,14 +71,13 @@ private  void  process_polygons( polygons_struct *polygons )
 
 private  void  display_polygons( polygons_struct *polygons )
 {
-    Status            status;
     window_struct     *window;
     static Point      origin = { 0.0, 0.0, 3.0 };
     static Vector     up_direction = { 0.0, 1.0, 0.0 };
     static Vector     line_of_sight = { 0.0, 0.0, -1.0 };
     Vector            light_direction;
 
-    status = G_create_window( "Polygons", -1, -1, -1, -1, &window );
+    (void) G_create_window( "Polygons", -1, -1, -1, -1, &window );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
                    0.01, 6.0, ON, 2.0, 2.0, 2.0 );

@@ -1,5 +1,5 @@
 
-#include  <def_mni.h>
+#include  <def_graphics.h>
 
 #define  LIGHT_INDEX         0
 

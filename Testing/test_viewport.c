@@ -1,4 +1,4 @@
-#include  <def_mni.h>
+#include  <def_graphics.h>
 
 main()
 {
@@ -54,7 +54,7 @@ main()
     x_position = 10;
     y_position = 10;
     initialize_pixels( &pixels, x_position, y_position,
-                       pixels_x_size, pixels_y_size, RGB_PIXEL );
+                       pixels_x_size, pixels_y_size, 1.0, 1.0, RGB_PIXEL );
 
     for_less( i, 0, pixels_x_size )
     {
