@@ -10,24 +10,24 @@ IRISGL_LIBNAME = irisgl_graphics
 OPENGL_X_LIBNAME = opengl_x_graphics
 MESA_LIBNAME = mesa_x_graphics
 
-LIB_IRISGL = lib$(IRISGL_LIBNAME).a
-LIB_IRISGL-O3 = lib$(IRISGL_LIBNAME)-O3.a
-LINT_IRISGL = llib-l$(IRISGL_LIBNAME).ln
-LIB_OPENGL_X = lib$(OPENGL_X_LIBNAME).a
-LIB_OPENGL_X-O3 = lib$(OPENGL_X_LIBNAME)-O3.a
-LINT_OPENGL_X = llib-l$(OPENGL_X_LIBNAME).ln
-LIB_MESA = lib$(MESA_LIBNAME).a
-LIB_MESA-O3 = lib$(MESA_LIBNAME)-O3.a
-LINT_MESA = llib-l$(MESA_LIBNAME).ln
+LIB_IRISGL = $(ARCH_DIR)/lib$(IRISGL_LIBNAME).a
+LIB_IRISGL-O3 = $(ARCH_DIR)/lib$(IRISGL_LIBNAME)-O3.a
+LINT_IRISGL = $(ARCH_DIR)/llib-l$(IRISGL_LIBNAME).ln
+LIB_OPENGL_X = $(ARCH_DIR)/lib$(OPENGL_X_LIBNAME).a
+LIB_OPENGL_X-O3 = $(ARCH_DIR)/lib$(OPENGL_X_LIBNAME)-O3.a
+LINT_OPENGL_X = $(ARCH_DIR)/llib-l$(OPENGL_X_LIBNAME).ln
+LIB_MESA = $(ARCH_DIR)/lib$(MESA_LIBNAME).a
+LIB_MESA-O3 = $(ARCH_DIR)/lib$(MESA_LIBNAME)-O3.a
+LINT_MESA = $(ARCH_DIR)/llib-l$(MESA_LIBNAME).ln
 
-IRISGL_INCLUDES = -IInclude -IGL_graphics/Include
+IRISGL_INCLUDES = -IInclude -IGL_graphics/Include $(X11_INCLUDES)
 IRISGL_TARGETS = $(LIB_IRISGL)
 IRISGL_-O3_TARGETS = $(LIB_IRISGL-O3)
 
 OPENGL_INCLUDES = -IInclude \
                   -IOpenGL_graphics/Include \
                   -IGLX_windows/Include \
-                  -IX_windows/Include
+                  -IX_windows/Include $(X11_INCLUDES)
 OPENGL_TARGETS = $(LIB_OPENGL_X)
 OPENGL_-O3_TARGETS = $(LIB_OPENGL_X-O3)
 
@@ -42,29 +42,32 @@ clean_obj:
 
 OPT = -O
 
+$(ARCH_DIR):
+	$(MKDIR) $@
+
 #------  three principal targets
 
-irisgl:
+irisgl: $(ARCH_DIR)
 	make library "TARGETS=$(IRISGL_TARGETS)" "G_INCLUDE=$(IRISGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-irisgl-O3:
+irisgl-O3: $(ARCH_DIR)
 	make library "TARGETS=$(IRISGL_-O3_TARGETS)" "G_INCLUDE=$(IRISGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-opengl:
+opengl: $(ARCH_DIR)
 	make library "TARGETS=$(OPENGL_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-opengl-O3:
+opengl-O3: $(ARCH_DIR)
 	make library "TARGETS=$(OPENGL_-O3_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-mesa:
+mesa: $(ARCH_DIR)
 	make library "TARGETS=$(MESA_TARGETS)" "G_INCLUDE=$(MESA_INCLUDES)"\
                      "OPT=$(OPT)"
 
-mesa-O3:
+mesa-O3: $(ARCH_DIR)
 	make library "TARGETS=$(MESA_-O3_TARGETS)" "G_INCLUDE=$(MESA_INCLUDES)"\
                      "OPT=$(OPT)"
 
@@ -84,38 +87,38 @@ lint_mesa:
 
 INCLUDE = $(G_INCLUDE) $(BIC_PL_INCLUDE)
 
-GLX_SRC = GLX_windows/glx_windows.c \
-          GLX_windows/stored_font.c
+GLX_SRC = GLX_windows/$(ARCH_DIR)/glx_windows.c \
+          GLX_windows/$(ARCH_DIR)/stored_font.c
 
-X_SRC = X_windows/x_windows.c
+X_SRC = X_windows/$(ARCH_DIR)/x_windows.c
 
 GL_SRC = \
-         GL_graphics/colour_def.c \
-         GL_graphics/draw.c \
-         GL_graphics/events.c \
-         GL_graphics/lights.c \
-         GL_graphics/render.c \
-         GL_graphics/view.c \
-         GL_graphics/windows.c
+         GL_graphics/$(ARCH_DIR)/colour_def.c \
+         GL_graphics/$(ARCH_DIR)/draw.c \
+         GL_graphics/$(ARCH_DIR)/events.c \
+         GL_graphics/$(ARCH_DIR)/lights.c \
+         GL_graphics/$(ARCH_DIR)/render.c \
+         GL_graphics/$(ARCH_DIR)/view.c \
+         GL_graphics/$(ARCH_DIR)/windows.c
 
 OPENGL_SRC = \
-             OpenGL_graphics/colour_def.c \
-             OpenGL_graphics/draw.c \
-             OpenGL_graphics/events.c \
-             OpenGL_graphics/lights.c \
-             OpenGL_graphics/render.c \
-             OpenGL_graphics/view.c \
-             OpenGL_graphics/windows.c
+             OpenGL_graphics/$(ARCH_DIR)/colour_def.c \
+             OpenGL_graphics/$(ARCH_DIR)/draw.c \
+             OpenGL_graphics/$(ARCH_DIR)/events.c \
+             OpenGL_graphics/$(ARCH_DIR)/lights.c \
+             OpenGL_graphics/$(ARCH_DIR)/render.c \
+             OpenGL_graphics/$(ARCH_DIR)/view.c \
+             OpenGL_graphics/$(ARCH_DIR)/windows.c
 
-G_SRC = G_graphics/draw.c \
-        G_graphics/draw_objects.c \
-        G_graphics/events.c \
-        G_graphics/graphics_structs.c \
-        G_graphics/lights.c \
-        G_graphics/random_order.c \
-        G_graphics/render.c \
-        G_graphics/view.c \
-        G_graphics/windows.c
+G_SRC = G_graphics/$(ARCH_DIR)/draw.c \
+        G_graphics/$(ARCH_DIR)/draw_objects.c \
+        G_graphics/$(ARCH_DIR)/events.c \
+        G_graphics/$(ARCH_DIR)/graphics_structs.c \
+        G_graphics/$(ARCH_DIR)/lights.c \
+        G_graphics/$(ARCH_DIR)/random_order.c \
+        G_graphics/$(ARCH_DIR)/render.c \
+        G_graphics/$(ARCH_DIR)/view.c \
+        G_graphics/$(ARCH_DIR)/windows.c
 
 IRISGL_SRC = $(G_SRC) $(GL_SRC)
 
@@ -130,35 +133,35 @@ IRISGL_OBJECTS = $(IRISGL_SRC:.c=.o)
 PROTOTYPE_FILE = Include/graphics_prototypes.h
 
 $(PROTOTYPE_FILE): $(G_SRC)
-	@$(MAKE_DIRECTORY)/create_prototypes.csh $@ $(G_SRC)
+	@$(MAKE_PROTOTYPES) $@ $(G_SRC)
 
 #-----
 
 X_PROTOTYPE_FILE = X_windows/Include/x_window_prototypes.h
 
 $(X_PROTOTYPE_FILE): $(X_SRC)
-	@$(MAKE_DIRECTORY)/create_prototypes.csh $@ $(X_SRC)
+	@$(MAKE_PROTOTYPES) $@ $(X_SRC)
 
 #-----
 
 GLX_PROTOTYPE_FILE = GLX_windows/Include/glx_window_prototypes.h
 
 $(GLX_PROTOTYPE_FILE): $(GLX_SRC)
-	@$(MAKE_DIRECTORY)/create_prototypes.csh $@ $(GLX_SRC)
+	@$(MAKE_PROTOTYPES) $@ $(GLX_SRC)
 
 #-----
 
 OPENGL_PROTOTYPE_FILE = OpenGL_graphics/Include/opengl_graphics_prototypes.h
 
 $(OPENGL_PROTOTYPE_FILE): $(OPENGL_SRC)
-	@$(MAKE_DIRECTORY)/create_prototypes.csh $@ $(OPENGL_SRC)
+	@$(MAKE_PROTOTYPES) $@ $(OPENGL_SRC)
 
 #-----
 
 GL_PROTOTYPE_FILE = GL_graphics/Include/irisgl_graphics_prototypes.h
 
 $(GL_PROTOTYPE_FILE): $(GL_SRC)
-	@$(MAKE_DIRECTORY)/create_prototypes.csh $@ $(GL_SRC)
+	@$(MAKE_PROTOTYPES) $@ $(GL_SRC)
 
 #-----
 
@@ -216,3 +219,12 @@ lint: \
       $(OPENGL_PROTOTYPE_FILE) \
       $(GL_PROTOTYPE_FILE) \
       $(LINT_LIBRARY)
+
+$(OPENGL_X_SRC) $(GL_SRC) \
+G_graphics/$(ARCH_DIR)/draw_polygons.include.c \
+G_graphics/$(ARCH_DIR)/draw_quadmesh.include.c :
+	@$(MAKE_SOURCE_LINKS)
+
+G_graphics/$(ARCH_DIR)/draw.u \
+G_graphics/$(ARCH_DIR)/draw.o: G_graphics/$(ARCH_DIR)/draw_polygons.include.c \
+                               G_graphics/$(ARCH_DIR)/draw_quadmesh.include.c
