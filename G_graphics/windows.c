@@ -232,6 +232,15 @@ public  Status  G_delete_window(
     return( status );
 }
 
+public  void  G_set_window_title(
+    Gwindow   window,
+    char      title[] )
+{
+    set_current_window( window );
+
+    GS_set_window_title( window, title );
+}
+
 public  void  G_terminate( void )
 {
     delete_event_queue();

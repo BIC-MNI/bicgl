@@ -128,6 +128,14 @@ private  void  initialize_window(
 {
 }
 
+/* ARGSUSED */
+
+public  void  GS_set_window_title(
+    Gwindow   window,
+    char      title[] )
+{
+}
+
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : GS_has_transparency_mode
 @INPUT      : 

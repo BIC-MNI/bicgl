@@ -1,5 +1,7 @@
 #include  <graphics.h>
 
+#define  DEGREES_CONTINUITY  -1
+
 int  main(
     int   argc,
     char  *argv[] )
@@ -47,7 +49,8 @@ int  main(
     print( "Thickness: %g %g %g\n",
             separations[X], separations[Y], separations[Z] );
 
-    status = G_create_window( "Volume Browser", -1, -1, -1, -1, &window );
+    status = G_create_window( "Volume Browser", -1, -1, -1, -1,
+                              FALSE, TRUE, FALSE, 0, &window );
     G_set_double_buffer_state( window, OFF );
     G_set_transparency_state( window, ON );
 
@@ -80,6 +83,7 @@ int  main(
                                   &used_x_viewport_size, &used_y_viewport_size);
 
     n_iters = 100;
+    n_iters = 1;
     start_timing();
     for_less( iter, 0, n_iters )
     create_volume_slice( volume, NEAREST_NEIGHBOUR, 0.0,
@@ -89,7 +93,7 @@ int  main(
                          (Volume) NULL, NEAREST_NEIGHBOUR, 0.0,
                          (Real *) NULL, (Real *) NULL, (Real *) NULL,
                          0.0, 0.0, 0.0, 0.0,
-                         x_size, y_size, RGB_PIXEL, FALSE,
+                         x_size, y_size, RGB_PIXEL, DEGREES_CONTINUITY,
                          (unsigned short **) NULL,
                          &rgb_map, BLACK, NULL, &n_alloced, &pixels1 );
     end_timing( "Creating Pixmap", n_iters );
@@ -116,7 +120,7 @@ int  main(
                              (Volume) NULL, NEAREST_NEIGHBOUR, 0.0,
                              (Real *) NULL, (Real *) NULL, (Real *) NULL,
                              0.0, 0.0, 0.0, 0.0,
-                             x_size, y_size, RGB_PIXEL, FALSE,
+                             x_size, y_size, RGB_PIXEL, DEGREES_CONTINUITY,
                              (unsigned short **) NULL,
                              &rgb_map, BLACK, NULL, &n_alloced, &pixels2 );
     }
@@ -124,6 +128,7 @@ int  main(
     G_set_view_type( window, PIXEL_VIEW );
 
     n_iters = 1000;
+    n_iters = 1;
     start_timing();
     for_less( iter, 0, n_iters )
         G_draw_pixels( window, &pixels1 );
