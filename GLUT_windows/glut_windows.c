@@ -252,8 +252,9 @@ private  Window_id  create_GLUT_window(
 
     if( actual_colour_map_mode != colour_map_mode )
     {
-        print_error( "Could not get requested colour_map_mode(%d,%d)\n",
+        print_error( "Could not get requested colour_map_mode(%d), got(%d,%d)\n",
                      colour_map_mode,
+                     !glutGet( (GLenum) GLUT_WINDOW_RGBA ),
                      glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE ) );
 
 /*
