@@ -1205,3 +1205,26 @@ public  void  WS_terminate( void )
         FREE( idles );
 }
 
+public  void  WS_raise_window(
+    WSwindow   window  )
+{
+    glutPopWindow();
+}
+
+public  void  WS_lower_window(
+    WSwindow   window  )
+{
+    glutPushWindow();
+}
+
+public  void  WS_iconify_window(
+    WSwindow   window  )
+{
+    glutIconifyWindow();
+}
+
+public  void  WS_deiconify_window(
+    WSwindow   window  )
+{
+    glutShowWindow();
+}
