@@ -1,3 +1,7 @@
+2001-07-20  Steve ROBBINS  <stever@bic.mni.mcgill.ca>
+
+	* GLUT_windows/Makefile.am (INCLUDES): Include $(X_CFLAGS).
+
 2001-05-22  Steve M. Robbins  <steve@nyongwa.montreal.qc.ca>
 
 	* branch-1_3 merge: Many autoconfig files added.
