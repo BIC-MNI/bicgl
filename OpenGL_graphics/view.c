@@ -115,12 +115,12 @@ public  void  GS_initialize_window_view(
 {
 }
 
-public  void  GS_push_transform()
+public  void  GS_push_transform( void )
 {
     glPushMatrix();
 }
 
-public  void  GS_pop_transform()
+public  void  GS_pop_transform( void )
 {
     glPopMatrix();
 }
@@ -134,7 +134,7 @@ public  void  GS_set_viewport(
     glViewport( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1 );
 }
 
-public  void  clear_overlay_planes()
+public  void  clear_overlay_planes( void )
 {
 #ifndef  TWO_D_ONLY
 #ifdef TO_DO
@@ -157,5 +157,5 @@ public  void  GS_set_matrix_mode(
         break;
     }
 
-    glMatrixMode( gl_mode );
+    glMatrixMode( (GLenum) gl_mode );
 }
