@@ -1,6 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 #include  <random_order.h>
 
 private  void     draw_marker_as_cube( Gwindow, Colour );
@@ -556,7 +556,7 @@ private  void  draw_polygons(
     {
         if( polygons->line_thickness < 1.0 || polygons->line_thickness > 20.0 )
         {
-            print( "Line thickness %g\n", polygons->line_thickness );
+            print_error( "Line thickness %g\n", polygons->line_thickness );
             handle_internal_error( "line thickness" );
         }
 
@@ -852,7 +852,7 @@ public  void  G_draw_lines(
 
     if( lines->line_thickness < 1.0 || lines->line_thickness > 20.0 )
     {
-        print( "Line thickness %g\n", lines->line_thickness );
+        print_error( "Line thickness %g\n", lines->line_thickness );
         handle_internal_error( "line thickness" );
     }
 
@@ -987,7 +987,8 @@ private  BOOLEAN  lookup_font(
 
     for_less( i, 0, n_fonts )
     {
-        if( fonts[i].size == int_size )
+        if( fonts[i].font_type == type &&
+            (type == FIXED_FONT || fonts[i].size == int_size) )
         {
             *font_info = &fonts[i].font_info;
             return( TRUE );
@@ -1004,6 +1005,8 @@ private  BOOLEAN  lookup_font(
         ++n_fonts;
         return( TRUE );
     }
+
+    print_error( "Could not find font: %d %g\n", (int) type, size );
 
     return( FALSE );
 }
@@ -1028,6 +1031,16 @@ private  BOOLEAN  set_font(
 {
     WS_font_info  *font_info;
     BOOLEAN       found;
+
+    if( type != FIXED_FONT && type != SIZED_FONT )
+    {
+        print_error( "Invalid font type: %d\n", type );
+    }
+
+    if( type == SIZED_FONT && ( size < 1.0 || size > 100.0 ) )
+    {
+        print_error( "Invalid font size: %g\n", size );
+    }
 
     found = lookup_font( type, size, &font_info );
 
@@ -1302,7 +1315,7 @@ public  void  G_draw_pixels(
     {
         if( pixels->pixel_type == RGB_PIXEL )
         {
-            print(
+            print_error(
                "G_draw_pixels(): cannot draw rgb pixels in colour map mode.\n");
             return;
         }
@@ -1313,7 +1326,7 @@ public  void  G_draw_pixels(
     {
         if( pixels->pixel_type != RGB_PIXEL )
         {
-            print(
+            print_error(
                "G_draw_pixels(): cannot draw colour map pixels in rgb mode.\n");
             return;
         }
