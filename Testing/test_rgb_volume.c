@@ -48,12 +48,10 @@ int  main(
     print( "Thickness: %g %g %g\n",
             separations[X], separations[Y], separations[Z] );
 
-/*
     status = G_create_window( "Volume Browser", -1, -1, -1, -1, &window );
     G_set_double_buffer_state( window, OFF );
 
     G_get_window_size( window, &x_size, &y_size );
-*/
 
     n_alloced = 0;
 
@@ -67,7 +65,6 @@ int  main(
     y_axis[Y] = 1.0;
     y_axis[Z] = 0.0;
 
-    /*
     fit_volume_slice_to_viewport( volume, origin, x_axis, y_axis,
                                   x_size, y_size, slice_fit_oversize,
                                   &x_translation, &y_translation,
@@ -83,13 +80,12 @@ int  main(
                          0.0, 0.0, 0.0, 0.0,
                          x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
-                         &rgb_map, BLACK, NULL, &n_alloced, &pixels1 );
+                         NULL, BLACK, NULL, &n_alloced, &pixels1 );
 
     G_set_view_type( window, PIXEL_VIEW );
     G_draw_pixels( window, &pixels1 );
 
     G_update_window( window );
-*/
 
     BEGIN_ALL_VOXELS( volume, v[0], v[1], v[2], v[3], v[4] )
 

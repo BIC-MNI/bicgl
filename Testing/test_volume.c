@@ -6,6 +6,7 @@ int  main(
 {
     Status         status;
     int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
+    int            iter, n_iters;
     Real           alpha;
     Real           intensity, separations[MAX_DIMENSIONS];
     Real           min_value, max_value;
@@ -78,6 +79,9 @@ int  main(
                                   &x_scale, &y_scale,
                                   &used_x_viewport_size, &used_y_viewport_size);
 
+    n_iters = 100;
+    start_timing();
+    for_less( iter, 0, n_iters )
     create_volume_slice( volume, NEAREST_NEIGHBOUR, 0.0,
                          origin, x_axis, y_axis,
                          x_translation, y_translation,
@@ -88,6 +92,7 @@ int  main(
                          x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
                          &rgb_map, BLACK, NULL, &n_alloced, &pixels1 );
+    end_timing( "Creating Pixmap", n_iters );
 
     if( alpha != 1.0 )
     {
@@ -117,7 +122,12 @@ int  main(
     }
 
     G_set_view_type( window, PIXEL_VIEW );
-    G_draw_pixels( window, &pixels1 );
+
+    n_iters = 1000;
+    start_timing();
+    for_less( iter, 0, n_iters )
+        G_draw_pixels( window, &pixels1 );
+    end_timing( "Drawing Pixmap", n_iters );
 
     if( alpha != 1.0 )
         G_draw_pixels( window, &pixels2 );
