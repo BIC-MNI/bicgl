@@ -62,8 +62,6 @@ private  Window_id  create_GLUT_window(
 
     if( depth_buffer_flag )
         mode |= GLUT_DEPTH;
-
-    glutInitDisplayMode( mode );
     
     if( initial_x_pos >= 0 && initial_y_pos >= 0 )
     {
@@ -82,6 +80,23 @@ private  Window_id  create_GLUT_window(
         glutInitWindowSize( initial_x_size, initial_y_size );
     else
         glutInitWindowSize( DEFAULT_WINDOW_X_SIZE, DEFAULT_WINDOW_Y_SIZE );
+
+    glutInitDisplayMode( mode );
+
+    if( !glutGet( (GLenum) GLUT_DISPLAY_MODE_POSSIBLE ) &&
+        double_buffer_flag )
+    {
+        mode -= GLUT_DOUBLE;
+        mode |= GLUT_SINGLE;
+        glutInitDisplayMode( mode );
+    }
+
+    if( !glutGet( (GLenum) GLUT_DISPLAY_MODE_POSSIBLE ) )
+    {
+        print_error( "Could not open GLUT window in Display mode (%d,%d) for OpenGL\n",
+                     colour_map_mode, double_buffer_flag );
+        return( -1 );
+    }
 
     window_id = glutCreateWindow( title );
 
