@@ -11,18 +11,18 @@ GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include $(BIC_PL_INCLUDE)
 
 #-------------------------- OpenGl with glX windows --------------------------
 
-OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics -lGL -lXext -lX11 \
+OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics -lGL  -lX11 \
                             $(BIC_PL_LIBS)
-OPENGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics-O3 -lGL -lXext \
+OPENGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics-O3 -lGL  \
                             -lX11 $(BIC_PL_LIBS-O3)
 OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 
 #----------------------- MESA/OpenGl with glX windows ------------------------
 
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics \
-                          $(MESA_LIB) -lXext -lX11 $(BIC_PL_LIBS)
+                          $(MESA_LIB)  -lX11 $(BIC_PL_LIBS)
 MESA_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics-O3 \
-                          $(MESA_LIB-O3) -lXext -lX11 $(BIC_PL_LIBS-O3)
+                          $(MESA_LIB-O3)  -lX11 $(BIC_PL_LIBS-O3)
 MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------
