@@ -60,12 +60,12 @@ public  void  GS_terminate( void )
 
 public  BOOLEAN  GS_can_switch_double_buffering( void )
 {
-    return( FALSE );
+    return( TRUE );
 }
 
 public  BOOLEAN  GS_can_switch_colour_map_mode( void )
 {
-    return( FALSE );
+    return( TRUE );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -226,18 +226,19 @@ public  BOOLEAN  GS_has_rgb_mode( void )
 /* ARGSUSED */
 
 public  BOOLEAN  GS_set_double_buffer_state(
+    GSwindow       window,
     BOOLEAN        flag )
 {
-    print_error( "GS_set_double_buffer_state(): OpenGL cannot change state.\n");
-    return( FALSE );
+    return( WS_set_double_buffer_state( &window->WS_window, flag ) );
 }
 
 /* ARGSUSED */
 
-public  void  GS_set_colour_map_state(
+public  BOOLEAN  GS_set_colour_map_state(
+    GSwindow       window,
     BOOLEAN        flag )
 {
-    print_error( "GS_set_colour_map_state():  OpenGL cannot change state.\n" );
+    return( WS_set_colour_map_state( &window->WS_window, flag ) );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
