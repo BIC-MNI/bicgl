@@ -1,5 +1,5 @@
 #include  <internal_volume_io.h>
-#include  <WS_windows.h>
+#include  <graphics.h>
 
 private  void  initialize_glut( void )
 {
@@ -14,7 +14,7 @@ private  void  initialize_glut( void )
     }
 }
 
-public  Status  WS_create_window(
+public  Status  GS_create_window(
     STRING                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
@@ -28,7 +28,7 @@ public  Status  WS_create_window(
     BOOLEAN                *actual_double_buffer_flag,
     BOOLEAN                *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
-    WS_window_struct       *window )
+    Gwindow                window )
 {
     unsigned  int           mode;
 
@@ -57,9 +57,9 @@ public  Status  WS_create_window(
 
     glutInitDisplayMode( mode );
 
-    window->window_id = glutCreateWindow( title );
+    window->gs_window.window_id = glutCreateWindow( title );
 
-    if( window->window_id < 1 )
+    if( window->gs_window.window_id < 1 )
     {
         print_error( "Could not open GLUT window for OpenGL\n" );
         return( ERROR );
@@ -73,32 +73,37 @@ public  Status  WS_create_window(
     return( OK );
 }
 
-public  void  WS_delete_window(
-    WS_window_struct  *window )
+public  void  GS_delete_window(
+    Gwindow  window )
 {
-    glutDestroyWindow( window->window_id );
+    glutDestroyWindow( window->gs_window.window_id );
 }
 
-public  BOOLEAN  WS_window_has_overlay_planes(
-    WS_window_struct  *window )
+public  Window_id  GS_get_current_window_id()
+{
+    return( glutGetWindow() );
+}
+
+public  BOOLEAN  GS_window_has_overlay_planes(
+    Gwindow  window )
 {
     return( FALSE );
 }
 
 private  void  set_window_normal_planes(
-    WS_window_struct  *window )
+    Gwindow  window )
 {
-    glutSetWindow( window->window_id );
+    glutSetWindow( window->gs_window.window_id );
 }
 
 private  void  set_window_overlay_planes(
-    WS_window_struct  *window )
+    Gwindow  window )
 {
-    glutSetWindow( window->window_id );
+    glutSetWindow( window->gs_window.window_id );
 }
 
-public  void  WS_set_current_window(
-    WS_window_struct  *window,
+public  void  GS_set_current_window(
+    Gwindow           window,
     Bitplane_types    current_bitplanes )
 {
     if( current_bitplanes == OVERLAY_PLANES )
@@ -108,23 +113,15 @@ public  void  WS_set_current_window(
 }
 
 
-public  int    WS_get_n_overlay_planes( void )
+public  int    GS_get_n_overlay_planes( void )
 {
     return( 0 );
 }
 
-public  BOOLEAN  WS_get_event(
-    Event_types          *event_type,
-    Window_id            *window,
-    event_info_struct    *info )
-{
-    return( FALSE );
-}
-
-public  void  WS_get_window_position(
-    WS_window_struct  *window,
-    int               *x_pos,
-    int               *y_pos )
+public  void  GS_get_window_position(
+    Gwindow  window,
+    int      *x_pos,
+    int      *y_pos )
 {
     set_window_normal_planes( window );
 
@@ -132,10 +129,10 @@ public  void  WS_get_window_position(
     *y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
 }
 
-public  void  WS_get_window_size(
-    WS_window_struct  *window,
-    int               *x_size,
-    int               *y_size )
+public  void  GS_get_window_size(
+    Gwindow  window,
+    int      *x_size,
+    int      *y_size )
 {
     set_window_normal_planes( window );
 
@@ -143,25 +140,25 @@ public  void  WS_get_window_size(
     *y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
 }
 
-public  void  WS_set_colour_map_entry(
-    WS_window_struct  *window,
-    int               ind,
-    Colour            colour )
+public  void  GS_set_colour_map_entry(
+    Gwindow  window,
+    int      ind,
+    Colour   colour )
 {
     glutSetColor( ind, get_Colour_r_0_1(colour),
                        get_Colour_g_0_1(colour),
                        get_Colour_b_0_1(colour) );
 }
 
-public  void  WS_set_overlay_colour_map_entry(
-    WS_window_struct  *window,
-    int               ind,
-    Colour            colour )
+public  void  GS_set_overlay_colour_map_entry(
+    Gwindow  window,
+    int      ind,
+    Colour   colour )
 {
 }
 
-public  void  WS_swap_buffers(
-    WS_window_struct  *window )
+public  void  GS_swap_buffers(
+    Gwindow  window )
 {
     set_window_normal_planes( window );
 
@@ -184,10 +181,10 @@ static  struct
               };
 
 
-public  BOOLEAN  WS_get_font(
+public  BOOLEAN  GS_get_font(
     Font_types       type,
     Real             size,
-    WS_font_info     *font_info )
+    GS_font_info     *font_info )
 {
     Real    diff, min_diff;
     int     which, best;
@@ -218,41 +215,25 @@ public  BOOLEAN  WS_get_font(
 
 /* ARGSUSED */
 
-public  void  WS_build_font_in_window(
-    WS_window_struct  *window,
-    int               font_index,
-    WS_font_info      *font_info )
-{
-}
-
-/* ARGSUSED */
-
-public  void  WS_delete_font_in_window(
-    WS_window_struct     *window,
+public  BOOLEAN  GS_set_font(
+    GS_window_struct     *window,
     int                  font_index,
-    WS_font_info         *font_info )
-{
-}
-
-/* ARGSUSED */
-
-public  BOOLEAN  WS_set_font(
-    WS_window_struct     *window,
-    int                  font_index,
-    WS_font_info         *font_info )
+    GS_font_info         *font_info )
 {
     window->current_font = font_info->font;
 
     return( TRUE );
 }
 
-public  void  WS_delete_font(
-    WS_font_info  *info )
+public  void  GS_draw_character(
+    Gwindow   window,
+    int       char )
 {
+    glutBitmapCharacter( window->GS_window->window_id, string[i] );
 }
 
-public  Real  WS_get_character_height(
-    WS_font_info  *font_info )
+public  Real  GS_get_character_height(
+    GS_font_info  *font_info )
 {
     int  which;
 
@@ -264,15 +245,15 @@ public  Real  WS_get_character_height(
 
     if( which >= SIZEOF_STATIC_ARRAY(known_fonts) )
     {
-        print_error( "Invalid font in WS_get_character_height\n" );
+        print_error( "Invalid font in GS_get_character_height\n" );
         return( 0.0 );
     }
 
     return( known_fonts[which].size );
 }
 
-public  Real  WS_get_text_length(
-    WS_font_info     *font_info,
+public  Real  GS_get_text_length(
+    GS_font_info     *font_info,
     STRING           str )
 {
     int    i, len;
@@ -287,10 +268,21 @@ public  Real  WS_get_text_length(
     return( (Real) len );
 }
 
-public  void  WS_get_screen_size(
+public  void  GS_get_screen_size(
     int   *x_size, 
     int   *y_size  )
 {
     *x_size = glutGet( (GLenum) GLUT_SCREEN_WIDTH );
     *y_size = glutGet( (GLenum) GLUT_SCREEN_HEIGHT );
+}
+
+public  void  GS_set_update_function(
+    void  (*func)( void ) )
+{
+    glutDisplayFunc( func );
+}
+
+public  void  GS_event_loop( void )
+{
+    glutMainLoop();
 }
