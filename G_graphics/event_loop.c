@@ -1,6 +1,10 @@
 #include  <internal_volume_io.h>
 #include  <graphics.h>
 
+static  BOOLEAN    left_button_state = FALSE;
+static  BOOLEAN    middle_button_state = FALSE;
+static  BOOLEAN    right_button_state = FALSE;
+
 private  Gwindow  lookup_window_for_window_id(
     Window_id  window_id )
 {
@@ -29,25 +33,284 @@ private  Gwindow  lookup_window_for_window_id(
         return( window );
 }
 
-private  void  global_update_function( void )
+private  Gwindow  get_event_window(
+    Window_id   window_id )
 {
-    Window_id   window_id;
     Gwindow     window;
-
-    window_id = GS_get_current_window_id();
 
     window = lookup_window_for_window_id( window_id );
 
     if( window == NULL )
-        handle_internal_error( "global_update_function" );
+        handle_internal_error( "get_event_window" );
 
-    (*window->update_callback)( window, window->update_callback_data );
+    return( window );
 }
 
-public  void  initialize_callbacks_for_window(
-    Gwindow                 window )
+private  void  global_update_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->update_callback != NULL )
+        (*window->update_callback)( window, window->update_data );
+}
+
+private  void  global_update_overlay_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->update_overlay_callback != NULL )
+        (*window->update_overlay_callback)( window,
+                                            window->update_overlay_data );
+}
+
+private  void  global_resize_function(
+    Window_id  window_id,
+    int        x,
+    int        y,
+    int        x_size,
+    int        y_size )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_origin = x;
+    window->y_origin = y;
+    window->x_size = x_size;
+    window->y_size = y_size;
+
+    if( window->resize_callback != NULL )
+        (*window->resize_callback)( window, x, y, x_size, y_size,
+                                    window->resize_data );
+}
+
+private  void  global_key_down_function(
+    Window_id  window_id,
+    int        key,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+
+    if( window->key_down_callback != NULL )
+        (*window->key_down_callback)( window, key, window->key_down_data );
+}
+
+private  void  global_key_up_function(
+    Window_id  window_id,
+    int        key,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+
+    if( window->key_up_callback != NULL )
+        (*window->key_up_callback)( window, key, window->key_up_data );
+}
+
+private  void  global_mouse_movement_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+
+    if( window->mouse_movement_callback != NULL )
+        (*window->mouse_movement_callback)( window, x, y,
+                                            window->mouse_movement_data );
+}
+
+private  void  global_left_mouse_down_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+    left_button_state = TRUE;
+
+    if( window->left_mouse_down_callback != NULL )
+        (*window->left_mouse_down_callback)( window, x, y,
+                                             window->left_mouse_down_data );
+}
+
+private  void  global_left_mouse_up_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+    left_button_state = FALSE;
+
+    if( window->left_mouse_up_callback != NULL )
+        (*window->left_mouse_up_callback)( window, x, y,
+                                           window->left_mouse_up_data );
+}
+
+private  void  global_middle_mouse_down_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+    middle_button_state = TRUE;
+
+    if( window->middle_mouse_down_callback != NULL )
+        (*window->middle_mouse_down_callback)( window, x, y,
+                                               window->middle_mouse_down_data );
+}
+
+private  void  global_middle_mouse_up_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+    middle_button_state = FALSE;
+
+    if( window->middle_mouse_up_callback != NULL )
+        (*window->middle_mouse_up_callback)( window, x, y,
+                                             window->middle_mouse_up_data );
+}
+
+private  void  global_right_mouse_down_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+    right_button_state = TRUE;
+
+    if( window->right_mouse_down_callback != NULL )
+        (*window->right_mouse_down_callback)( window, x, y,
+                                              window->right_mouse_down_data );
+}
+
+private  void  global_right_mouse_up_function(
+    Window_id  window_id,
+    int        x,
+    int        y )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    window->x_mouse_pos = x;
+    window->y_mouse_pos = y;
+    right_button_state = FALSE;
+
+    if( window->right_mouse_up_callback != NULL )
+        (*window->right_mouse_up_callback)( window, x, y,
+                                            window->right_mouse_up_data );
+}
+
+private  void  global_iconify_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->iconify_callback != NULL )
+        (*window->iconify_callback)( window, window->iconify_data );
+}
+
+private  void  global_deiconify_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->deiconify_callback != NULL )
+        (*window->deiconify_callback)( window, window->deiconify_data );
+}
+
+private  void  global_enter_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->enter_callback != NULL )
+        (*window->enter_callback)( window, window->enter_data );
+}
+
+private  void  global_leave_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->leave_callback != NULL )
+        (*window->leave_callback)( window, window->leave_data );
+}
+
+private  void  initialize_callbacks( void )
 {
     GS_set_update_function( global_update_function );
+    GS_set_update_overlay_function( global_update_overlay_function );
+    GS_set_resize_function( global_resize_function );
+    GS_set_key_down_function( global_key_down_function );
+    GS_set_key_up_function( global_key_up_function );
+    GS_set_mouse_movement_function( global_mouse_movement_function );
+    GS_set_left_mouse_down_function( global_left_mouse_down_function );
+    GS_set_left_mouse_up_function( global_left_mouse_up_function );
+    GS_set_middle_mouse_down_function( global_middle_mouse_down_function );
+    GS_set_middle_mouse_up_function( global_middle_mouse_up_function );
+    GS_set_right_mouse_down_function( global_right_mouse_down_function );
+    GS_set_right_mouse_up_function( global_right_mouse_up_function );
+    GS_set_iconify_function( global_iconify_function );
+    GS_set_deiconify_function( global_deiconify_function );
+    GS_set_enter_function( global_enter_function );
+    GS_set_leave_function( global_leave_function );
 }
 
 public  void  G_set_update_function(
@@ -56,10 +319,174 @@ public  void  G_set_update_function(
     void                    *func_data )
 {
     window->update_callback = func;
-    window->update_callback_data = func_data;
+    window->update_data = func_data;
+}
+
+public  void  G_set_update_overlay_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, void * ),
+    void                    *func_data )
+{
+    window->update_overlay_callback = func;
+    window->update_overlay_data = func_data;
+}
+
+public  void  G_set_resize_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, int, int, void * ),
+    void                    *func_data )
+{
+    window->resize_callback = func;
+    window->resize_data = func_data;
+}
+
+public  void  G_set_key_down_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, void * ),
+    void                    *func_data )
+{
+    window->key_down_callback = func;
+    window->key_down_data = func_data;
+}
+
+public  void  G_set_key_up_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, void * ),
+    void                    *func_data )
+{
+    window->key_up_callback = func;
+    window->key_up_data = func_data;
+}
+
+public  void  G_set_mouse_movement_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->mouse_movement_callback = func;
+    window->mouse_movement_data = func_data;
+}
+
+public  void  G_set_left_mouse_down_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->left_mouse_down_callback = func;
+    window->left_mouse_down_data = func_data;
+}
+
+public  void  G_set_left_mouse_up_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->left_mouse_up_callback = func;
+    window->left_mouse_up_data = func_data;
+}
+
+public  void  G_set_middle_mouse_down_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->middle_mouse_down_callback = func;
+    window->middle_mouse_down_data = func_data;
+}
+
+public  void  G_set_middle_mouse_up_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->middle_mouse_up_callback = func;
+    window->middle_mouse_up_data = func_data;
+}
+
+public  void  G_set_right_mouse_down_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->right_mouse_down_callback = func;
+    window->right_mouse_down_data = func_data;
+}
+
+public  void  G_set_right_mouse_up_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->right_mouse_up_callback = func;
+    window->right_mouse_up_data = func_data;
+}
+
+public  void  G_set_iconify_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, void * ),
+    void                    *func_data )
+{
+    window->iconify_callback = func;
+    window->iconify_data = func_data;
+}
+
+public  void  G_set_deiconify_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, void * ),
+    void                    *func_data )
+{
+    window->deiconify_callback = func;
+    window->deiconify_data = func_data;
+}
+
+public  void  G_set_window_enter_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, void * ),
+    void                    *func_data )
+{
+    window->enter_callback = func;
+    window->enter_data = func_data;
+}
+
+public  void  G_set_window_leave_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, void * ),
+    void                    *func_data )
+{
+    window->leave_callback = func;
+    window->leave_data = func_data;
+}
+
+public  void  initialize_callbacks_for_window(
+    Gwindow                 window )
+{
+    window->update_callback = NULL;
+    window->update_overlay_callback = NULL;
+    window->resize_callback = NULL;
+    window->key_down_callback = NULL;
+    window->key_up_callback = NULL;
+    window->mouse_movement_callback = NULL;
+    window->left_mouse_down_callback = NULL;
+    window->left_mouse_up_callback = NULL;
+    window->middle_mouse_down_callback = NULL;
+    window->middle_mouse_up_callback = NULL;
+    window->right_mouse_down_callback = NULL;
+    window->right_mouse_up_callback = NULL;
+    window->iconify_callback = NULL;
+    window->deiconify_callback = NULL;
+    window->enter_callback = NULL;
+    window->leave_callback = NULL;
+}
+
+public  void  G_set_update_flag(
+    Gwindow  window )
+{
+    GS_set_update_flag( window->GS_window );
 }
 
 public  void  G_main_loop( void )
 {
+    initialize_callbacks();
+
     GS_event_loop();
 }
