@@ -1,6 +1,9 @@
 #include  <internal_volume_io.h>
 #include  <WS_graphics.h>
 
+#define  DEFAULT_WINDOW_X_SIZE    300
+#define  DEFAULT_WINDOW_Y_SIZE    300
+
 #define  USING_X11
 
 private  int         n_windows_to_delete = 0;
@@ -72,9 +75,13 @@ private  Window_id  create_GLUT_window(
         glutInitWindowPosition( initial_x_pos,
                                 flip_screen_y( initial_y_pos + used_size - 1) );
     }
+    else
+        glutInitWindowPosition( -1, -1 );
 
     if( initial_x_size > 0 && initial_y_size > 0 )
         glutInitWindowSize( initial_x_size, initial_y_size );
+    else
+        glutInitWindowSize( DEFAULT_WINDOW_X_SIZE, DEFAULT_WINDOW_Y_SIZE );
 
     window_id = glutCreateWindow( title );
 
@@ -103,12 +110,13 @@ private  Window_id  create_GLUT_window(
         window_id = -1;
     }
 
-    if( *actual_double_buffer_flag != double_buffer_flag )
+    if( *actual_double_buffer_flag && !double_buffer_flag )
     {
-        print_error( "Could not get requested double_buffer_mode(%d)\n",
-                     double_buffer_flag );
-        glutDestroyWindow( window_id );
-        window_id = -1;
+        print_error( "For some reason got double buffer window, when requesting single buffer.\n" );
+    }
+    else if( !(*actual_double_buffer_flag) && double_buffer_flag )
+    {
+        print_error( "Could not get requested double buffer window\n" );
     }
 
 #ifdef  USING_X11
@@ -390,11 +398,11 @@ static  struct
               {
                 {10, GLUT_BITMAP_HELVETICA_10},
                 {12, GLUT_BITMAP_HELVETICA_12},
+                {13,  GLUT_BITMAP_8_BY_13},
+                {15 , GLUT_BITMAP_9_BY_15},
                 {18, GLUT_BITMAP_HELVETICA_18},
-                {10, GLUT_BITMAP_TIMES_ROMAN_10},
                 {24, GLUT_BITMAP_TIMES_ROMAN_24},
-                {8,  GLUT_BITMAP_8_BY_13},
-                {9 , GLUT_BITMAP_9_BY_15}
+                {10, GLUT_BITMAP_TIMES_ROMAN_10}
               };
 
 
@@ -816,7 +824,6 @@ public  void  WS_add_timer_function(
     void          *data )
 {
     int                   i;
-    callback_info_struct  info;
 
     for_less( i, 0, n_timers )
     {
@@ -826,12 +833,12 @@ public  void  WS_add_timer_function(
 
     if( i >= n_timers )
     {
-        info.function = func;
-        info.data = data;
-
-        ADD_ELEMENT_TO_ARRAY( timers, n_timers, info, 1 );
+        SET_ARRAY_SIZE( timers, n_timers, n_timers+1, 1 );
+        ++n_timers;
     }
 
+    timers[i].function = func;
+    timers[i].data = data;
     timers[i].active = TRUE;
 
     glutTimerFunc( (unsigned int) (1000.0 * seconds + 0.5),
