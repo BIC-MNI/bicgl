@@ -46,6 +46,8 @@ int main(
                               100, 600, 300, 300,
                               FALSE, TRUE, FALSE, 0, &window );
 
+    (void) GS_has_rgb_mode();
+
     if( status != OK )
         return( 1 );
 
@@ -311,14 +313,17 @@ for_less( i, 0, 4 )
         {
             G_clear_window( window );
 
+            G_set_zbuffer_state( window, OFF );
             G_set_lighting_state( window, OFF );
             G_set_view_type( window, PIXEL_VIEW );
             G_draw_pixels( window, &pixels );
 
+            G_set_zbuffer_state( window, ON );
             G_set_lighting_state( window, ON );
             G_set_view_type( window, MODEL_VIEW );
-            G_draw_lines( window, &lines );
             G_draw_polygons( window, &polygons );
+            G_set_lighting_state( window, OFF );
+            G_draw_lines( window, &lines );
 
             G_set_lighting_state( window, OFF );
             G_set_view_type( window, PIXEL_VIEW );
