@@ -151,9 +151,8 @@ private  void  initialize_window(
     print_info();
 #endif
 
-    GS_get_window_size( window->GS_window, &window->x_size, &window->y_size );
-    GS_get_window_position( window->GS_window, &window->x_origin,
-                                                &window->y_origin );
+    GS_get_window_size( &window->x_size, &window->y_size );
+    GS_get_window_position( &window->x_origin, &window->y_origin );
 
     G_set_automatic_clear_state( window, TRUE );
 
