@@ -53,6 +53,12 @@ public  void  G_set_transparency_state(
     }
 }
 
+public  BOOLEAN  G_get_lighting_state(
+    Gwindow      window )
+{
+    return( window->lighting_state );
+}
+
 public  void  G_set_lighting_state(
     Gwindow      window,
     BOOLEAN      state )

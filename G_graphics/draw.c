@@ -863,7 +863,7 @@ public  void  G_draw_lines(
     float    geom[4][3];
     BOOLEAN  wrap_around;
 #ifndef TWO_D_ONLY
-    BOOLEAN  lines_as_curves;
+    BOOLEAN  lines_as_curves, save_lights;
 #endif
 
     if( lines->line_thickness < 1.0 || lines->line_thickness > 20.0 )
@@ -873,6 +873,9 @@ public  void  G_draw_lines(
     }
 
     about_to_draw_graphics( window );
+
+    save_lights = G_get_lighting_state( window );
+    G_set_lighting_state( window, OFF );
 
     if( lines->line_thickness > 1.0 && lines->line_thickness < 1000.0 )
         GS_set_line_width( (Real) lines->line_thickness );
@@ -977,6 +980,8 @@ public  void  G_draw_lines(
 
     if( lines->line_thickness > 1.0 && lines->line_thickness < 1000.0 )
         GS_set_line_width( 1.0 );
+
+    G_set_lighting_state( window, save_lights );
 }
 
 /* ------------------------------ text and fonts ------------------- */
@@ -1238,9 +1243,13 @@ public  void  G_draw_marker(
     marker_struct   *marker )
 {
 #ifndef  TWO_D_ONLY
+    BOOLEAN     save_lights;
     Transform   transform;
 
     about_to_draw_graphics( window );
+
+    save_lights = G_get_lighting_state( window );
+    G_set_lighting_state( window, OFF );
 
     set_colour( window, marker->colour );
 
@@ -1294,6 +1303,8 @@ public  void  G_draw_marker(
         }
 
     END_DRAW_OBJECTS
+
+    G_set_lighting_state( window, save_lights );
 #endif
 }
 
