@@ -1,48 +1,33 @@
 #include  <internal_volume_io.h>
-#include  <X11/Xlib.h>
 
 extern  void  glut_set_colour_entry(
-    int      ind,
-    float    r,
-    float    g,
-    float    b );
+    int     ind,
+    Real    r,
+    Real    g,
+    Real    b );
 
 public  void  copy_X_colours(
     int  n_colours_to_copy )
 {
-    Display            *display;
-    int                screen;
-    Window             root_window;
-    XWindowAttributes  attrib;
-    Colormap           cmap;
-    XColor             def;
-    int                ind;
+    int     ind;
+    char    command[1000];
+    FILE    *file;
+    Real    r, g, b;
 
-    display = XOpenDisplay( 0 );
+    (void) sprintf( command, "print_X_colours %d", n_colours_to_copy );
 
-    if( display == NULL )
+    file = popen( command, "r" );
+
+    ind = 0;
+
+    while( input_real( file, &r ) == OK &&
+           input_real( file, &g ) == OK &&
+           input_real( file, &b ) == OK )
     {
-        print_error( "Could not open X display\n" );
-        return;
+        glut_set_colour_entry( ind, r, g, b );
+
+        ++ind;
     }
 
-    screen = DefaultScreen( display );
-
-    root_window =  RootWindow( display, screen ),
-
-    XGetWindowAttributes( display, root_window, &attrib );
-
-    cmap = attrib.colormap;
-
-    for_less( ind, 0, n_colours_to_copy )
-    {
-        def.pixel = ind;
-        XQueryColor( display, cmap, &def );
-        glut_set_colour_entry( ind, (float) def.red / (float) 65535.0,
-                                    (float) def.green / (float) 65535.0,
-                                    (float) def.blue / (float) 65535.0 );
-
-    }
-
-    XCloseDisplay( display );
+    (void) pclose( file );
 }

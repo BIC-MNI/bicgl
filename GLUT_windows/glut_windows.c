@@ -1,6 +1,8 @@
 #include  <internal_volume_io.h>
 #include  <WS_graphics.h>
 
+#define  USING_X11
+
 private  int         n_windows_to_delete = 0;
 private  Window_id   *windows_to_delete = NULL;
 
@@ -40,7 +42,7 @@ private  Window_id  create_GLUT_window(
     int                    *actual_n_overlay_planes )
 {
     unsigned  int      mode;
-    int                width, height, used_size;
+    int                used_size;
     Window_id          window_id;
 
     mode = 0;
@@ -82,6 +84,7 @@ private  Window_id  create_GLUT_window(
         return( window_id );
     }
 
+    glutSetWindow( window_id );
     glutPopWindow();
 
     *actual_n_overlay_planes = 0;
@@ -90,6 +93,34 @@ private  Window_id  create_GLUT_window(
     *actual_colour_map_mode = (glutGet((GLenum) GLUT_WINDOW_RGBA) != 1);
     *actual_double_buffer_flag = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
     *actual_depth_buffer_flag = (glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE) > 0);
+
+    if( *actual_colour_map_mode != colour_map_mode )
+    {
+        print_error( "Could not get requested colour_map_mode(%d,%d)\n",
+                     colour_map_mode,
+                     glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE ) );
+        glutDestroyWindow( window_id );
+        window_id = -1;
+    }
+
+    if( *actual_double_buffer_flag != double_buffer_flag )
+    {
+        print_error( "Could not get requested double_buffer_mode(%d)\n",
+                     double_buffer_flag );
+        glutDestroyWindow( window_id );
+        window_id = -1;
+    }
+
+#ifdef  USING_X11
+    if( window_id >= 1 && *actual_colour_map_mode )
+    {
+        int   n_colours_to_copy;
+
+        n_colours_to_copy = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
+
+        copy_X_colours( n_colours_to_copy );
+    }
+#endif
 
     return( window_id );
 }
@@ -116,8 +147,6 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {
-    unsigned  int      mode;
-    int                used_size;
 
     window->window_id = create_GLUT_window( title, 
                                             initial_x_pos,
@@ -185,11 +214,13 @@ public  BOOLEAN  WS_set_double_buffer_state(
     if( window->window_id < 1 )
     {
         print_error( "Could not open GLUT window for OpenGL\n" );
-        return( ERROR );
+        window->window_id = old_window_id;
     }
-
-    ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
-                          old_window_id, 1 );
+    else
+    {
+        ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
+                              old_window_id, 1 );
+    }
 
     return( actual_double_buffer_flag );
 }
@@ -234,7 +265,7 @@ public  BOOLEAN  WS_set_colour_map_state(
     if( window->window_id < 1 )
     {
         print_error( "Could not open GLUT window for OpenGL\n" );
-        return( ERROR );
+        window->window_id = old_window_id;
     }
 
     ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
@@ -318,15 +349,25 @@ public  void  WS_get_window_size(
     *y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
 }
 
+public  void  glut_set_colour_entry(
+    int      ind,
+    Real     r,
+    Real     g,
+    Real     b )
+{
+    glutSetColor( ind, (float) r, (float) g, (float) b );
+}
+
 public  void  WS_set_colour_map_entry(
     WSwindow          window,
     Bitplane_types    bitplane,
     int               ind,
     Colour            colour )
 {
-    glutSetColor( ind, (float) get_Colour_r_0_1(colour),
-                       (float) get_Colour_g_0_1(colour),
-                       (float) get_Colour_b_0_1(colour) );
+    glut_set_colour_entry( ind,
+                           get_Colour_r_0_1(colour),
+                           get_Colour_g_0_1(colour),
+                           get_Colour_b_0_1(colour) );
 }
 
 public  void  WS_set_overlay_colour_map_entry(
