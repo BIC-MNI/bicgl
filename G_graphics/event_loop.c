@@ -5,6 +5,9 @@ static  BOOLEAN    left_button_state = FALSE;
 static  BOOLEAN    middle_button_state = FALSE;
 static  BOOLEAN    right_button_state = FALSE;
 static  int        keyboard_modifiers = 0;
+static  int        current_mouse_x = 0;
+static  int        current_mouse_y = 0;
+static  Gwindow    current_window = NULL;
 
 public  BOOLEAN  G_get_left_mouse_button( void )
 {
@@ -36,8 +39,8 @@ public  BOOLEAN  G_get_alt_key_state( void )
     return( (keyboard_modifiers & ALT_KEY_BIT) != 0 );
 }
 
-private  Gwindow  lookup_event_window_for_window_id(
-    Window_id  event_window_id )
+private  Gwindow  lookup_window_for_window_id(
+    Window_id  window_id )
 {
     int       i, n_windows;
     Gwindow   window;
@@ -45,9 +48,11 @@ private  Gwindow  lookup_event_window_for_window_id(
     window = get_current_window();
 
     if( window != NULL &&
-        (GS_get_event_window_id( window->GS_window ) == event_window_id ||
-         GS_get_window_id( window->GS_window ) == event_window_id) )
+        GS_get_window_id( window->GS_window ) == window_id )
+    {
+        current_window = window;
         return( window );
+    }
 
     n_windows = get_n_graphics_windows();
 
@@ -55,29 +60,54 @@ private  Gwindow  lookup_event_window_for_window_id(
     {
         window = get_nth_graphics_window( i );
 
-        if( GS_get_event_window_id( window->GS_window ) == event_window_id ||
-            GS_get_window_id( window->GS_window ) == event_window_id )
+        if( GS_get_window_id( window->GS_window ) == window_id )
             break;
     }
 
     if( i >= n_windows )
-        return( NULL );
+        current_window = NULL;
     else
-        return( window );
+        current_window = window;
+
+    return( current_window );
 }
 
 private  Gwindow  get_event_window(
-    Window_id   event_window_id )
+    Window_id   window_id )
 {
     Gwindow     window;
 
-    window = lookup_event_window_for_window_id( event_window_id );
+    window = lookup_window_for_window_id( window_id );
 
+    /*--- since the underlying event handler may have changed the current
+          window, we now set the current window to NULL, so the next call to
+          set_current_window forces an update of the current window */
+
+    set_current_window( NULL );
+
+/*
     if( window == NULL )
         handle_internal_error( "get_event_window" );
+*/
 
     return( window );
 }
+
+private  void  assign_mouse_position(
+    Gwindow   window,
+    int       x,
+    int       y )
+{
+    current_mouse_x = x;
+    current_mouse_y = y;
+
+    if( GS_are_mouse_coordinates_in_screen_space() )
+    {
+        current_mouse_x -= window->x_origin;
+        current_mouse_y -= window->y_origin;
+    }
+}
+
 
 private  Gwindow  get_key_or_mouse_event_window(
     Window_id   window_id,
@@ -91,8 +121,7 @@ private  Gwindow  get_key_or_mouse_event_window(
 
     if( window != NULL )
     {
-        window->x_mouse_pos = x;
-        window->y_mouse_pos = y;
+        assign_mouse_position( window, x, y );
         keyboard_modifiers = modifier;
     }
 
@@ -197,8 +226,7 @@ private  void  global_mouse_movement_function(
     if( window == NULL )
         return;
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
+    assign_mouse_position( window, x, y );
 
     if( window->mouse_movement_callback != NULL )
         (*window->mouse_movement_callback)( window, x, y,
@@ -214,6 +242,7 @@ private  void  global_left_mouse_down_function(
     Gwindow     window;
 
     window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+
     if( window == NULL )
         return;
 
@@ -613,4 +642,72 @@ public  void  G_main_loop( void )
     initialize_callbacks();
 
     GS_event_loop();
+}
+
+public  void  G_set_mouse_position(
+    int       x_screen,
+    int       y_screen )
+{
+    GS_set_mouse_position( x_screen, y_screen );
+}
+
+public  BOOLEAN  G_is_mouse_in_window(
+    Gwindow window )
+{
+    return( current_window == window && window != NULL );
+}
+
+public  void  G_get_mouse_screen_position(
+    int            *x_screen_pos,
+    int            *y_screen_pos )
+{
+    int       x_mouse, y_mouse;
+
+    if( G_get_mouse_position( current_window, &x_mouse, &y_mouse ) )
+    {
+        *x_screen_pos = x_mouse + current_window->x_origin;
+        *y_screen_pos = y_mouse + current_window->y_origin;
+    }
+    else
+    {
+        *x_screen_pos = 0;
+        *y_screen_pos = 0;
+    }
+}
+
+public  BOOLEAN  G_get_mouse_position(
+    Gwindow        window,
+    int            *x_pixel_pos,
+    int            *y_pixel_pos )
+{
+    BOOLEAN        in_window;
+
+    in_window = G_is_mouse_in_window( window );
+
+    if( window != NULL )
+    {
+        *x_pixel_pos = current_mouse_x;
+        *y_pixel_pos = current_mouse_y;
+    }
+    
+    return( in_window );
+}
+
+public  BOOLEAN  G_get_mouse_position_0_to_1(
+    Gwindow        window,
+    Real           *x_pos,
+    Real           *y_pos )
+{
+    int            x_pixel, y_pixel;
+    BOOLEAN        in_window;
+
+    in_window = G_get_mouse_position( window, &x_pixel, &y_pixel );
+
+    if( window != (Gwindow) NULL )
+    {
+        *x_pos = ((Real) x_pixel + 0.5) / (Real) window->x_size;
+        *y_pos = ((Real) y_pixel + 0.5) / (Real) window->y_size;
+    }
+    
+    return( in_window );
 }

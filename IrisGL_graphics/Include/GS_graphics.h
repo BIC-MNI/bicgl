@@ -2,33 +2,21 @@
 #define  DEF_GRAPHICS_SYSTEM_SPECIFIC
 
 #include <def_gl.h>
-#include <window_events.h>
+#include <graphics_base.h>
 #include <fmclient.h>
+#include <bicpl.h>
 
 typedef  long  Window_id;
 
 typedef  struct
 {
-    Font_types       type;
-    Real             size;
-    fmfonthandle     font_handle;
-}  WS_font_info;
-
-typedef  struct
-{
     Window_id       window_id;
-}
-WS_window_struct;
-
-typedef  struct
-{
     long            unique_lmdef_id;
+    BOOLEAN         update_required;
 }
 GS_window_struct;
 
-#define  WS_WINDOW_DEFINED
-
-#include <graphics.h>
+typedef  GS_window_struct  *GSwindow;
 
 #ifndef  public
 #define       public

@@ -285,11 +285,12 @@ public  int  GS_get_n_colour_map_entries(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_set_colour_map_entry(
+    GSwindow        window,
     Bitplane_types  bitplanes,
     int             ind,
     Colour          colour )
 {
-    WS_set_colour_map_entry( bitplanes, ind, colour );
+    WS_set_colour_map_entry( &window->WS_window, bitplanes, ind, colour );
 }
 
 public  BOOLEAN  GS_is_double_buffer_supported( void )

@@ -6,23 +6,27 @@ GL_DIRECTORY = $(TOP_DIR)/GL_graphics
 X_DIRECTORY = $(TOP_DIR)/X_windows
 GLX_DIRECTORY = $(TOP_DIR)/GLX_windows
 G_DIRECTORY = $(TOP_DIR)/G_graphics
+GLUT_DIRECTORY = $(TOP_DIR)/GLUT_windows
 
 GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include $(BIC_PL_INCLUDE) $(X11_INCLUDES)
 
+GLUT_LIB = -L$(SRC_DIRECTORY)/GLUT/$(ARCH_DIR) -lglut
+
 #-------------------------- OpenGl with glX windows --------------------------
 
-OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics -lGL \
-                             $(X11_LIBS) $(BIC_PL_LIBS)
+OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics \
+                             $(GLUT_LIB) -lGL -lGLU $(X11_LIBS) $(BIC_PL_LIBS)
 OPENGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics-O3 \
-                            -lGL $(X11_LIBS) $(BIC_PL_LIBS-O3)
+                            $(GLUT_LIB) -lGL -lGLU $(X11_LIBS) $(BIC_PL_LIBS-O3)
 OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 
 #----------------------- MESA/OpenGl with glX windows ------------------------
 
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics \
-                          $(MESA_LIB)  $(X11_LIBS) $(BIC_PL_LIBS)
+                          $(GLUT_LIB) $(MESA_LIB)  -lMesaGLU $(X11_LIBS) -lXmu $(BIC_PL_LIBS)
 MESA_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics-O3 \
-                          $(MESA_LIB-O3)  $(X11_LIBS) $(BIC_PL_LIBS-O3)
+                          $(GLUT_LIB) $(MESA_LIB-O3)  $(X11_LIBS) -lXmu \
+                          $(BIC_PL_LIBS-O3)
 MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------

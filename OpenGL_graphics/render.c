@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 public  void  GS_set_shade_model(
     Shading_types  type )
@@ -26,7 +26,7 @@ public  void  GS_turn_on_blend_function( void )
 /* ARGSUSED */
 
 public  void  GS_set_lighting_state(
-    Gwindow      window,
+    GSwindow     window,
     BOOLEAN      state )
 {
     if( state )

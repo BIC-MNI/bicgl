@@ -460,7 +460,8 @@ public  void  G_set_colour_map_entry(
     if( save_bitplane != NORMAL_PLANES )
         G_set_bitplanes( window, NORMAL_PLANES );
 
-    GS_set_colour_map_entry( window->current_bitplanes, ind, colour );
+    GS_set_colour_map_entry( window->GS_window,
+                             window->current_bitplanes, ind, colour );
 
     if( save_bitplane != NORMAL_PLANES )
         restore_bitplanes( window, save_bitplane );

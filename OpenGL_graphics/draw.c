@@ -1,7 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <graphics.h>
-#include  <random_order.h>
+#include  <GS_graphics.h>
 
 public  void  GS_set_point(
     Point  *point )
@@ -46,14 +45,14 @@ public  void  GS_set_ambient_and_diffuse_mode(
 /* ARGSUSED */
 
 public  void  GS_initialize_surface_property(
-    Gwindow        window )
+    GSwindow        window )
 {
 }
 
 /* ARGSUSED */
 
 public  void  GS_set_surface_property(
-    Gwindow        window,
+    GSwindow       window,
     Colour         col,
     Surfprop       *surfprop )
 {
@@ -157,29 +156,6 @@ public  void  GS_set_raster_position(
     glRasterPos3d( (double) x, (double) y, (double) z );
 }
 
-/* ARGSUSED */
-
-public  BOOLEAN  GS_set_font(
-    Gwindow         window,
-    int             font_index,
-    WS_font_info    *font )
-{
-    return( WS_set_font( window->WS_window, font_index, font ) );
-}
-
-/* ARGSUSED */
-
-public  void  GS_draw_text(
-    Gwindow      window,
-    Font_types   type,
-    STRING       string )
-{
-    int  i;
-
-    for_less( i, 0, (int) strlen(string) )
-        GS_draw_character( window, string[i] );
-}
-
 public  void  GS_set_pixel_zoom(
     Real  x_zoom,
     Real  y_zoom )
@@ -190,7 +166,8 @@ public  void  GS_set_pixel_zoom(
 /* ARGSUSED */
 
 public  void  GS_draw_colour_map_pixels(
-    Gwindow         window,
+    int             x_viewport_min,
+    int             y_viewport_min,
     pixels_struct   *pixels )
 {
     int       x, y, x_size, y_size;
@@ -225,7 +202,8 @@ public  void  GS_draw_colour_map_pixels(
 /* ARGSUSED */
 
 public  void  GS_draw_rgb_pixels(
-    Gwindow         window,
+    int             x_viewport_min,
+    int             y_viewport_min,
     pixels_struct   *pixels )
 {
     int       x, y, x_size, y_size;
@@ -244,7 +222,7 @@ public  void  GS_draw_rgb_pixels(
 }
 
 public  void  GS_read_pixels(
-    Gwindow         window,
+    BOOLEAN         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,
@@ -253,7 +231,7 @@ public  void  GS_read_pixels(
 {
     glReadBuffer( GL_FRONT );
 
-    if( window->colour_map_state )
+    if( colour_map_state )
     {
         glReadPixels( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1,
                       GL_COLOR_INDEX, GL_UNSIGNED_INT, pixels );
@@ -263,4 +241,29 @@ public  void  GS_read_pixels(
         glReadPixels( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1,
                       GL_RGBA, GL_UNSIGNED_BYTE, pixels );
     }
+}
+
+public  Real  GS_get_character_height(
+    Font_types       type,
+    Real             size )
+{
+    return( WS_get_character_height( type, size ) );
+}
+
+/* ARGSUSED */
+
+public  void  GS_draw_text(
+    Font_types   type,
+    Real         size,
+    STRING       string )
+{
+    WS_draw_text( type, size, string );
+}
+
+public  Real  GS_get_text_length(
+    STRING           str,
+    Font_types       type,
+    Real             size )
+{
+    return( WS_get_text_length( str, type, size ) );
 }

@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 private  void  make_matrix(
     Transform   *trans,
@@ -106,7 +106,7 @@ public  void  GS_frustum(
 /* ARGSUSED */
 
 public  void  GS_initialize_window_view(
-    Gwindow   window )
+    GSwindow   window )
 {
 }
 
@@ -132,38 +132,31 @@ public  void  GS_set_viewport(
 
 public  void  clear_overlay_planes( void )
 {
-#ifndef  TWO_D_ONLY
     Matrix          save_projection;
 
-    if( G_has_overlay_planes() )
-    {
-        mmode( MPROJECTION );
-        getmatrix( save_projection );
-        mmode( MVIEWING );
+    mmode( MPROJECTION );
+    getmatrix( save_projection );
+    mmode( MVIEWING );
 
-        pushmatrix();
-        pushviewport();
+    pushmatrix();
+    pushviewport();
 
-        fullscrn();
+    fullscrn();
 /*
-        drawmode( NORMALDRAW );
-        blendfunction( BF_ONE, BF_ZERO );
+    drawmode( NORMALDRAW );
+    blendfunction( BF_ONE, BF_ZERO );
 */
-        drawmode( OVERDRAW );
-        color( 0 );
-        clear();
-        endfullscrn();
+    drawmode( OVERDRAW );
+    color( 0 );
+    clear();
+    endfullscrn();
 
-        restore_bitplanes( (Gwindow) NULL );
+    popviewport();
+    popmatrix();
 
-        popviewport();
-        popmatrix();
-
-        mmode( MPROJECTION );
-        loadmatrix( save_projection );
-        mmode( MVIEWING );
-    }
-#endif
+    mmode( MPROJECTION );
+    loadmatrix( save_projection );
+    mmode( MVIEWING );
 }
 
 public  void  GS_set_matrix_mode(

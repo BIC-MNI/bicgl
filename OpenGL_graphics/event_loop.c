@@ -136,3 +136,15 @@ public  void  GS_event_loop( void )
 {
     WS_event_loop();
 }
+
+public  void  GS_set_mouse_position(
+    int       x_screen,
+    int       y_screen )
+{
+    WS_set_mouse_position( x_screen, y_screen );
+}
+
+public  BOOLEAN  GS_are_mouse_coordinates_in_screen_space( void )
+{
+    return( FALSE );
+}

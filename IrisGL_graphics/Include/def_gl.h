@@ -12,7 +12,6 @@
 #define  multmatrix  multmatrix_avoid_lint_message
 #endif
 
-
 #include <gl/gl.h>
 
 #undef  crv

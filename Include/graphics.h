@@ -1,16 +1,15 @@
 #ifndef  DEF_GRAPHICS
 #define  DEF_GRAPHICS
 
+#include  <GS_graphics.h>
 #include  <bicpl.h>
 #include  <random_order.h>
-#include  <GS_graphics.h>
 
 typedef  struct   window_struct
 {
     GSwindow               GS_window;
     int                    x_origin, y_origin;          
     int                    x_size, y_size;          
-    int                    x_mouse_pos, y_mouse_pos;
     Colour                 background_colour;
     Colour                 background_colour_index;
     View_types             current_view_type;
@@ -121,6 +120,9 @@ typedef  struct   window_struct
 
     void    (*leave_callback) ( struct window_struct *, void * );
     void    *leave_data;
+
+    void    (*quit_callback) ( struct window_struct *, void * );
+    void    *quit_data;
 } window_struct;
 
 typedef  struct  window_struct   *Gwindow;

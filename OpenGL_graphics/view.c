@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 typedef  double  Matrix[16];
 
@@ -146,7 +146,7 @@ public  void  GS_frustum(
 /* ARGSUSED */
 
 public  void  GS_initialize_window_view(
-    Gwindow   window )
+    GSwindow   window )
 {
 }
 

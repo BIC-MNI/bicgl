@@ -1,11 +1,11 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 /* ARGSUSED */
 
 public  void  GS_initialize_lights(
-    Gwindow        window )
+    GSwindow        window )
 {
     static  float ambient_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -18,7 +18,7 @@ public  void  GS_initialize_lights(
 /* ARGSUSED */
 
 public  void  GS_set_ambient_light(
-    Gwindow        window,
+    GSwindow       window,
     Colour         colour )
 {
     float     ambient_light[4];
@@ -34,7 +34,7 @@ public  void  GS_set_ambient_light(
 /* ARGSUSED */
 
 public  void  GS_define_light(
-    Gwindow         window,
+    GSwindow        window,
     int             light_index,
     Light_types     type,
     Colour          colour,
@@ -111,7 +111,7 @@ public  void  GS_define_light(
 /* ARGSUSED */
 
 public  void  GS_set_light_state(
-    Gwindow         window,
+    GSwindow        window,
     int             light_index,
     BOOLEAN         state )
 {

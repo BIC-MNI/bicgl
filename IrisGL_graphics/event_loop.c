@@ -94,7 +94,7 @@ public  void  GS_set_middle_mouse_up_function(
 public  void  GS_set_right_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
-    middle_down_callback = func;
+    right_down_callback = func;
 }
 
 public  void  GS_set_right_mouse_up_function(
@@ -229,15 +229,19 @@ public  void  GS_event_loop( void )
     short      val;
     int        i;
     Real       current_time;
+    BOOLEAN    idle;
 
     while( TRUE )
     {
+        idle = TRUE;
+
         for_less( i, 0, n_windows )
         {
             if( windows[i]->update_required )
             {
                 windows[i]->update_required = FALSE;
                 display_callback( GS_get_window_id(windows[i]) );
+                idle = FALSE;
             }
         }
 
@@ -251,6 +255,7 @@ public  void  GS_event_loop( void )
                 {
                     (*timers[i].function) ( timers[i].data );
                     DELETE_ELEMENT_FROM_ARRAY( timers, n_timers, i, 1 );
+                    idle = FALSE;
                 }
                 else
                     ++i;
@@ -258,8 +263,10 @@ public  void  GS_event_loop( void )
 
             recompute_min_time();
         }
-        else if( qtest() )
+
+        if( qtest() )
         {
+            idle = FALSE;
             dev = qread( &val );
 
             switch( dev )
@@ -271,8 +278,8 @@ public  void  GS_event_loop( void )
                 }
                 else
                 {
-                    (*enter_callback) ( (Window_id) val );
                     event_window = (Window_id) val;
+                    (*enter_callback) ( (Window_id) val );
                 }
                 break;
 
@@ -311,13 +318,13 @@ public  void  GS_event_loop( void )
             case LEFTARROWKEY:
                 if( val )
                 {
-                    key_down_callback( event_window, LEFT_ARROW_KEY,
+                    (*key_down_callback)( event_window, LEFT_ARROW_KEY,
                                        current_mouse_x, 
                                        current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    key_up_callback( event_window, LEFT_ARROW_KEY,
+                    (*key_up_callback)( event_window, LEFT_ARROW_KEY,
                                      current_mouse_x, 
                                      current_mouse_y, current_modifier );
                 }
@@ -326,13 +333,13 @@ public  void  GS_event_loop( void )
             case RIGHTARROWKEY:
                 if( val )
                 {
-                    key_down_callback( event_window, RIGHT_ARROW_KEY,
+                    (*key_down_callback)( event_window, RIGHT_ARROW_KEY,
                                        current_mouse_x, 
                                        current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    key_up_callback( event_window, RIGHT_ARROW_KEY,
+                    (*key_up_callback)( event_window, RIGHT_ARROW_KEY,
                                      current_mouse_x, 
                                      current_mouse_y, current_modifier );
                 }
@@ -341,13 +348,13 @@ public  void  GS_event_loop( void )
             case DOWNARROWKEY:
                 if( val )
                 {
-                    key_down_callback( event_window, DOWN_ARROW_KEY,
+                    (*key_down_callback)( event_window, DOWN_ARROW_KEY,
                                        current_mouse_x, 
                                        current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    key_up_callback( event_window, DOWN_ARROW_KEY,
+                    (*key_up_callback)( event_window, DOWN_ARROW_KEY,
                                      current_mouse_x, 
                                      current_mouse_y, current_modifier );
                 }
@@ -356,13 +363,13 @@ public  void  GS_event_loop( void )
             case UPARROWKEY:
                 if( val )
                 {
-                    key_down_callback( event_window, UP_ARROW_KEY,
+                    (*key_down_callback)( event_window, UP_ARROW_KEY,
                                        current_mouse_x, 
                                        current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    key_up_callback( event_window, UP_ARROW_KEY,
+                    (*key_up_callback)( event_window, UP_ARROW_KEY,
                                      current_mouse_x, 
                                      current_mouse_y, current_modifier );
                 }
@@ -393,7 +400,7 @@ public  void  GS_event_loop( void )
                 break;
 
             case KEYBD:
-                key_down_callback( event_window, (int) val,
+                (*key_down_callback)( event_window, (int) val,
                                    current_mouse_x, 
                                    current_mouse_y, current_modifier );
                 break;
@@ -405,19 +412,19 @@ public  void  GS_event_loop( void )
                 else
                     current_mouse_y = (int) val;
 
-                mouse_motion_callback( event_window, current_mouse_x, 
+                (*mouse_motion_callback)( event_window, current_mouse_x, 
                                        current_mouse_y );
                 break;
 
             case LEFTMOUSE:
                 if( val )
                 {
-                    left_down_callback( event_window, current_mouse_x, 
+                    (*left_down_callback)( event_window, current_mouse_x, 
                                         current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    left_up_callback( event_window, current_mouse_x, 
+                    (*left_up_callback)( event_window, current_mouse_x, 
                                       current_mouse_y, current_modifier );
                 }
                 break;
@@ -425,12 +432,12 @@ public  void  GS_event_loop( void )
             case MIDDLEMOUSE:
                 if( val )
                 {
-                    middle_down_callback( event_window, current_mouse_x, 
+                    (*middle_down_callback)( event_window, current_mouse_x, 
                                           current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    middle_up_callback( event_window, current_mouse_x, 
+                    (*middle_up_callback)( event_window, current_mouse_x, 
                                         current_mouse_y, current_modifier );
                 }
                 break;
@@ -438,12 +445,12 @@ public  void  GS_event_loop( void )
             case RIGHTMOUSE:
                 if( val )
                 {
-                    right_down_callback( event_window, current_mouse_x, 
+                    (*right_down_callback)( event_window, current_mouse_x, 
                                          current_mouse_y, current_modifier );
                 }
                 else
                 {
-                    right_up_callback( event_window, current_mouse_x, 
+                    (*right_up_callback)( event_window, current_mouse_x, 
                                        current_mouse_y, current_modifier );
                 }
                 break;
@@ -456,16 +463,18 @@ public  void  GS_event_loop( void )
                 break;
             }
         }
-        else if( n_idles > 0 )
+
+        if( idle )
         {
-            for_less( i, 0, n_idles )
+            if( n_idles > 0 )
             {
-                (*idles[i].function) ( idles[i].data );
+                for_less( i, 0, n_idles )
+                    (*idles[i].function) ( idles[i].data );
             }
-        }
-        else
-        {
-            sleep_program( SLEEP_WHEN_IDLE_IN_EVENT_LOOP );
+            else
+            {
+                sleep_program( SLEEP_WHEN_IDLE_IN_EVENT_LOOP );
+            }
         }
     }   
 }
@@ -527,4 +536,31 @@ public  void  delete_window_events(
     }
 
     DELETE_ELEMENT_FROM_ARRAY( windows, n_windows, i, 1 );
+}
+
+/* ----------------------------- MNI Header -----------------------------------
+@NAME       : GS_set_mouse_position
+@INPUT      : x_screen
+              y_screen
+@OUTPUT     : 
+@RETURNS    : 
+@DESCRIPTION: Sets the mouse position relative to the full screen.
+@METHOD     : 
+@GLOBALS    : 
+@CALLS      : 
+@CREATED    : 1993            David MacDonald
+@MODIFIED   : 
+---------------------------------------------------------------------------- */
+
+public  void  GS_set_mouse_position(
+    int   x_screen,
+    int   y_screen )
+{
+    setvaluator( MOUSEX, (short) x_screen, 0, 10000 );
+    setvaluator( MOUSEY, (short) y_screen, 0, 10000 );
+}
+
+public  BOOLEAN  GS_are_mouse_coordinates_in_screen_space( void )
+{
+    return( TRUE );
 }

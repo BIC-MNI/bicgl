@@ -377,6 +377,7 @@ public  int  GS_get_n_colour_map_entries(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_set_colour_map_entry(
+    GSwindow        window,
     Bitplane_types  bitplanes,
     int             index,
     Colour          colour )

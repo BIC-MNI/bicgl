@@ -1,19 +1,19 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 public  void   GS_initialize_lights(
-    Gwindow  window )
+    GSwindow  window )
 {
     static   float    data[] = { (float) AMBIENT, 1.0f, 1.0f, 1.0f,
                                  (float) LOCALVIEWER, 0.0f,
                                  (float) TWOSIDE, 1.0f,
                                  (float) LMNULL };
 
-    lmdef( DEFLMODEL, (short) window->GS_window->unique_lmdef_id,
+    lmdef( DEFLMODEL, (short) window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(data), data );
 
-    lmbind( LMODEL, (short) window->GS_window->unique_lmdef_id );
+    lmbind( LMODEL, (short) window->unique_lmdef_id );
 
     lmbind( LIGHT0, 0 );
     lmbind( LIGHT1, 0 );
@@ -26,10 +26,9 @@ public  void   GS_initialize_lights(
 }
 
 public  void  GS_set_ambient_light(
-    Gwindow        window,
+    GSwindow       window,
     Colour         colour )
 {
-#ifndef  TWO_D_ONLY
     static   float    data[] = { (float) AMBIENT, 0.0f, 0.0f, 0.0f,
                                  (float) LMNULL };
 
@@ -37,13 +36,12 @@ public  void  GS_set_ambient_light(
     data[2] = (float) get_Colour_g_0_1(colour);
     data[3] = (float) get_Colour_b_0_1(colour);
 
-    lmdef( DEFLMODEL, (short) window->GS_window->unique_lmdef_id,
+    lmdef( DEFLMODEL, (short) window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(data), data );
-#endif
 }
 
 public  void  GS_define_light(
-    Gwindow         window,
+    GSwindow        window,
     int             light_index,
     Light_types     type,
     Colour          colour,
@@ -52,7 +50,6 @@ public  void  GS_define_light(
     Real            spot_exponent,
     Real            spot_angle )
 {
-#ifndef  TWO_D_ONLY
     Vector  unit_direction;
     int     n_data;
     float   data[25];
@@ -121,18 +118,16 @@ public  void  GS_define_light(
         break;
     }
 
-    lmdef( DEFLIGHT, (short) ((int) window->GS_window->unique_lmdef_id +
+    lmdef( DEFLIGHT, (short) ((int) window->unique_lmdef_id +
                               light_index),
            (short) n_data, data );
-#endif
 }
 
 public  void  GS_set_light_state(
-    Gwindow         window,
+    GSwindow        window,
     int             light_index,
     BOOLEAN         state )
 {
-#ifndef  TWO_D_ONLY
     short   gl_light_index;
 
     switch( light_index )
@@ -149,8 +144,7 @@ public  void  GS_set_light_state(
 
     if( state )
         lmbind( gl_light_index,
-                (short) ((int)window->GS_window->unique_lmdef_id+light_index) );
+                (short) ((int)window->unique_lmdef_id+light_index) );
     else
         lmbind( gl_light_index, 0 );
-#endif
 }

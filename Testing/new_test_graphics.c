@@ -30,6 +30,8 @@ typedef struct
     text_struct      font_examples[N_FONTS_TO_DRAW];
     polygons_struct  polygons;
     Transform        modeling_transform;
+    Real             last_message;
+    BOOLEAN          double_buffer_flag;
 
 }main_struct;
 
@@ -182,7 +184,15 @@ private  void  right_mouse_down(
 
     info = (main_struct *) update_data;
 
-    print( "RIGHT mouse down\n" );
+    info->double_buffer_flag = !info->double_buffer_flag;
+
+    if( info->double_buffer_flag )
+        print( "Double buffering: On\n" );
+    else
+        print( "Double buffering: Off\n" );
+
+    G_set_double_buffer_state( window, info->double_buffer_flag );
+    G_set_update_flag( window );
 }
 
 private  void  right_mouse_up(
@@ -247,6 +257,7 @@ private  void  key_down(
     int        key,
     void       *update_data )
 {
+    int           i;
     main_struct   *info;
 
     info = (main_struct *) update_data;
@@ -256,7 +267,26 @@ private  void  key_down(
     if( key == '' )
     {
         print( "Quitting\n" );
+
+        delete_lines( &info->lines );
+        delete_lines( &info->lines_2d );
+        delete_lines( &info->single_point );
+
+        delete_polygons( &info->polygons );
+
+        delete_pixels( &info->pixels );
+
+        delete_text( &info->text );
+
+        for_less( i, 0, N_FONTS )
+            delete_text( &info->font_examples[i] );
+
+        (void) G_delete_window( info->window );
+
         G_terminate();
+
+        output_alloc_to_file( NULL );
+
         exit( 0 );
     }
 }
@@ -328,6 +358,25 @@ private  void  timer_function(
     G_add_timer_function( TIMER_INCREMENT, timer_function, (void *) info );
 }
 
+private  void  idle_function(
+    void       *update_data )
+{
+    Real           current_time;
+    main_struct    *info;
+
+    info = (main_struct *) update_data;
+
+    current_time = current_realtime_seconds();
+
+    if( current_time >= info->last_message + 1.0 )
+    {
+        print( "Idling.\n" );
+        info->last_message = current_time + 1.0;
+    }
+
+    sleep_program( 0.001 );
+}
+
 int main(
     int    argc,
     char   *argv[] )
@@ -361,6 +410,7 @@ int main(
     static Vector     line_of_sight = { 0.0f, 0.0f, -1.0f };
 
     info.in_rotation_mode = FALSE;
+    info.double_buffer_flag = TRUE;
 
     stereo_flag = (argc > 1);
 
@@ -369,7 +419,8 @@ int main(
 
     status = G_create_window( "Test Window",
                               100, 600, 300, 300,
-                              FALSE, TRUE, FALSE, 0, &info.window );
+                              FALSE, info.double_buffer_flag, TRUE, 0,
+                              &info.window );
 
     G_set_transparency_state( info.window, ON );
 
@@ -581,30 +632,10 @@ int main(
 
     G_add_timer_function( TIMER_INCREMENT, timer_function, (void *) &info );
 
+    info.last_message = current_realtime_seconds();
+    G_add_idle_function( idle_function, (void *) &info );
+
     G_main_loop();
-
-    /* delete drawing objects and window (text does not need to be deleted */
-
-/*
-    delete_lines( &info.lines );
-    delete_lines( &info.lines_2d );
-    delete_lines( &info.single_point );
-
-    delete_polygons( &info.polygons );
-
-    delete_pixels( &info.pixels );
-
-    delete_text( &info.text );
-
-    for_less( i, 0, N_FONTS )
-        delete_text( &info.font_examples[i] );
-
-    (void) G_delete_window( info.window );
-
-    G_terminate();
-
-    output_alloc_to_file( NULL );
-*/
 
     return( 0 );
 }

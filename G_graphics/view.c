@@ -4,7 +4,6 @@
 
 #define  CLOSEST_FRONT_PLANE    1.0e-5
 
-private  void  update_transforms( Gwindow );
 private  void  set_view_type(
     Gwindow         window,
     View_types      view_type );
@@ -347,7 +346,7 @@ public  void  G_transform_point(
     *y_pixel = (int) (((Real) y + 1.0) / 2.0 * (Real) window->y_size);
 }
 
-private  void  update_transforms(
+public  void  update_transforms(
     Gwindow         window )
 {
     set_current_window( window );

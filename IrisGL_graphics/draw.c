@@ -1,6 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 public  void  GS_set_point(
     Point  *point )
@@ -35,7 +35,6 @@ public  void  GS_set_ambient_and_diffuse_mode(
         lmcolor( LMC_COLOR );
 }
 
-#ifndef  TWO_D_ONLY
 private  long  get_unique_lmdef_id( void )
 {
     static  long   unique_lmdef_id = 1;
@@ -46,25 +45,21 @@ private  long  get_unique_lmdef_id( void )
 
     return( unique_lmdef_id );
 }
-#endif
 
 public  void  GS_initialize_surface_property(
-    Gwindow        window )
+    GSwindow        window )
 {
-#ifndef  TWO_D_ONLY
     static  Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
-    window->GS_window->unique_lmdef_id = get_unique_lmdef_id();
+    window->unique_lmdef_id = get_unique_lmdef_id();
     GS_set_surface_property( window, WHITE, &spr );
-#endif
 }
 
 public  void  GS_set_surface_property(
-    Gwindow        window,
+    GSwindow       window,
     Colour         col,
     Surfprop       *surfprop )
 {
-#ifndef  TWO_D_ONLY
     static  float  props[] = { (float) AMBIENT, 0.0f, 0.0f, 0.0f,
                                (float) DIFFUSE, 0.0f, 0.0f, 0.0f,
                                (float) SPECULAR, 0.0f, 0.0f, 0.0f,
@@ -88,9 +83,8 @@ public  void  GS_set_surface_property(
 
     props[15] = Surfprop_t( *surfprop );
 
-    lmdef( DEFMATERIAL, (short) window->GS_window->unique_lmdef_id,
+    lmdef( DEFMATERIAL, (short) window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(props), props );
-#endif
 }
 
 public  void  GS_set_line_width(
@@ -170,13 +164,14 @@ public  void  GS_set_pixel_zoom(
 }
 
 public  void  GS_draw_colour_map_pixels(
-    Gwindow         window,
+    int             x_viewport_min,
+    int             y_viewport_min,
     pixels_struct   *pixels )
 {
     int   x, y, x_size, y_size;
 
-    x = pixels->x_position + window->x_viewport_min;
-    y = pixels->y_position + window->y_viewport_min;
+    x = pixels->x_position + x_viewport_min;
+    y = pixels->y_position + y_viewport_min;
     x_size = pixels->x_size;
     y_size = pixels->y_size;
 
@@ -204,13 +199,14 @@ public  void  GS_draw_colour_map_pixels(
 }
 
 public  void  GS_draw_rgb_pixels(
-    Gwindow         window,
+    int             x_viewport_min,
+    int             y_viewport_min,
     pixels_struct   *pixels )
 {
     int   x, y, x_size, y_size;
 
-    x = pixels->x_position + window->x_viewport_min;
-    y = pixels->y_position + window->y_viewport_min;
+    x = pixels->x_position + x_viewport_min;
+    y = pixels->y_position + y_viewport_min;
     x_size = pixels->x_size;
     y_size = pixels->y_size;
 
@@ -223,75 +219,58 @@ public  void  GS_draw_rgb_pixels(
 /* ARGSUSED */
 
 public  void  GS_read_pixels(
-    Gwindow         window,
+    BOOLEAN         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,
     int             y_max,
     Colour          pixels[] )
 {
-#ifdef  TWO_D_ONLY
-    int   i, n_pixels;
-
-    n_pixels = (x_max - x_min + 1) * (y_max - y_min + 1);
-
-    for_less( i, 0, n_pixels )
-        pixels[i] = BLACK;
-#else
     int   i, n_pixels;
 
     readsource( SRC_FRONT );
 
-    (void) lrectread( (Screencoord) x_min, (Screencoord) y_min,
-                      (Screencoord) x_max, (Screencoord) y_max, pixels );
+    if( colour_map_state )
+    {
+        (void) rectread( (Screencoord) x_min, (Screencoord) y_min,
+                         (Screencoord) x_max, (Screencoord) y_max,
+                         (Colorindex *) pixels );
+    }
+    else
+    {
+        (void) lrectread( (Screencoord) x_min, (Screencoord) y_min,
+                          (Screencoord) x_max, (Screencoord) y_max, pixels );
 
-    n_pixels = (x_max - x_min + 1) * (y_max - y_min + 1);
-    for_less( i, 0, n_pixels )
-        pixels[i] |= BLACK;
-#endif
+        n_pixels = (x_max - x_min + 1) * (y_max - y_min + 1);
+        for_less( i, 0, n_pixels )
+            pixels[i] |= BLACK;
+    }
 }
 
 private  const  STRING  font_name = "Helvetica";
 
-private  fmfonthandle   base_font_handle;
+private  fmfonthandle   base_font_handle = 0;
+
+private  struct
+{
+    Real           size;
+    fmfonthandle   font;
+}
+*fonts = NULL;
+
+private  int  n_fonts = 0;
+private  int  current_font_index = 0;
 
 private  BOOLEAN  fonts_present( void )
 {
     return( base_font_handle != (fmfonthandle) 0 );
 }
 
-/* ARGSUSED */
-
-public  void  WS_build_font_in_window(
-    WS_window_struct     *window,
-    int                  font_index,
-    WS_font_info         *font_info )
-{
-}
-
-/* ARGSUSED */
-
-public  void  WS_delete_font_in_window(
-    WS_window_struct     *window,
-    int                  font_index,
-    WS_font_info         *font_info )
-{
-}
-
-/* ARGSUSED */
-
-public  void  WS_delete_font(
-    WS_font_info  *info )
-{
-}
-
-public  BOOLEAN  WS_get_font(
-    Font_types    type,
-    Real          size,
-    WS_font_info  *info )
+private  fmfonthandle  lookup_font(
+    Font_types    font_type,
+    Real          size )
 {
     static  BOOLEAN  first = TRUE;
-    BOOLEAN          found;
 
     if( first )
     {
@@ -301,72 +280,77 @@ public  BOOLEAN  WS_get_font(
         base_font_handle = fmfindfont( font_name );
     }
 
-    info->type = type;
-    info->size = size;
+    if( font_type == FIXED_FONT || !fonts_present() )
+        return( (fmfonthandle) 0 );
 
-    if( type == FIXED_FONT )
+    if( current_font_index <= 0 || current_font_index >= n_fonts ||
+        fonts[current_font_index].size != size )
     {
-        found = TRUE;
-    }
-    else if( fonts_present() )
-    {
-        info->font_handle = fmscalefont( base_font_handle, size );
-        found = TRUE;
-    }
-    else
-    {
-        found = FALSE;
+        for_less( current_font_index, 0, n_fonts )
+        {
+            if( fonts[current_font_index].size == size )
+                break;
+        }
     }
 
-    return( found );
+    if( current_font_index >= n_fonts )
+    {
+        SET_ARRAY_SIZE( fonts, n_fonts, n_fonts+1, 1 );
+        fonts[current_font_index].size = size;
+        fonts[current_font_index].font = fmscalefont( base_font_handle, size );
+    }
+
+    return( fonts[current_font_index].font );
 }
 
-public  Real  WS_get_text_length(
-    WS_font_info    *font_info,
-    STRING          str )
+public  Real  GS_get_text_length(
+    STRING          str,
+    Font_types      font_type,
+    Real            font_size )
 {
-    Real   width;
+    fmfonthandle   font;
+    Real           width;
 
-    if( font_info->type == SIZED_FONT )
-        width = (Real) fmgetstrwidth( font_info->font_handle, str );
+    font = lookup_font( font_type, font_size );
+
+    if( font != 0 )
+        width = (Real) fmgetstrwidth( font, str );
     else
         width = (Real) strwidth( str );
 
     return( width );
 }
 
-public  Real  WS_get_character_height(
-    WS_font_info    *font_info )
+public  Real  GS_get_character_height(
+    Font_types      font_type,
+    Real            font_size )
 {
-    Real   height;
+    fmfonthandle   font;
+    Real           height;
 
-    if( font_info->type == SIZED_FONT )
-        height = font_info->size;
+    font = lookup_font( font_type, font_size );
+
+    if( font != 0 )
+        height = font_size;
     else
         height = 18.0;
 
     return( height );
 }
 
-/* ARGSUSED */
-
-public  BOOLEAN  GS_set_font(
-    Gwindow            window,
-    int                font_index,
-    WS_font_info       *font )
-{
-    if( font->type != FIXED_FONT )
-        fmsetfont( font->font_handle );
-
-    return( TRUE );
-}
-
 public  void   GS_draw_text(
-    Font_types   type,
+    Font_types   font_type,
+    Real         font_size,
     STRING       string )
 {
-    if( type == SIZED_FONT )
+    fmfonthandle   font;
+
+    if( font_type == SIZED_FONT )
+    {
+        font = lookup_font( font_type, font_size );
+        fmsetfont( font );
         fmprstr( string );
+    }
     else
         charstr( string );
 }

@@ -34,8 +34,7 @@ public  void  initialize_display_interrupts(
     window->continuation_flag = FALSE;
     window->interrupt_occurred = FALSE;
     window->interrupt_interval = 100;
-    window->interrupt_time_interval = 1.0;
-    window->interrupt_event_time_interval = 0.3;
+    window->interrupt_time_interval = 0.3;
 }
 
 public  void  G_set_drawing_interrupt_state(
@@ -72,13 +71,6 @@ public  void  G_set_interrupt_time(
     window->interrupt_time_interval = interval;
 }
 
-public  void  G_set_interrupt_event_time(
-    Gwindow          window,
-    Real             interval )
-{
-    window->interrupt_event_time_interval = interval;
-}
-
 public  void  G_start_interrupt_test(
     Gwindow          window )
 {
@@ -86,8 +78,6 @@ public  void  G_start_interrupt_test(
 
     current_time = current_realtime_seconds();
     window->interrupt_time = current_time + window->interrupt_time_interval;
-    window->interrupt_event_time = current_time +
-                                   window->interrupt_event_time_interval;
 }
 
 public  BOOLEAN  G_get_interrupt_occurred(
@@ -120,7 +110,7 @@ public  void  set_continuation_flag(
     int                         _check_every, _n_objects_to_do; \
     BOOLEAN                     _random_order, _interrupt_allowed; \
     Random_mask_type            _random_order_mask; \
-    Real                        interrupt_at, check_events_at, current_time; \
+    Real                        interrupt_at, current_time; \
     int                         _n_objects, _first_object, _second_object; \
     BOOLEAN                     _wireframe_flag; \
     static   BOOLEAN            const_true = TRUE; \
@@ -131,7 +121,6 @@ public  void  set_continuation_flag(
     (window)->interrupt_occurred = FALSE; \
 \
     interrupt_at = (window)->interrupt_time; \
-    check_events_at = (window)->interrupt_event_time; \
     _interrupt_allowed = (G_get_drawing_interrupt_state( window ) && \
                          (_n_objects) > (window)->interrupt_size ); \
  \
@@ -215,8 +204,7 @@ public  void  set_continuation_flag(
                 if( _n_before_check == 0 ) \
                 { \
                     current_time = current_realtime_seconds(); \
-                    if( current_time >= check_events_at || \
-                        current_time > interrupt_at ) \
+                    if( current_time >= interrupt_at ) \
                     { \
                         _n_objects_to_do = _i+1; \
                         (window)->n_items_done = _n_objects_to_do; \
@@ -285,7 +273,7 @@ public  void  initialize_surface_property(
     Colour                 col;
     static  Surfprop       surfprop = { 1.0f, 1.0f, 1.0f, 40.0f, 1.0f };
 
-    col = WHITE;
+    col = make_Colour( 255, 255, 255 );
 
     GS_initialize_surface_property( window->GS_window );
     set_surface_property( window, col, &surfprop );
@@ -917,8 +905,7 @@ public  void  G_draw_text(
                                 (Real) Point_y(text->origin),
                                 (Real) Point_z(text->origin) );
 
-        GS_draw_text( window->GS_window, text->font, text->size,
-                      text->string );
+        GS_draw_text( text->font, text->size, text->string );
 
     END_DRAW_OBJECTS
 }
@@ -994,7 +981,7 @@ public  void  G_draw_marker(
                                     (Real) Point_y(marker->position),
                                     (Real) Point_z(marker->position) );
 
-            GS_draw_text( window->GS_window, FIXED_FONT, 10.0, marker->label );
+            GS_draw_text( FIXED_FONT, 10.0, marker->label );
         }
 
     END_DRAW_OBJECTS
@@ -1131,7 +1118,8 @@ public  void  G_draw_pixels(
             return;
         }
 
-        GS_draw_colour_map_pixels( window->GS_window, pixels );
+        GS_draw_colour_map_pixels( window->x_viewport_min,
+                                   window->y_viewport_min, pixels );
     }
     else
     {
@@ -1142,7 +1130,8 @@ public  void  G_draw_pixels(
             return;
         }
 
-        GS_draw_rgb_pixels( window->GS_window, pixels );
+        GS_draw_rgb_pixels( window->x_viewport_min,
+                            window->y_viewport_min, pixels );
     }
 }
 
@@ -1173,6 +1162,6 @@ public  void  G_read_pixels(
 {
     set_current_window( window );
 
-    GS_read_pixels( window->GS_window, G_get_colour_map_state(window),
+    GS_read_pixels( G_get_colour_map_state(window),
                     x_min, x_max, y_min, y_max, pixels );
 }

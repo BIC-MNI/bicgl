@@ -36,7 +36,7 @@ private  void  initialize_viewport(
 {
     Bitplane_types   bitplane;
 
-    viewport->background_colour = BLACK;
+    viewport->background_colour = make_Colour( 0, 0, 0 );
     viewport->background_colour_index = 0;
 
     for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
