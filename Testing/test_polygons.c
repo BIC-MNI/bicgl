@@ -80,7 +80,7 @@ private  void  display_polygons( polygons_struct *polygons )
     (void) G_create_window( "Polygons", -1, -1, -1, -1, &window );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
-                   0.01, 6.0, ON, 2.0, 2.0, 2.0 );
+                   0.01, 6.0, ON, 2.0, FALSE, 0.0, 2.0, 2.0 );
 
     G_set_background_colour( window, PINK );
 

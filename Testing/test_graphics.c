@@ -45,7 +45,7 @@ int main(
     status = G_create_window( "Test Window", -1, -1, -1, -1, &window );
 
     if( stereo_flag )
-        G_set_background_colour( window, BLACK );
+        G_set_background_colour( window, WHITE );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
                    0.01, 4.0, ON, 2.0, stereo_flag, eye_separation, 2.0, 2.0 );
