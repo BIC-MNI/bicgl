@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 #include  <queue.h>
 #include  <gl/device.h>
 
@@ -161,7 +161,7 @@ public  BOOLEAN  GS_get_event(
             if( *window != (Gwindow) NULL )
             {
                 clear_overlay_planes();
-                getsize( &x_pos, &y_pos );
+                getorigin( &x_pos, &y_pos );
                 (*window)->x_origin = x_pos;
                 (*window)->y_origin = y_pos;
 
