@@ -74,7 +74,7 @@ typedef  struct   window_struct
 
     Real                   min_update_time;
 
-    void    (*update_callback) ( struct window_struct *, void * );
+    void    (*update_callback) ( struct window_struct *, BOOLEAN, void * );
     void    *update_data;
 
     void    (*update_overlay_callback) ( struct window_struct *, void * );

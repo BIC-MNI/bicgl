@@ -255,6 +255,8 @@ public  Status  G_delete_window(
         G_clear_window( window );
     }
 
+    terminate_callbacks_for_window( window );
+
     status = GS_delete_window( window->GS_window );
 
     FREE( window->GS_window );
@@ -835,4 +837,32 @@ public  void  G_set_transparency_state(
         window->transparency_state = state;
         update_blend_function( window, window->current_bitplanes );
     }
+}
+
+public  void  G_raise_window(
+    Gwindow        window )
+{
+    set_current_window( window );
+    GS_raise_window( window->GS_window );
+}
+
+public  void  G_lower_window(
+    Gwindow        window )
+{
+    set_current_window( window );
+    GS_lower_window( window->GS_window );
+}
+
+public  void  G_iconify_window(
+    Gwindow        window )
+{
+    set_current_window( window );
+    GS_iconify_window( window->GS_window );
+}
+
+public  void  G_deiconify_window(
+    Gwindow        window )
+{
+    set_current_window( window );
+    GS_deiconify_window( window->GS_window );
 }
