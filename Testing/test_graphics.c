@@ -158,10 +158,15 @@ private  void  middle_mouse_down(
     void       *update_data )
 {
     main_struct   *info;
+    Gwindow       second;
 
     info = (main_struct *) update_data;
 
     print( "MIDDLE mouse down\n" );
+
+    (void) G_create_window( "Second Window",
+                            500, 600, 200, 200,
+                            TRUE, TRUE, TRUE, 0, &second );
 }
 
 private  void  middle_mouse_up(
@@ -444,6 +449,7 @@ int main(
     G_set_transparency_state( info.window, ON );
 
     G_set_window_update_min_interval( info.window, 1.0 / 30.0 );
+    G_set_window_update_min_interval( info.window, 1.0 / 100.0 );
 
     if( status != OK )
         return( 1 );
@@ -655,7 +661,9 @@ int main(
     G_add_timer_function( TIMER_INCREMENT, timer_function, (void *) &info );
 
     info.last_message = current_realtime_seconds();
+/*
     G_add_idle_function( idle_function, (void *) &info );
+*/
 
     G_main_loop();
 
