@@ -1,10 +1,12 @@
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <graphics.h>
 
 /*--------------- maintaining list of known windows ------------------------ */
 
 private  Gwindow        *windows = NULL;
 private  int            n_windows = 0;
+private  Gwindow        current_window = NULL;
+
 
 private  Gwindow  create_window_struct( void )
 {
@@ -59,14 +61,12 @@ private  void  delete_window_struct( Gwindow   window )
     FREE( window );
 }
 
-static  Gwindow   current_window = NULL;
-
 public  void  set_current_window( Gwindow   window )
 {
     if( window != current_window )
     {
-        if( window != (Gwindow) 0 )
-            WS_set_current_window( window->WS_window,
+        if( window != (Gwindow) NULL )
+            GS_set_current_window( window->GS_window,
                                    window->current_bitplanes );
         current_window = window;
     }
@@ -87,6 +87,7 @@ private  void  check_graphics_initialized( void )
     {
         first = FALSE;
         GS_initialize();
+        (void) make_rgba_Colour( 0, 0, 0, 0 );
     }
 }
 
@@ -105,9 +106,9 @@ private  void  initialize_window(
     print_info();
 #endif
 
-    WS_get_window_size( window->WS_window, &window->x_size, &window->y_size );
-    WS_get_window_position( window->WS_window, &window->x_origin,
-                                               &window->y_origin );
+    GS_get_window_size( window->GS_window, &window->x_size, &window->y_size );
+    GS_get_window_position( window->GS_window, &window->x_origin,
+                                                &window->y_origin );
 
     G_set_automatic_clear_state( window, TRUE );
 
@@ -119,7 +120,6 @@ private  void  initialize_window(
 
     GS_set_matrix_mode( VIEWING_MATRIX );
 
-#ifndef  TWO_D_ONLY
     G_set_shaded_state( window, ON );
     G_set_shading_type( window, GOURAUD_SHADING );
     G_set_lighting_state( window, OFF );
@@ -134,28 +134,13 @@ private  void  initialize_window(
     if( window->zbuffer_state )
         GS_set_depth_buffer_state( window->zbuffer_state );
 
-    GS_initialize_surface_property( window );
+    GS_initialize_surface_property( window->GS_window );
 
     initialize_graphics_lights( window );
 
     initialize_display_interrupts( window );
-#endif
 
     initialize_window_view( window );
-
-    add_fonts_for_window( window );
-
-    G_clear_window( window );
-    G_update_window( window );
-
-    G_clear_window( window );
-    G_update_window( window );
-}
-
-public  long  G_get_window_id(
-    Gwindow   window )
-{
-    return( (long) GS_get_window_id( window ) );
 }
 
 public  Status  G_create_window(
@@ -181,9 +166,9 @@ public  Status  G_create_window(
     *window = create_window_struct();
 
     ALLOC( (*window)->GS_window, 1 );
-    ALLOC( (*window)->WS_window, 1 );
 
-    status = GS_create_window( *window, title, x_pos, y_pos, width, height,
+    status = GS_create_window( (*window)->GS_window,
+                               title, x_pos, y_pos, width, height,
                                colour_map_desired,
                                double_buffer_desired,
                                depth_buffer_desired,
@@ -203,11 +188,9 @@ public  Status  G_create_window(
         (*window)->double_buffer_state = actual_double_buffer_flag;
 
         (*window)->colour_map_state = actual_colour_map_flag;
-#ifndef  TWO_D_ONLY
         (*window)->n_overlay_planes = actual_n_overlay_planes;
         (*window)->zbuffer_state = actual_depth_buffer_flag;
         (*window)->zbuffer_available = actual_depth_buffer_flag;
-#endif
 
         initialize_window( *window );
     }
@@ -222,14 +205,11 @@ public  Status  G_delete_window(
 
     set_current_window( window );
 
-    delete_fonts_for_window( window );
-
-    status = GS_delete_window( window );
-
-    set_current_window( (Gwindow) 0 );
+    status = GS_delete_window( window->GS_window );
 
     FREE( window->GS_window );
-    FREE( window->WS_window );
+
+    set_current_window( (Gwindow) NULL );
 
     delete_window_struct( window );
 
@@ -242,14 +222,11 @@ public  void  G_set_window_title(
 {
     set_current_window( window );
 
-    GS_set_window_title( window, title );
+    GS_set_window_title( window->GS_window, title );
 }
 
 public  void  G_terminate( void )
 {
-    delete_event_queue();
-    delete_fonts();
-
     while( n_windows > 0 )
     {
         (void) G_delete_window( windows[0] );
@@ -296,6 +273,8 @@ public  void  G_set_double_buffer_state(
     Gwindow        window,
     BOOLEAN        flag )
 {
+    Bitplane_types  save_bitplane;
+
     if( flag && (!G_can_switch_double_buffering() ||
                  !window->double_buffer_available) )
         flag = FALSE;
@@ -304,11 +283,13 @@ public  void  G_set_double_buffer_state(
     {
         set_current_window( window );
 
-        set_bitplanes( window, NORMAL_PLANES );
+        save_bitplane = G_get_bitplanes( window );
+
+        G_set_bitplanes( window, NORMAL_PLANES );
 
         window->double_buffer_state = GS_set_double_buffer_state( flag );
 
-        restore_bitplanes( window );
+        restore_bitplanes( window, save_bitplane );
     }
 }
 
@@ -331,7 +312,6 @@ public  void  G_set_zbuffer_state(
     Gwindow         window,
     BOOLEAN         flag )
 {
-#ifndef  TWO_D_ONLY
     if( flag && (!G_is_depth_buffer_supported() || !window->zbuffer_available) )
         flag = FALSE;
 
@@ -343,17 +323,12 @@ public  void  G_set_zbuffer_state(
 
         window->zbuffer_state = flag;
     }
-#endif
 }
 
 public  BOOLEAN  G_get_zbuffer_state(
     Gwindow         window )
 {
-#ifndef  TWO_D_ONLY
     return( window->zbuffer_state );
-#else
-    return( FALSE );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -393,15 +368,19 @@ public  void  G_set_colour_map_state(
     Gwindow        window,
     BOOLEAN        flag )
 {
+    Bitplane_types  save_bitplane;
+
     if( G_can_switch_colour_map_mode() && flag != window->colour_map_state )
     {
         set_current_window( window );
 
-        set_bitplanes( window, NORMAL_PLANES );
+        save_bitplane = G_get_bitplanes( window );
+
+        G_set_bitplanes( window, NORMAL_PLANES );
 
         GS_set_colour_map_state( flag );
 
-        restore_bitplanes( window );
+        restore_bitplanes( window, save_bitplane );
 
         window->colour_map_state = flag;
     }
@@ -412,7 +391,7 @@ public  int  G_get_n_colour_map_entries(
 {
     set_current_window( window );
 
-    return( GS_get_n_colour_map_entries( window ) );
+    return( GS_get_n_colour_map_entries( window->GS_window ) );
 }
 
 public  void  G_set_colour_map_entry(
@@ -420,27 +399,30 @@ public  void  G_set_colour_map_entry(
     int             ind,
     Colour          colour )
 {
+    Bitplane_types  save_bitplane;
+
     set_current_window( window );
 
-    if( window->current_bitplanes != NORMAL_PLANES )
-        set_bitplanes( window, NORMAL_PLANES );
+    save_bitplane = G_get_bitplanes( window );
 
-    GS_set_colour_map_entry( window, ind, colour );
+    if( save_bitplane != NORMAL_PLANES )
+        G_set_bitplanes( window, NORMAL_PLANES );
 
-    if( window->current_bitplanes != NORMAL_PLANES )
-        restore_bitplanes( window );
+    GS_set_colour_map_entry( window->GS_window, ind, colour );
+
+    if( save_bitplane != NORMAL_PLANES )
+        restore_bitplanes( window, save_bitplane );
 }
 
 public  void  restore_bitplanes(
-    Gwindow    window )
+    Gwindow         window,
+    Bitplane_types  bitplane )
 {
-#ifndef  TWO_D_ONLY
     if( window == (Gwindow) NULL )
         window = current_window;
 
     if( window != (Gwindow) NULL )
-        set_bitplanes( window, window->current_bitplanes );
-#endif
+        G_set_bitplanes( window, bitplane );
 }
 
 public  int  G_get_monitor_width( void )
@@ -588,7 +570,10 @@ public  void  G_clear_window(
     else
         colour = window->background_colour;
 
-    GS_clear_window( window, colour );
+    GS_clear_window( window->GS_window,
+                     window->current_bitplanes,
+                     G_get_colour_map_state(window),
+                     G_get_zbuffer_state(window), colour );
 
     window->bitplanes_cleared[window->current_bitplanes] = TRUE;
 }
@@ -599,7 +584,16 @@ public  void  G_clear_viewport(
 {
     set_current_window( window );
 
-    GS_clear_viewport( window, colour );
+    GS_clear_viewport( window->GS_window,
+                       window->x_viewport_min,
+                       window->x_viewport_max,
+                       window->y_viewport_min,
+                       window->y_viewport_max,
+                       window->x_size,
+                       window->y_size,
+                       window->current_bitplanes,
+                       G_get_colour_map_state(window),
+                       G_get_zbuffer_state(window), colour );
 }
 
 public  void  G_set_automatic_clear_state(
@@ -632,15 +626,13 @@ public  void  G_update_window( Gwindow   window )
     if( window->current_bitplanes == NORMAL_PLANES )
     {
         if( window->double_buffer_state )
-            WS_swap_buffers( window->WS_window );
+            GS_swap_buffers( window->GS_window );
         GS_flush();
     }
-#ifndef  TWO_D_ONLY
     else
         GS_flush();
 
     set_continuation_flag( window, FALSE );
-#endif
 
     window->bitplanes_cleared[window->current_bitplanes] = FALSE;
 }
@@ -659,11 +651,19 @@ public  void  check_window_cleared(
 
 public  BOOLEAN  G_has_overlay_planes( void )
 {
-#ifdef  TWO_D_ONLY
-    return( FALSE );
-#else
     return( G_get_n_overlay_planes() > 0 );
-#endif
+}
+
+private  void  update_blend_function(
+    Gwindow         window,
+    Bitplane_types  bitplane )
+{
+    set_current_window( window );
+
+    if( bitplane == OVERLAY_PLANES || !window->transparency_state )
+        GS_turn_off_blend_function();
+    else
+        GS_turn_on_blend_function();
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -684,11 +684,19 @@ public  void  G_set_bitplanes(
     Gwindow          window,
     Bitplane_types   bitplanes )
 {
-    if( window->current_bitplanes != bitplanes )
+    if( window->current_bitplanes != bitplanes &&
+        window->n_overlay_planes > 0 )
     {
-        set_bitplanes( window, bitplanes );
+        GS_set_bitplanes( window->GS_window, bitplanes );
         window->current_bitplanes = bitplanes;
+        update_blend_function( window, bitplanes );
     }
+}
+
+public  Bitplane_types  G_get_bitplanes(
+    Gwindow          window )
+{
+    return( window->current_bitplanes );
 }
 
 public  BOOLEAN  G_can_switch_double_buffering( void )
@@ -721,16 +729,19 @@ public  void  G_set_overlay_colour_map(
     int             ind,
     Colour          colour )
 {
-    set_current_window( window );
-
-    GS_set_overlay_colour_map( window, ind, colour );
+    if( window->n_overlay_planes > 0 )
+    {
+        set_current_window( window );
+        GS_set_overlay_colour_map( window->GS_window, ind, colour );
+    }
 }
 
 public  void  G_append_to_last_update(
      Gwindow   window )
 {
     set_current_window( window );
-    GS_append_to_last_update( window );
+    GS_append_to_last_update( window->GS_window,
+                              window->x_size, window->y_size );
     set_continuation_flag( window, TRUE );
     window->bitplanes_cleared[NORMAL_PLANES] = TRUE;
 }
@@ -740,4 +751,15 @@ public  void  G_continue_last_update(
 {
     set_current_window( window );
     set_continuation_flag( window, TRUE );
+}
+
+public  void  G_set_transparency_state(
+    Gwindow        window,
+    BOOLEAN        state )
+{
+    if( state != window->transparency_state )
+    {
+        window->transparency_state = state;
+        update_blend_function( window, window->current_bitplanes );
+    }
 }

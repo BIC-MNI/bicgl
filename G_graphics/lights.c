@@ -1,13 +1,13 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <graphics.h>
 
 public  void   initialize_graphics_lights(
     Gwindow  window )
 {
     set_current_window( window );
 
-    GS_initialize_lights( window );
+    GS_initialize_lights( window->GS_window );
 }
 
 public  void  G_set_ambient_light(
@@ -16,7 +16,7 @@ public  void  G_set_ambient_light(
 {
     set_current_window( window );
 
-    GS_set_ambient_light( window, colour );
+    GS_set_ambient_light( window->GS_window, colour );
 }
 
 public  void  G_define_light(
@@ -31,8 +31,8 @@ public  void  G_define_light(
 {
     set_current_window( window );
 
-    GS_define_light( window, light_index, type, colour, direction, position,
-                     spot_exponent, spot_angle );
+    GS_define_light( window->GS_window, light_index, type, colour,
+                     direction, position, spot_exponent, spot_angle );
 }
 
 public  void  G_set_light_state(
@@ -45,5 +45,5 @@ public  void  G_set_light_state(
     if( state )
         G_set_view_type( window, WORLD_VIEW );
 
-    GS_set_light_state( window, light_index, state );
+    GS_set_light_state( window->GS_window, light_index, state );
 }

@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <graphics.h>
 
 #define  CLOSEST_FRONT_PLANE    1.0e-5
 
@@ -26,7 +26,6 @@ public  void  initialize_window_view(
     Gwindow   window )
 {
     Transform      identity;
-#ifndef  TWO_D_ONLY
     static  Point  default_origin = { 0.0f, 0.0f, 1.0f };
     static  Vector default_line_of_sight = { 0.0f, 0.0f, -1.0f };
     static  Vector default_up_direction = { 0.0f, 1.0f, 0.0f };
@@ -38,13 +37,10 @@ public  void  initialize_window_view(
     Real           default_eye_separation = 0.1;
     Real           default_window_width = 1.0;
     Real           default_window_height = 1.0;
-#endif
 
     make_identity_transform( &identity );
 
-#ifndef  TWO_D_ONLY
     window->modeling_transform = identity;
-#endif
 
     GS_set_matrix_mode( PROJECTION_MATRIX );
     GS_load_transform( &identity );
@@ -58,16 +54,14 @@ public  void  initialize_window_view(
 
     set_view_type( window, SCREEN_VIEW );
 
-    GS_initialize_window_view( window );
+    GS_initialize_window_view( window->GS_window );
 
-#ifndef  TWO_D_ONLY
     G_set_3D_view( window, &default_origin, &default_line_of_sight,
                    &default_up_direction,
                    default_front_clip_distance, default_back_clip_distance,
                    default_perspective_flag, default_perspective_distance,
                    default_stereo_flag, default_eye_separation,
                    default_window_width, default_window_height );
-#endif
 
     window_was_resized( window );
 }
@@ -107,7 +101,6 @@ public  void  set_view_for_eye(
     Gwindow         window,
     int             which_eye )
 {
-#ifndef  TWO_D_ONLY
     if( view_is_stereo(window) )
     {
         GS_set_matrix_mode( PROJECTION_MATRIX );
@@ -133,7 +126,6 @@ public  void  set_view_for_eye(
 
         GS_set_matrix_mode( VIEWING_MATRIX );
     }
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -171,7 +163,6 @@ private  void  define_3D_projection(
     Real           window_width,
     Real           window_height )
 {
-#ifndef  TWO_D_ONLY
     Real        real_aspect, virtual_aspect, scaling;
     Transform   translate1, translate2, right_transform;
     Transform   left_transform;
@@ -257,7 +248,6 @@ private  void  define_3D_projection(
     GS_set_matrix_mode( VIEWING_MATRIX );
 
     set_view_type( window, window->current_view_type );  /* restore view type */
-#endif
 }
 
 public  void  G_set_3D_view(
@@ -274,7 +264,6 @@ public  void  G_set_3D_view(
     Real           window_width,
     Real           window_height )
 {
-#ifndef  TWO_D_ONLY
     Vector      x_axis, y_axis, z_axis;
     Transform   view_matrix;
 
@@ -311,17 +300,14 @@ public  void  G_set_3D_view(
     window->viewing_matrices[WORLD_VIEW] = view_matrix;
 
     update_transforms( window );
-#endif
 }
 
 public  void  G_set_modeling_transform(
     Gwindow         window,
     Transform       *transform )
 {
-#ifndef  TWO_D_ONLY
     window->modeling_transform = *transform;
     update_transforms( window );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -364,7 +350,6 @@ public  void  G_transform_point(
 private  void  update_transforms(
     Gwindow         window )
 {
-#ifndef  TWO_D_ONLY
     set_current_window( window );
 
     concat_transforms( &window->viewing_matrices[MODEL_VIEW],
@@ -372,7 +357,6 @@ private  void  update_transforms(
                        &window->viewing_matrices[WORLD_VIEW] );
 
     set_view_type( window, window->current_view_type );  /* restore view type */
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -408,38 +392,30 @@ private  void  define_pixel_view(
 
 private  void  push_local_transform( Transform   *transform )
 {
-#ifndef  TWO_D_ONLY
     GS_push_transform();
     GS_mult_transform( transform );
-#endif
 }
 
 private  void  pop_local_transform( void )
 {
-#ifndef  TWO_D_ONLY
     GS_pop_transform();
-#endif
 }
 
 public  void  G_push_transform(
     Gwindow      window,
     Transform    *transform )
 {
-#ifndef  TWO_D_ONLY
     set_current_window( window );
 
     push_local_transform( transform );
-#endif
 }
 
 public  void  G_pop_transform(
     Gwindow    window )
 {
-#ifndef  TWO_D_ONLY
     set_current_window( window );
 
     pop_local_transform();
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -463,7 +439,6 @@ public  void  window_was_resized(
 
     G_set_viewport( window, 0, window->x_size-1, 0, window->y_size-1 );
 
-#ifndef  TWO_D_ONLY
     define_3D_projection( window,
                           window->front_clip_distance,
                           window->back_clip_distance,
@@ -475,7 +450,6 @@ public  void  window_was_resized(
                           window->window_height );
 
     update_transforms( window );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -502,11 +476,6 @@ public  void  G_set_viewport(
     int            y_min,
     int            y_max )
 {
-#ifdef TWO_D_ONLY
-    if( window->current_bitplanes != NORMAL_PLANES )
-        return;
-#endif
-
     set_current_window( window );
 
     window->x_viewport_min = x_min;

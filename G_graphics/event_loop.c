@@ -4,6 +4,37 @@
 static  BOOLEAN    left_button_state = FALSE;
 static  BOOLEAN    middle_button_state = FALSE;
 static  BOOLEAN    right_button_state = FALSE;
+static  int        keyboard_modifiers = 0;
+
+public  BOOLEAN  G_get_left_mouse_button( void )
+{
+    return( left_button_state );
+}
+
+public  BOOLEAN  G_get_middle_mouse_button( void )
+{
+    return( middle_button_state );
+}
+
+public  BOOLEAN  G_get_right_mouse_button( void )
+{
+    return( right_button_state );
+}
+
+public  BOOLEAN  G_get_shift_key_state( void )
+{
+    return( (keyboard_modifiers & SHIFT_KEY_BIT) != 0 );
+}
+
+public  BOOLEAN  G_get_ctrl_key_state( void )
+{
+    return( (keyboard_modifiers & CTRL_KEY_BIT) != 0 );
+}
+
+public  BOOLEAN  G_get_alt_key_state( void )
+{
+    return( (keyboard_modifiers & ALT_KEY_BIT) != 0 );
+}
 
 private  Gwindow  lookup_window_for_window_id(
     Window_id  window_id )
@@ -42,6 +73,26 @@ private  Gwindow  get_event_window(
 
     if( window == NULL )
         handle_internal_error( "get_event_window" );
+
+    return( window );
+}
+
+private  Gwindow  get_key_or_mouse_event_window(
+    Window_id   window_id,
+    int         x,
+    int         y,
+    int         modifier )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window != NULL )
+    {
+        window->x_mouse_pos = x;
+        window->y_mouse_pos = y;
+        keyboard_modifiers = modifier;
+    }
 
     return( window );
 }
@@ -85,6 +136,8 @@ private  void  global_resize_function(
     window->x_size = x_size;
     window->y_size = y_size;
 
+    window_was_resized( window );
+
     if( window->resize_callback != NULL )
         (*window->resize_callback)( window, x, y, x_size, y_size,
                                     window->resize_data );
@@ -94,14 +147,12 @@ private  void  global_key_down_function(
     Window_id  window_id,
     int        key,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
-
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
     if( window->key_down_callback != NULL )
         (*window->key_down_callback)( window, key, window->key_down_data );
@@ -111,14 +162,12 @@ private  void  global_key_up_function(
     Window_id  window_id,
     int        key,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
-
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
     if( window->key_up_callback != NULL )
         (*window->key_up_callback)( window, key, window->key_up_data );
@@ -144,14 +193,13 @@ private  void  global_mouse_movement_function(
 private  void  global_left_mouse_down_function(
     Window_id  window_id,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
     left_button_state = TRUE;
 
     if( window->left_mouse_down_callback != NULL )
@@ -162,14 +210,13 @@ private  void  global_left_mouse_down_function(
 private  void  global_left_mouse_up_function(
     Window_id  window_id,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
     left_button_state = FALSE;
 
     if( window->left_mouse_up_callback != NULL )
@@ -180,14 +227,13 @@ private  void  global_left_mouse_up_function(
 private  void  global_middle_mouse_down_function(
     Window_id  window_id,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
     middle_button_state = TRUE;
 
     if( window->middle_mouse_down_callback != NULL )
@@ -198,14 +244,13 @@ private  void  global_middle_mouse_down_function(
 private  void  global_middle_mouse_up_function(
     Window_id  window_id,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
     middle_button_state = FALSE;
 
     if( window->middle_mouse_up_callback != NULL )
@@ -216,14 +261,13 @@ private  void  global_middle_mouse_up_function(
 private  void  global_right_mouse_down_function(
     Window_id  window_id,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
     right_button_state = TRUE;
 
     if( window->right_mouse_down_callback != NULL )
@@ -234,14 +278,13 @@ private  void  global_right_mouse_down_function(
 private  void  global_right_mouse_up_function(
     Window_id  window_id,
     int        x,
-    int        y )
+    int        y,
+    int        modifier )
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
 
-    window->x_mouse_pos = x;
-    window->y_mouse_pos = y;
     right_button_state = FALSE;
 
     if( window->right_mouse_up_callback != NULL )
@@ -482,6 +525,28 @@ public  void  G_set_update_flag(
     Gwindow  window )
 {
     GS_set_update_flag( window->GS_window );
+}
+
+public  void  G_add_timer_function(
+    Real          seconds,
+    void          (*func) ( void * ),
+    void          *data )
+{
+    GS_add_timer_function( seconds, func, data );
+}
+
+public  void  G_add_idle_function(
+    void  (*func) ( void * ),
+    void          *data )
+{
+    GS_add_idle_function( func, data );
+}
+
+public  void  G_remove_idle_function(
+    void  (*func) ( void * ),
+    void          *data )
+{
+    GS_remove_idle_function( func, data );
 }
 
 public  void  G_main_loop( void )

@@ -1,6 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <graphics.h>
 #include  <random_order.h>
 
 #define  MAX_LINE_WIDTH  1000.0f
@@ -11,12 +11,6 @@ private  void  set_colour(
     Gwindow   window,
     Colour    colour )
 {
-#ifdef  TWO_D
-     if( window->colour_map_state )
-         GS_set_colour_index( colour );
-     else
-         GS_set_colour( colour );
-#else
      if( window->colour_map_state ||
          window->current_bitplanes == OVERLAY_PLANES )
          GS_set_colour_index( colour );
@@ -30,13 +24,11 @@ private  void  set_colour(
      } */
      else
          GS_set_colour( colour );
-#endif
 }
 
 public  void  initialize_display_interrupts(
     Gwindow        window )
 {
-#ifndef  TWO_D_ONLY
     window->interrupt_allowed = FALSE;
     window->interrupt_size = 100;
     window->continuation_flag = FALSE;
@@ -44,44 +36,33 @@ public  void  initialize_display_interrupts(
     window->interrupt_interval = 100;
     window->interrupt_time_interval = 1.0;
     window->interrupt_event_time_interval = 0.3;
-#endif
 }
 
 public  void  G_set_drawing_interrupt_state(
     Gwindow          window,
     BOOLEAN         state )
 {
-#ifndef  TWO_D_ONLY
     window->interrupt_allowed = state;
-#endif
 }
 
 public  BOOLEAN  G_get_drawing_interrupt_state(
     Gwindow          window )
 {
-#ifdef  TWO_D_ONLY
-    return( FALSE );
-#else
     return( window->interrupt_allowed );
-#endif
 }
 
 public  void  G_set_smallest_interrupt_interval(
     Gwindow          window,
     int             interval )
 {
-#ifndef  TWO_D_ONLY
     window->interrupt_interval = interval;
-#endif
 }
 
 public  void  G_set_smallest_interrupt_size(
     Gwindow          window,
     int             size )
 {
-#ifndef  TWO_D_ONLY
     window->interrupt_size = size;
-#endif
 }
 
 public  void  G_set_interrupt_time(
@@ -101,44 +82,33 @@ public  void  G_set_interrupt_event_time(
 public  void  G_start_interrupt_test(
     Gwindow          window )
 {
-#ifndef  TWO_D_ONLY
     Real   current_time;
 
     current_time = current_realtime_seconds();
     window->interrupt_time = current_time + window->interrupt_time_interval;
     window->interrupt_event_time = current_time +
                                    window->interrupt_event_time_interval;
-#endif
 }
 
 public  BOOLEAN  G_get_interrupt_occurred(
     Gwindow          window )
 {
-#ifdef  TWO_D_ONLY
-    return( FALSE );
-#else
     return( window->interrupt_occurred );
-#endif
 }
 
 public  void  G_clear_drawing_interrupt_flag(
     Gwindow          window )
 {
-#ifndef  TWO_D_ONLY
     window->interrupt_occurred = FALSE;
-#endif
 }
 
 public  void  set_continuation_flag(
     Gwindow         window,
     BOOLEAN         state )
 {
-#ifndef  TWO_D_ONLY
     window->continuation_flag = state;
-#endif
 }
 
-#ifndef TWO_D_ONLY
 #ifndef   DISALLOW_DRAWING_INTERRUPT
 
 /*  macro for drawing objects with interrupts  */
@@ -218,8 +188,7 @@ public  void  set_continuation_flag(
         {
 
 
-
-#define  END_DRAW_OBJECTS \
+#define  END_DRAW_OBJECTS  \
             if( _random_order ) \
             { \
                 if( _i == 0 ) \
@@ -246,7 +215,7 @@ public  void  set_continuation_flag(
                 if( _n_before_check == 0 ) \
                 { \
                     current_time = current_realtime_seconds(); \
-                    if( (current_time>=check_events_at && G_events_pending())||\
+                    if( current_time >= check_events_at || \
                         current_time > interrupt_at ) \
                     { \
                         _n_objects_to_do = _i+1; \
@@ -291,28 +260,13 @@ public  void  set_continuation_flag(
         for_less( OBJECT_INDEX, 0, n_objects )                                \
         {
 
-#define  END_DRAW_OBJECTS \
-        } \
-    } \
-    if( view_is_stereo(window) ) \
-    { \
-        set_view_for_eye( window, -1 );                                        \
-    } \
-}
-
-#endif
-
-#else   /* TWO_D_ONLY */
-
-#define  BEGIN_DRAW_OBJECTS( window, check_every, n_objects, wireframe_flag ) \
-{                                                                             \
-    int                      OBJECT_INDEX;                                    \
-                                                                              \
-    for_less( OBJECT_INDEX, 0, n_objects )                                    \
-    {
-
-#define  END_DRAW_OBJECTS \
-    } \
+#define  END_DRAW_OBJECTS                                                     \
+        }                                                                     \
+    }                                                                         \
+    if( view_is_stereo(window) )                                              \
+    {                                                                         \
+        set_view_for_eye( window, -1 );                                       \
+    }                                                                         \
 }
 
 #endif
@@ -322,7 +276,7 @@ private  void  set_surface_property(
     Colour         col,
     Surfprop       *surfprop )
 {
-    GS_set_surface_property( window, col, surfprop );
+    GS_set_surface_property( window->GS_window, col, surfprop );
 }
 
 public  void  initialize_surface_property(
@@ -333,22 +287,18 @@ public  void  initialize_surface_property(
 
     col = WHITE;
 
-    GS_initialize_surface_property( window );
+    GS_initialize_surface_property( window->GS_window );
     set_surface_property( window, col, &surfprop );
 }
 
 public  BOOLEAN  view_is_stereo(
     Gwindow        window )
 {
-#ifdef  TWO_D_ONLY
-    return( FALSE );
-#else
     return( window->stereo_flag &&
             !window->colour_map_state &&
             window->current_bitplanes == NORMAL_PLANES &&
             (window->current_view_type == WORLD_VIEW ||
              window->current_view_type == MODEL_VIEW) );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -392,12 +342,6 @@ private  void  draw_polygons_one_colour(
 {
 #define     DEF_ONE_COLOUR
 
-#ifdef TWO_D_ONLY
-
-#include    "draw_polygons.include.c"
-
-#else   /* THREE_D */
-
     if( window->shaded_mode_state )
     {
         if( window->lighting_state && polygons->normals != (Vector *) 0 )
@@ -426,8 +370,6 @@ private  void  draw_polygons_one_colour(
         }
 #undef   DEF_WIREFRAME
     }
-
-#endif   /* THREE_D */
 
 #undef  DEF_ONE_COLOUR
 }
@@ -453,12 +395,6 @@ private  void  draw_polygons_per_item_colours(
 {
 #define DEF_PER_ITEM_COLOURS
 
-#ifdef TWO_D_ONLY
-
-#include    "draw_polygons.include.c"
-
-#else   /* THREE_D */
-
     if( window->shaded_mode_state )
     {
         if( window->lighting_state && polygons->normals != (Vector *) 0 )
@@ -487,8 +423,6 @@ private  void  draw_polygons_per_item_colours(
         }
 #undef   DEF_WIREFRAME
     }
-
-#endif   /* THREE_D */
 
 #undef DEF_PER_ITEM_COLOURS
 }
@@ -514,12 +448,6 @@ private  void  draw_polygons_per_vertex_colours(
 {
 #define DEF_PER_VERTEX_COLOURS
 
-#ifdef TWO_D_ONLY
-
-#include    "draw_polygons.include.c"
-
-#else   /* THREE_D */
-
     if( window->shaded_mode_state )
     {
         if( window->lighting_state && polygons->normals != (Vector *) 0 )
@@ -549,8 +477,6 @@ private  void  draw_polygons_per_vertex_colours(
 #undef   DEF_WIREFRAME
     }
 
-#endif   /* THREE_D */
-
 #undef      DEF_PER_VERTEX_COLOURS
 }
 
@@ -572,14 +498,12 @@ private  void  draw_polygons(
     Gwindow         window,
     polygons_struct *polygons )
 {
-#ifndef  TWO_D_ONLY
     if( !window->shaded_mode_state &&
         polygons->line_thickness > 1.0f &&
         polygons->line_thickness < MAX_LINE_WIDTH )
     {
         GS_set_line_width( (Real) polygons->line_thickness );
     }
-#endif
 
     switch( polygons->colour_flag )
     {
@@ -596,12 +520,10 @@ private  void  draw_polygons(
         break;
     }
 
-#ifndef TWO_D_ONLY
     if( !window->shaded_mode_state &&
         polygons->line_thickness > 1.0f &&
         polygons->line_thickness < MAX_LINE_WIDTH )
         GS_set_line_width( 1.0 );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -647,12 +569,6 @@ private  void  draw_quadmesh_one_colour(
 {
 #define DEF_ONE_COLOUR
 
-#ifdef TWO_D_ONLY
-
-#include    "draw_quadmesh.include.c"
-
-#else   /* THREE_D */
-
     if( window->shaded_mode_state )
     {
         if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
@@ -681,8 +597,6 @@ private  void  draw_quadmesh_one_colour(
         }
 #undef   DEF_WIREFRAME
     }
-
-#endif   /* THREE_D */
 
 #undef  DEF_ONE_COLOUR
 }
@@ -707,12 +621,6 @@ private  void  draw_quadmesh_per_item_colours(
 {
 #define    DEF_PER_ITEM_COLOURS
 
-#ifdef TWO_D_ONLY
-
-#include    "draw_quadmesh.include.c"
-
-#else   /* THREE_D */
-
     if( window->shaded_mode_state )
     {
         if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
@@ -741,8 +649,6 @@ private  void  draw_quadmesh_per_item_colours(
         }
 #undef   DEF_WIREFRAME
     }
-
-#endif   /* THREE_D */
 
 #undef      DEF_PER_ITEM_COLOURS
 }
@@ -767,12 +673,6 @@ private  void  draw_quadmesh_per_vertex_colours(
 {
 #define DEF_PER_VERTEX_COLOURS
 
-#ifdef TWO_D_ONLY
-
-#include    "draw_quadmesh.include.c"
-
-#else   /* THREE_D */
-
     if( window->shaded_mode_state )
     {
         if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
@@ -801,8 +701,6 @@ private  void  draw_quadmesh_per_vertex_colours(
         }
 #undef   DEF_WIREFRAME
     }
-
-#endif   /* THREE_D */
 
 #undef      DEF_PER_VERTEX_COLOURS
 }
@@ -864,9 +762,7 @@ public  void  G_draw_lines(
     int      n_lines, i, pt_index, start_index, end_index;
     float    geom[4][3];
     BOOLEAN  wrap_around;
-#ifndef TWO_D_ONLY
     BOOLEAN  lines_as_curves, save_lights;
-#endif
 
     about_to_draw_graphics( window );
 
@@ -878,9 +774,7 @@ public  void  G_draw_lines(
 
     n_lines = lines->n_items;
 
-#ifndef TWO_D_ONLY
     lines_as_curves = window->render_lines_as_curves_state;
-#endif
 
     if( lines->colour_flag == ONE_COLOUR )
         set_colour( window, lines->colours[0] );
@@ -902,7 +796,6 @@ public  void  G_draw_lines(
                 GS_set_point( &lines->points[pt_index] );
             GS_end_point();
         }
-#ifndef  TWO_D_ONLY
         else if( lines_as_curves )
         {
             wrap_around = ( lines->indices[start_index] ==
@@ -956,7 +849,6 @@ public  void  G_draw_lines(
                 GS_curve( geom );
             }
         }
-#endif
         else
         {
             GS_begin_line();
@@ -982,192 +874,11 @@ public  void  G_draw_lines(
 
 /* ------------------------------ text and fonts ------------------- */
 
-typedef  struct
-{
-    Font_types   font_type;
-    int          size;
-    BOOLEAN      exists;
-    WS_font_info font_info;
-} font_struct;
-
-private  int  n_fonts = 0;
-private  font_struct    *fonts;
-
-private  BOOLEAN  lookup_a_font(
-    Font_types       type,
-    Real             size,
-    WS_font_info     **font_info,
-    int              *font_index )
-{
-    int            i, int_size, w;
-    Gwindow        win, current_window;
-    BOOLEAN        exists;
-    WS_font_info   fi;
-
-    int_size = (int) size;
-
-    for_less( i, 0, n_fonts )
-    {
-        if( fonts[i].font_type == type &&
-            (type == FIXED_FONT || fonts[i].size == int_size) )
-        {
-            *font_info = &fonts[i].font_info;
-            *font_index = i;
-            return( fonts[i].exists );
-        }
-    }
-
-    exists = WS_get_font( type, size, &fi );
-
-    SET_ARRAY_SIZE( fonts, n_fonts, n_fonts+1, DEFAULT_CHUNK_SIZE );
-    fonts[n_fonts].size = int_size;
-    fonts[n_fonts].font_type = type;
-    fonts[n_fonts].exists = exists;
-
-    if( exists )
-    {
-        fonts[n_fonts].font_info = fi;
-        *font_info = &fonts[n_fonts].font_info;
-    }
-
-    *font_index = n_fonts;
-    ++n_fonts;
-
-    if( exists )
-    {
-        current_window = get_current_window();
-
-        for_less( w, 0, get_n_graphics_windows() )
-        {
-            win = get_nth_graphics_window( w );
-
-            set_current_window( win );
-
-            WS_build_font_in_window( win->WS_window, n_fonts-1, *font_info );
-        }
-
-        set_current_window( current_window );
-    }
-
-    return( exists );
-}
-
-private  BOOLEAN  lookup_font(
-    Font_types       type,
-    Real             size,
-    WS_font_info     **font_info,
-    int              *font_index )
-{
-    static  BOOLEAN  first = TRUE;
-    BOOLEAN          found;
-
-    if( first )
-    {
-        first = FALSE;
-        (void) lookup_a_font( FIXED_FONT, 0.0, font_info, font_index );
-    }
-
-    found = lookup_a_font( type, size, font_info, font_index );
-
-    if( !found )
-        found = lookup_a_font( FIXED_FONT, 0.0, font_info, font_index );
-
-    if( !found )
-        print_error( "Could not find font: %d %g\n", (int) type, size );
-
-    return( found );
-}
-
-public  void  add_fonts_for_window(
-    Gwindow        window )
-{
-    int   i;
-
-    for_less( i, 0, n_fonts )
-    {
-        if( fonts[i].exists )
-            WS_build_font_in_window( window->WS_window, i, &fonts[i].font_info);
-    }
-}
-
-public  void  delete_fonts_for_window(
-    Gwindow        window )
-{
-    int   i;
-
-    for_down( i, n_fonts-1, 0 )
-    {
-        if( fonts[i].exists )
-            WS_delete_font_in_window( window->WS_window, i,
-                                      &fonts[i].font_info );
-    }
-}
-
-public  void  delete_fonts( void )
-{
-    int            i, w;
-    Gwindow        win, current_window;
-
-    current_window = get_current_window();
-
-    for_less( w, 0, get_n_graphics_windows() )
-    {
-        win = get_nth_graphics_window( w );
-
-        set_current_window( win );
-
-        delete_fonts_for_window( win );
-    }
-
-    set_current_window( current_window );
-
-    for_less( i, 0, n_fonts )
-    {
-        if( fonts[i].exists )
-            WS_delete_font( &fonts[i].font_info );
-    }
-
-    if( n_fonts > 0 )
-    {
-        FREE( fonts );
-        n_fonts = 0;
-    }
-}
-
-private  BOOLEAN  set_font(
-    Gwindow          win,
-    Font_types       type,
-    Real             size )
-{
-    int              font_index;
-    WS_font_info     *font_info;
-    BOOLEAN          found;
-
-    if( type != FIXED_FONT && type != SIZED_FONT )
-        print_error( "Invalid font type: %d\n", type );
-
-    if( type == SIZED_FONT && ( size < 1.0 || size > 100.0 ) )
-        print_error( "Invalid font size: %g\n", size );
-
-    found = lookup_font( type, size, &font_info, &font_index );
-
-    if( found )
-        found = GS_set_font( win, font_index, font_info );
-
-    return( found );
-}
-
 public  Real  G_get_text_height(
     Font_types       type,
     Real             size )
 {
-    int           font_index;
-    WS_font_info  *font_info;
-
-    if( !lookup_font( type, size, &font_info, &font_index ) )
-        return( 1.0 );
-
-    return( WS_get_character_height( font_info ) );
+    return( GS_get_character_height( type, size ) );
 }
 
 public  Real  G_get_text_length(
@@ -1175,13 +886,7 @@ public  Real  G_get_text_length(
     Font_types       type,
     Real             size )
 {
-    int           font_index;
-    WS_font_info  *font_info;
-
-    if( !lookup_font( type, size, &font_info, &font_index ) )
-        return( 1.0 );
-
-    return( WS_get_text_length( font_info, str ) );
+    return( GS_get_text_length( str, type, size ) );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -1206,16 +911,14 @@ public  void  G_draw_text(
 
     set_colour( window, text->colour );
 
-    if( !set_font( window, text->font, text->size ) )
-        return;
-
     BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, 1, TRUE )
 
         GS_set_raster_position( (Real) Point_x(text->origin),
                                 (Real) Point_y(text->origin),
                                 (Real) Point_z(text->origin) );
 
-        GS_draw_text( text->font, text->string );
+        GS_draw_text( window->GS_window, text->font, text->size,
+                      text->string );
 
     END_DRAW_OBJECTS
 }
@@ -1238,7 +941,6 @@ public  void  G_draw_marker(
     Gwindow         window,
     marker_struct   *marker )
 {
-#ifndef  TWO_D_ONLY
     BOOLEAN     save_lights;
     Transform   transform;
 
@@ -1287,24 +989,19 @@ public  void  G_draw_marker(
 
         if( window->marker_labels_visibility )
         {
-            if( set_font( window, FIXED_FONT, 0.0 ) )
-            {
-                GS_set_raster_position( (Real) Point_x(marker->position) +
-                                           1.5 * (Real) marker->size / 2.0,
-                                        (Real) Point_y(marker->position),
-                                        (Real) Point_z(marker->position) );
+            GS_set_raster_position( (Real) Point_x(marker->position) +
+                                       1.5 * (Real) marker->size / 2.0,
+                                    (Real) Point_y(marker->position),
+                                    (Real) Point_z(marker->position) );
 
-                GS_draw_text( FIXED_FONT, marker->label );
-            }
+            GS_draw_text( window->GS_window, FIXED_FONT, 10.0, marker->label );
         }
 
     END_DRAW_OBJECTS
 
     G_set_lighting_state( window, save_lights );
-#endif
 }
 
-#ifndef  TWO_D_ONLY
 private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
 {
     static  Colour           colours[1];
@@ -1396,7 +1093,6 @@ private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
     polygons.colours[0] = colour;
     draw_polygons( window, &polygons );
 }
-#endif
 
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : G_draw_pixels
@@ -1435,7 +1131,7 @@ public  void  G_draw_pixels(
             return;
         }
 
-        GS_draw_colour_map_pixels( window, pixels );
+        GS_draw_colour_map_pixels( window->GS_window, pixels );
     }
     else
     {
@@ -1446,7 +1142,7 @@ public  void  G_draw_pixels(
             return;
         }
 
-        GS_draw_rgb_pixels( window, pixels );
+        GS_draw_rgb_pixels( window->GS_window, pixels );
     }
 }
 
@@ -1477,5 +1173,6 @@ public  void  G_read_pixels(
 {
     set_current_window( window );
 
-    GS_read_pixels( window, x_min, x_max, y_min, y_max, pixels );
+    GS_read_pixels( window->GS_window, G_get_colour_map_state(window),
+                    x_min, x_max, y_min, y_max, pixels );
 }

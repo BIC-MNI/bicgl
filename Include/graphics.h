@@ -3,62 +3,14 @@
 
 #include  <bicpl.h>
 #include  <random_order.h>
-#include  <window_events.h>
+#include  <GS_graphics.h>
 
-typedef  enum  { PIXEL_VIEW, SCREEN_VIEW, WORLD_VIEW, MODEL_VIEW,
-                 N_VIEW_TYPES }     View_types;
-
-typedef  enum  { FLAT_SHADING, GOURAUD_SHADING }  Shading_types;
-
-#define  N_LIGHTS  8
-
-typedef  enum { 
-                DIRECTIONAL_LIGHT,
-                POINT_LIGHT,
-                SPOT_LIGHT
-              } Light_types;
-
-typedef  enum { VIEWING_MATRIX, PROJECTION_MATRIX } Matrix_modes;
-
-typedef  enum { LESS_OR_EQUAL } Depth_functions;
-
-
-
-#define  NO_BELL       0
-#define  SHORT_BELL    1
-#define  LONG_BELL     2
-
-/*--- if only doing 2D graphics, change the names of any 3D struct
-      elements, so that they cannot be accessed, but the size of the
-      window struct is still the same for 2D and 3D */
-
-#ifdef  TWO_D_ONLY
-#define  UNUSED_IF_2D(x)    GLUE(x,_unused_2d)
-#else
-#define  UNUSED_IF_2D(x)    x
-#endif
-
-#ifdef  WS_WINDOW_DEFINED
-
-#define  WS_type  WS_window_struct
-#define  GS_type  GS_window_struct
-
-#else
-
-#define  WS_WINDOW_DEFINED
-struct  WS_window_struct;
-struct  GS_window_struct;
-#define  WS_type  struct  WS_window_struct
-#define  GS_type  struct  GS_window_struct
-
-#endif
-
-typedef  struct
+typedef  struct   window_struct
 {
-    WS_type                *WS_window;
-    GS_type                *GS_window;
+    GSwindow               GS_window;
     int                    x_origin, y_origin;          
     int                    x_size, y_size;          
+    int                    x_mouse_pos, y_mouse_pos;
     Colour                 background_colour;
     Colour                 background_colour_index;
     View_types             current_view_type;
@@ -67,55 +19,111 @@ typedef  struct
     Transform              right_projection_matrices[(int) N_VIEW_TYPES];
     Transform              viewing_matrices[(int) N_VIEW_TYPES];
     Transform              modeling_transform;
-    int                    UNUSED_IF_2D(n_overlay_planes);
+    int                    n_overlay_planes;
     Bitplane_types         current_bitplanes;
     BOOLEAN                automatic_clear_flag;
     BOOLEAN                bitplanes_cleared[N_BITPLANE_TYPES];
 
-    Real                   UNUSED_IF_2D(front_clip_distance);
-    Real                   UNUSED_IF_2D(back_clip_distance);
-    BOOLEAN                UNUSED_IF_2D(perspective_flag);
-    Real                   UNUSED_IF_2D(perspective_distance);
-    BOOLEAN                UNUSED_IF_2D(stereo_flag);
-    Real                   UNUSED_IF_2D(eye_separation);
-    Real                   UNUSED_IF_2D(window_width);
-    Real                   UNUSED_IF_2D(window_height);
+    Real                   front_clip_distance;
+    Real                   back_clip_distance;
+    BOOLEAN                perspective_flag;
+    Real                   perspective_distance;
+    BOOLEAN                stereo_flag;
+    Real                   eye_separation;
+    Real                   window_width;
+    Real                   window_height;
 
     BOOLEAN                double_buffer_available;
     BOOLEAN                double_buffer_state;
 
-    BOOLEAN                UNUSED_IF_2D(zbuffer_available);
-    BOOLEAN                UNUSED_IF_2D(zbuffer_state);
+    BOOLEAN                zbuffer_available;
+    BOOLEAN                zbuffer_state;
     BOOLEAN                colour_map_state;
 
-    BOOLEAN                UNUSED_IF_2D(shaded_mode_state);
-    Shading_types          UNUSED_IF_2D(shading_type);
-    BOOLEAN                UNUSED_IF_2D(lighting_state);
-    BOOLEAN                UNUSED_IF_2D(transparency_state);
-    BOOLEAN                UNUSED_IF_2D(backface_culling_state);
-    BOOLEAN                UNUSED_IF_2D(render_lines_as_curves_state);
-    int                    UNUSED_IF_2D(n_curve_segments);
-    BOOLEAN                UNUSED_IF_2D(marker_labels_visibility);
+    BOOLEAN                shaded_mode_state;
+    Shading_types          shading_type;
+    BOOLEAN                lighting_state;
+    BOOLEAN                transparency_state;
+    BOOLEAN                backface_culling_state;
+    BOOLEAN                render_lines_as_curves_state;
+    int                    n_curve_segments;
+    BOOLEAN                marker_labels_visibility;
 
     int                    x_viewport_min;
     int                    x_viewport_max;
     int                    y_viewport_min;
     int                    y_viewport_max;
 
-    BOOLEAN                UNUSED_IF_2D(interrupt_allowed);
-    int                    UNUSED_IF_2D(interrupt_size);
-    BOOLEAN                UNUSED_IF_2D(continuation_flag);
-    BOOLEAN                UNUSED_IF_2D(interrupt_occurred);
-    int                    UNUSED_IF_2D(interrupt_interval);
-    Real                   UNUSED_IF_2D(interrupt_time);
-    Real                   UNUSED_IF_2D(interrupt_time_interval);
-    Real                   UNUSED_IF_2D(interrupt_event_time_interval);
-    Real                   UNUSED_IF_2D(interrupt_event_time);
-    int                    UNUSED_IF_2D(next_item);
-    int                    UNUSED_IF_2D(n_items_done);
+    BOOLEAN                interrupt_allowed;
+    int                    interrupt_size;
+    BOOLEAN                continuation_flag;
+    BOOLEAN                interrupt_occurred;
+    int                    interrupt_interval;
+    Real                   interrupt_time;
+    Real                   interrupt_time_interval;
+    Real                   interrupt_event_time_interval;
+    Real                   interrupt_event_time;
+    int                    next_item;
+    int                    n_items_done;
+
+    void    (*update_callback) ( struct window_struct *, void * );
+    void    *update_data;
+
+    void    (*update_overlay_callback) ( struct window_struct *, void * );
+    void    *update_overlay_data;
+
+    void    (*resize_callback) ( struct window_struct *, int, int, int, int,
+                                 void * );
+    void    *resize_data;
+
+    void    (*key_down_callback) ( struct window_struct *, int, void * );
+    void    *key_down_data;
+
+    void    (*key_up_callback) ( struct window_struct *, int, void * );
+    void    *key_up_data;
+
+    void    (*mouse_movement_callback) ( struct window_struct *, int, int,
+                                         void * );
+    void    *mouse_movement_data;
+
+    void    (*left_mouse_down_callback) ( struct window_struct *, int, int,
+                                          void * );
+    void    *left_mouse_down_data;
+
+    void    (*left_mouse_up_callback) ( struct window_struct *, int, int,
+                                          void * );
+    void    *left_mouse_up_data;
+
+    void    (*middle_mouse_down_callback) ( struct window_struct *, int, int,
+                                          void * );
+    void    *middle_mouse_down_data;
+
+    void    (*middle_mouse_up_callback) ( struct window_struct *, int, int,
+                                          void * );
+    void    *middle_mouse_up_data;
+
+    void    (*right_mouse_down_callback) ( struct window_struct *, int, int,
+                                          void * );
+    void    *right_mouse_down_data;
+
+    void    (*right_mouse_up_callback) ( struct window_struct *, int, int,
+                                          void * );
+    void    *right_mouse_up_data;
+
+    void    (*iconify_callback) ( struct window_struct *, void * );
+    void    *iconify_data;
+
+    void    (*deiconify_callback) ( struct window_struct *, void * );
+    void    *deiconify_data;
+
+    void    (*enter_callback) ( struct window_struct *, void * );
+    void    *enter_data;
+
+    void    (*leave_callback) ( struct window_struct *, void * );
+    void    *leave_data;
 } window_struct;
 
-typedef  window_struct   *Gwindow;
+typedef  struct  window_struct   *Gwindow;
 
 #include  <graphics_struct.h>
 
