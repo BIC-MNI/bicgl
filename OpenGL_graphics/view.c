@@ -124,36 +124,6 @@ public  void  clear_overlay_planes()
 {
 #ifndef  TWO_D_ONLY
 #ifdef TO_DO
-    Matrix          save_projection;
-
-    if( G_has_overlay_planes() )
-    {
-        mmode( MPROJECTION );
-        getmatrix( save_projection );
-        mmode( MVIEWING );
-
-        pushmatrix();
-        pushviewport();
-
-        fullscrn();
-/*
-        drawmode( NORMALDRAW );
-        blendfunction( BF_ONE, BF_ZERO );
-*/
-        drawmode( OVERDRAW );
-        color( 0 );
-        clear();
-        endfullscrn();
-
-        restore_bitplanes( (Gwindow) NULL );
-
-        popviewport();
-        popmatrix();
-
-        mmode( MPROJECTION );
-        loadmatrix( save_projection );
-        mmode( MVIEWING );
-    }
 #endif
 #endif
 }

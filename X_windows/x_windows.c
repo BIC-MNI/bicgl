@@ -58,15 +58,10 @@ public  Status  X_create_window_with_visual(
     Colormap         cmap,
     X_window_struct  *window )
 {
-    int                      event_mask;
+    int                      event_mask, cwa_mask;
+    int                      screen_x_size, screen_y_size;
     XEvent                   event;
     XSetWindowAttributes     cwa;
-
-    if( initial_x_pos < 0 )
-        initial_x_pos = 0;
-
-    if( initial_y_pos < 0 )
-        initial_y_pos = 0;
 
     if( initial_x_size <= 0 )
         initial_x_size = 100;
@@ -77,13 +72,32 @@ public  Status  X_create_window_with_visual(
     cwa.colormap = cmap;
     cwa.border_pixel = 0;
     cwa.event_mask = StructureNotifyMask | ExposureMask;
+    cwa_mask = CWColormap|CWBorderPixel;
+
+    if( initial_x_pos >= 0 && initial_y_pos >= 0 )
+    {
+/*
+        X_get_screen_size( &screen_x_size, &screen_y_size );
+
+        initial_y_pos = screen_y_size - 1 - initial_y_pos;
+
+        cwa.override_redirect = TRUE;
+        cwa_mask |= CWOverrideRedirect;
+*/
+    }
+    else
+    {
+        initial_x_pos = 0;
+        initial_y_pos = 0;
+    }
+
     window->window_id = XCreateWindow( X_get_display(),
                                RootWindow( X_get_display(),
                                            X_get_screen() ),
                                initial_x_pos, initial_y_pos,
                                initial_x_size, initial_y_size,
                                0, visual->depth, InputOutput, visual->visual,
-                               CWColormap|CWBorderPixel, &cwa );
+                               cwa_mask, &cwa );
 
     XStoreName( X_get_display(), window->window_id, title );
 
@@ -104,7 +118,7 @@ public  Status  X_create_window_with_visual(
     XIfEvent( X_get_display(), &event, wait_for_window,
               (char *) (&window->window_id) );
 
-    window->visual = *visual;
+    window->visual = visual;
     window->colour_map_mode = colour_map_mode;
     if( colour_map_mode )
     {
@@ -118,9 +132,51 @@ public  Status  X_create_window_with_visual(
     return( OK );
 }
 
+public  Status  X_create_overlay_window(
+    X_window_struct  *window,
+    XVisualInfo      *visual,
+    X_window_struct  *overlay_window )
+{
+    int                      x_size, y_size, x_pos, y_pos;
+    XSetWindowAttributes     cwa;
+    Colormap                 cmap;
+    XEvent                   event;
+
+    window->visual = visual;
+    window->colour_map_mode = TRUE;
+
+    cmap = XCreateColormap( X_get_display(),
+                            RootWindow( X_get_display(),
+                                        X_get_screen() ),
+                            visual->visual, AllocAll );
+
+    X_get_window_geometry( window, &x_pos, &y_pos, &x_size, &y_size );
+
+    cwa.colormap = cmap;
+    cwa.background_pixmap = None;
+    cwa.border_pixel = 0;
+
+    overlay_window->window_id = XCreateWindow( X_get_display(),
+                                      window->window_id,
+                                      0, 0, x_size, y_size, 0,
+                                      visual->depth, InputOutput,
+                                      visual->visual,
+                                      CWBackPixmap|CWBorderPixel|CWColormap,
+                                      &cwa );
+    XMapWindow( X_get_display(), overlay_window->window_id );
+    XIfEvent( X_get_display(), &event, wait_for_window,
+              (char *) (&overlay_window->window_id) );
+    XSetWMColormapWindows( X_get_display(), window->window_id,
+                           &overlay_window->window_id, 1 );
+
+    return( OK );
+}
+
 public  void  X_delete_window(
     X_window_struct  *window )
 {
+    XFree( window->visual );
+
     if( window->colour_map_mode )
         XFreeColormap( X_get_display(), window->colour_map );
 
@@ -130,7 +186,7 @@ public  void  X_delete_window(
 public  int  X_get_n_colours(
     X_window_struct          *window )
 {
-    return( window->visual.colormap_size );
+    return( window->visual->colormap_size );
 }
 
 public  void  X_set_colour_map_entry(
@@ -184,6 +240,28 @@ public  void  X_get_window_geometry(
     }
 }
 
+public  void  X_get_screen_size(
+    int    *x_size,
+    int    *y_size )
+{
+    int           x, y;
+    unsigned int  width, height, border_width, depth;
+    Window        root;
+
+    if( XGetGeometry( X_get_display(), RootWindow(X_get_display(),
+                                                  X_get_screen()),
+                      &root, &x, &y, &width, &height, &border_width, &depth ) )
+    {
+        *x_size = width;
+        *y_size = height;
+    }
+    else
+    {
+        *x_size = 1000;
+        *y_size = 1000;
+    }
+}
+
 /*--------------------------------- events ----------------------------- */
 
 private  BOOLEAN  translate_key(
@@ -191,7 +269,7 @@ private  BOOLEAN  translate_key(
     int      *key )
 {
     int             char_count;
-    char            buffer[10];
+    unsigned  char  buffer[10];
     KeySym          keysym;
     XComposeStatus  compose;
 
@@ -333,11 +411,22 @@ private  void  bind_key(
     KeySym   keysym,
     int      output_key_value )
 {
-    char  string[1];
+    unsigned char  string[1];
 
-    string[0] = (char) output_key_value;
+    string[0] = (unsigned char) output_key_value;
 
-    XRebindKeysym( X_get_display(), keysym, NULL, 0, string, 1 );
+    XRebindKeysym( X_get_display(), keysym, NULL,
+                   0, string, 1 );
+
+    /* --- in order to get the up-key event for a modifier,
+           we need to bind the key with itself as a modifier */
+
+    if( keysym == XK_Shift_L || keysym == XK_Shift_R ||
+        keysym == XK_Control_L || keysym == XK_Control_R ||
+        keysym == XK_Alt_L || keysym == XK_Alt_R )
+    {
+        XRebindKeysym( X_get_display(), keysym, &keysym, 1, string, 1 );
+    }
 }
 
 private  void  bind_special_keys()
@@ -367,50 +456,126 @@ private  void  bind_special_keys()
         bind_key( table[i].keysym, table[i].character );
 }
 
-private  char  font_named_str[] = "*-helvetica-medium-r-normal--*-%d-*";
+private  char  font_named_str[] = "*-helvetica-medium-r-normal--\?\?-%d-*";
 
 #define  MAX_NAMES   10
 #define  MAX_FONT_SIZE_ERROR   5
+
+private  BOOLEAN  find_font(
+    Font_types       type,
+    int              size,
+    STRING           font_name )
+{
+    int      i, n_returned;
+    BOOLEAN  found;
+    STRING   pattern;
+    char     **names;
+    int      dpi, family, width, slant, weight;
+    static   char  *dpis[] = { "100", "75" };
+    static   char  *families[] = { "helvetica", "times", "courier" };
+    static   char  *widths[] = { "normal", "narrow" };
+    static   char  *slants[] = { "r", "o", "i" };
+    static   char  *weights[] = { "medium", "bold" };
+
+    found = FALSE;
+
+    for_less( dpi, 0, SIZEOF_STATIC_ARRAY(dpis) )
+    {
+        for_less( family, 0, SIZEOF_STATIC_ARRAY(families) )
+        {
+            for_less( width, 0, SIZEOF_STATIC_ARRAY(widths) )
+            {
+                for_less( slant, 0, SIZEOF_STATIC_ARRAY(slants) )
+                {
+                    for_less( weight, 0, SIZEOF_STATIC_ARRAY(weights) )
+                    {
+                        if( type == FIXED_FONT )
+                        {
+                            (void) strcpy( pattern, "fixed" );
+                        }
+                        else
+                        {
+                            (void) sprintf( pattern,
+                              "*-%s-%s-%s-%s--\?\?-%d-%s-*",
+                              families[family],
+                              weights[weight],
+                              slants[slant],
+                              widths[width],
+                              size * 10,
+                              dpis[dpi] );
+                        }
+
+                        names = XListFonts( X_get_display(), pattern,
+                                            MAX_NAMES, &n_returned );
+
+                        found = (n_returned > 0 );
+
+                        if( found )
+                            break;
+                    }
+                    if( found )
+                        break;
+                }
+
+                if( found )
+                    break;
+            }
+            if( found )
+                break;
+        }
+
+        if( found )
+            break;
+    }
+
+
+    if( found )
+    {
+        (void) strcpy( font_name, names[0] );
+        XFreeFontNames( names );
+    }
+
+    return( found );
+}
 
 public  BOOLEAN  X_get_font(
     Font_types       type,
     int              size,
     Font             *x_font )
 {
-    char     **names;
-    int      n_returned, offset;
-    STRING   pattern;
+    BOOLEAN  found;
+    int      offset;
+    STRING   font_name;
 
     offset = 0;
 
     do
     {
-        if( type == FIXED_FONT )
-            (void) strcpy( pattern, "fixed" );
-        else
-            (void) sprintf( pattern, font_named_str, 10 * (size + offset) );
-        names = XListFonts( X_get_display(), pattern, MAX_NAMES, &n_returned );
+        found = find_font( type, size + offset, font_name );
 
         if( offset <= 0 )
             offset = -offset + 1;
         else
             offset = -offset;
     }
-    while( n_returned == 0 &&
+    while( !found &&
            (type != FIXED_FONT || offset <= MAX_FONT_SIZE_ERROR) );
 
-    if( n_returned >= 1 )
-    {
-        *x_font = XLoadFont( X_get_display(), names[0] );
-        XFreeFontNames( names );
-    }
+    if( found )
+        *x_font = XLoadFont( X_get_display(), font_name );
 
-    return( n_returned >= 1 );
+    return( found );
 }
 
 public  void  X_set_mouse_position(
     int                      x,
     int                      y )
 {
-    XWarpPointer( X_get_display(), None, None, 0, 0, 0, 0, x, y );
+    int    x_size, y_size;
+
+    X_get_screen_size( &x_size, &y_size );
+
+    XWarpPointer( X_get_display(), None, RootWindow(X_get_display(),
+                                                    X_get_screen()),
+                  0, 0, 0, 0, x, y_size-1-y );
 }

@@ -302,18 +302,6 @@ public  Status  GS_delete_window(
 
     if( window->WS_window->x_window.window_id >= 0 )
     {
-#ifndef  TWO_D_ONLY
-#ifdef TO_DO
-        if( G_has_overlay_planes() )
-        {
-            viewport( 0, window->x_size-1, 0, window->y_size-1 );
-            drawmode( OVERDRAW );
-            color( 0 );
-            clear();
-        }
-#endif
-#endif
-
         WS_delete_window( window->WS_window );
 
         status = OK;
@@ -398,10 +386,8 @@ private  void  clear_viewport(
 public  void  GS_clear_overlay()
 {
 #ifndef  TWO_D_ONLY
-#ifdef TO_DO
-    color( OVERLAY_CLEAR_INDEX );
-    clear();
-#endif
+    glClearIndex( 0 );
+    glClear( GL_COLOR_BUFFER_BIT );
 #endif
 }
 
@@ -501,19 +487,7 @@ public  int  GS_get_num_overlay_planes()
 #ifdef  TWO_D_ONLY
     return( 0 );
 #else
-    static  BOOLEAN  first = TRUE;
-    static  int      n_planes;
-
-    if( first )
-    {
-        first = FALSE;
-/*
-        n_planes = getgdesc( GD_BITS_OVER_SNG_CMODE );
-*/
-        n_planes = 0;
-    }
-
-    return( n_planes );
+    return( WS_get_n_overlay_planes() );
 #endif
 }
 
@@ -522,28 +496,23 @@ public  void  set_bitplanes(
     Bitplane_types   bitplanes )
 {
 #ifndef  TWO_D_ONLY
-#ifdef TO_DO
-    set_current_window( window );
-
-    if( G_has_overlay_planes() )
+    if( window->n_overlay_planes > 0 )
     {
+        WS_set_current_window( window->WS_window, bitplanes );
+
         switch( bitplanes )
         {
         case NORMAL_PLANES:
-            drawmode( NORMALDRAW );
-            zwritemask( 0xffffffff );
+            glDepthMask( TRUE );
             update_blend_function( window, bitplanes );
             break;
 
         case OVERLAY_PLANES:
-            drawmode( NORMALDRAW );
-            zwritemask( 0 );
-            drawmode( OVERDRAW );
+            glDepthMask( FALSE );
             update_blend_function( window, bitplanes );
             break;
         }
     }
-#endif
 #endif
 }
 
@@ -553,19 +522,8 @@ public  void  GS_set_overlay_colour_map(
     Colour          colour )
 {
 #ifndef  TWO_D_ONLY
-#ifdef TO_DO
-    if( G_has_overlay_planes() )
-    {
-        if( window->current_bitplanes != OVERLAY_PLANES )
-            set_bitplanes( window, OVERLAY_PLANES );
-
-        mapcolor( index, get_Colour_r(colour), get_Colour_g(colour),
-                         get_Colour_b(colour) );
-
-        if( window->current_bitplanes != OVERLAY_PLANES )
-            restore_bitplanes( window );
-    }
-#endif
+    if( window->n_overlay_planes > 0 )
+        WS_set_overlay_colour_map_entry( window->WS_window, index, colour );
 #endif
 }
 

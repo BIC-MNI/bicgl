@@ -337,27 +337,47 @@ public  BOOLEAN  WS_get_font(
     Real             size,
     WS_font_info     *font_info )
 {
-    int          first, last;
     Font         x_font;
 
     if( X_get_font( type, (int) size, &x_font ) )
     {
+        font_info->x_font = x_font;
         font_info->x_font_info = XQueryFont( X_get_display(), x_font );
-
-        first = font_info->x_font_info->min_char_or_byte2;
-        last = font_info->x_font_info->max_char_or_byte2;
-
-        font_info->listBase = glGenLists( last+1 );
-
-        if( font_info->listBase == 0 )
-            return( FALSE );
-
-        glXUseXFont( x_font, first, last-first+1, font_info->listBase+first );
 
         return( TRUE );
     }
 
     return( FALSE );
+}
+
+public  void  WS_build_font_in_window(
+    WS_window_struct  *window,
+    int               font_index,
+    WS_font_info      *font_info )
+{
+    int   first, last, listBase;
+
+    first = font_info->x_font_info->min_char_or_byte2;
+    last = font_info->x_font_info->max_char_or_byte2;
+
+    listBase = 1 + font_index * 256;
+
+    glXUseXFont( font_info->x_font, first, last-first+1, listBase+first );
+}
+
+public  void  WS_delete_font_in_window(
+    WS_window_struct     *window,
+    int                  font_index,
+    WS_font_info         *font_info )
+{
+    int   first, last, listBase;
+
+    first = font_info->x_font_info->min_char_or_byte2;
+    last = font_info->x_font_info->max_char_or_byte2;
+
+    listBase = 1 + font_index * 256;
+
+    glDeleteLists( listBase, last + 1 );
 }
 
 public  void  WS_delete_font(
