@@ -1,5 +1,5 @@
 
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <graphics.h>
 
 #define  LIGHT_INDEX         0
@@ -42,7 +42,6 @@ typedef struct
 
 private  void  update(
     Gwindow    window,
-    BOOLEAN    full_update_required,
     void       *update_data )
 {
 static  BOOLEAN   first = TRUE;

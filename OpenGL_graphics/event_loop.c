@@ -1,9 +1,9 @@
  
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <GS_graphics.h>
 
 public  void  GS_set_update_function(
-    void  (*func)( Window_id, int, int ) )
+    void  (*func)( Window_id ) )
 {
     WS_set_update_function( func );
 }
@@ -116,13 +116,6 @@ public  void  GS_add_timer_function(
     void          *data )
 {
     WS_add_timer_function( seconds, func, data );
-}
-
-public  void  GS_delete_timer_function(
-    void          (*func) ( void * ),
-    void          *data )
-{
-    WS_delete_timer_function( func, data );
 }
 
 public  void  GS_add_idle_function(

@@ -1,11 +1,11 @@
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <GS_graphics.h>
 #include  <queue.h>
 #include  <gl/device.h>
 
 #define  SLEEP_WHEN_IDLE_IN_EVENT_LOOP   0.02    /* 20 milliseconds */
  
-private  void  (*display_callback) ( Window_id, int, int );
+private  void  (*display_callback) ( Window_id );
 private  void  (*display_overlay_callback) ( Window_id );
 private  void  (*resize_callback) ( Window_id, int, int, int, int );
 private  void  (*key_down_callback) ( Window_id, int, int, int, int );
@@ -32,7 +32,7 @@ private  GSwindow   *windows = NULL;
 private  int        n_windows;
 
 public  void  GS_set_update_function(
-    void  (*func)( Window_id, int, int ) )
+    void  (*func)( Window_id ) )
 {
     display_callback = func;
 }
@@ -179,29 +179,6 @@ public  void  GS_add_timer_function(
     recompute_min_time();
 }
 
-public  void  GS_delete_timer_function(
-    void          (*func) ( void * ),
-    void          *data )
-{
-    int                index;
-
-    for_less( index, 0, n_timers )
-    {
-        if( timers[index].function == func && timers[index].data == data )
-            break;
-    }
-
-    if( index >= n_timers )
-    {
-        handle_internal_error( "GS_delete_timer_function" );
-        return;
-    }
-
-    DELETE_ELEMENT_FROM_ARRAY( timers, n_timers, index, 1 );
-
-    recompute_min_time();
-}
-
 typedef struct
 {
     void  (*function) ( void * );
@@ -262,14 +239,7 @@ public  void  GS_event_loop( void )
             if( windows[i]->update_required )
             {
                 windows[i]->update_required = FALSE;
-
-                save_win = winget();
-                winset( GS_get_window_id(windows[i]) );
-                getorigin( &x_pos, &y_pos );
-                winset( save_win );
-
-                (*display_callback)( GS_get_window_id(windows[i]),
-                                     (int) x_pos, (int) y_pos );
+                (*display_callback)( GS_get_window_id(windows[i]) );
                 idle = FALSE;
             }
         }
@@ -321,12 +291,7 @@ public  void  GS_event_loop( void )
                 break;
 
             case DEPTHCHANGE:
-                save_win = winget();
-                winset( (Window_id) val );
-                getorigin( &x_pos, &y_pos );
-                winset( save_win );
-
-                (*display_callback) ( (Window_id) val, (int) x_pos, (int) y_pos );
+                (*display_callback) ( (Window_id) val );
                 (*display_overlay_callback) ( (Window_id) val );
                 break;
 

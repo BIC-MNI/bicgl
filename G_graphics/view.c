@@ -1,5 +1,5 @@
  
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <graphics.h>
 
 #define  CLOSEST_FRONT_PLANE    1.0e-5
@@ -49,9 +49,7 @@ public  void  initialize_window_view(
     GS_set_matrix_mode( VIEWING_MATRIX );
 
     window->viewing_matrices[SCREEN_VIEW] = identity;
-
-    make_translation_transform( 0.375, 0.375, 0.0,
-                                &window->viewing_matrices[PIXEL_VIEW] );
+    window->viewing_matrices[PIXEL_VIEW] = identity;
 
     set_view_type( window, SCREEN_VIEW );
 
@@ -381,8 +379,8 @@ private  void  define_pixel_view(
 
     GS_set_matrix_mode( PROJECTION_MATRIX );
 
-    GS_ortho_2d( 0, window->x_viewport_max - window->x_viewport_min + 1,
-                 0, window->y_viewport_max - window->y_viewport_min + 1 );
+    GS_ortho_2d( 0, window->x_viewport_max - window->x_viewport_min,
+                 0, window->y_viewport_max - window->y_viewport_min );
 
     GS_get_transform( &window->projection_matrices[PIXEL_VIEW] );
 

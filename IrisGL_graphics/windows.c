@@ -1,5 +1,5 @@
  
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <GS_graphics.h>
 #include  <gl/get.h>
 
@@ -727,26 +727,4 @@ public  void  GS_get_window_size(
     getsize( &lx_size, &ly_size );
     *x_size = (int) lx_size;
     *y_size = (int) ly_size;
-}
-
-public  void  GS_raise_window(
-    GSwindow        window )
-{
-    winpop();
-}
-
-public  void  GS_lower_window(
-    GSwindow        window )
-{
-    winpush();
-}
-
-public  void  GS_iconify_window(
-    GSwindow        window )
-{
-}
-
-public  void  GS_deiconify_window(
-    GSwindow        window )
-{
 }

@@ -1,4 +1,4 @@
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <WS_graphics.h>
 
 #define  DEFAULT_WINDOW_X_SIZE    300

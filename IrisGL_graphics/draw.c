@@ -1,5 +1,5 @@
 
-#include  <internal_volume_io.h>
+#include  <volume_io/internal_volume_io.h>
 #include  <GS_graphics.h>
 
 public  void  GS_set_point(
@@ -325,46 +325,15 @@ public  Real  GS_get_character_height(
     Font_types      font_type,
     Real            font_size )
 {
-    int            i;
     fmfonthandle   font;
     Real           height;
-    static struct
-    {
-        int   declared_size;
-        int   actual_size;
-    }              some_corrections[] = 
-    {
-        { 6, 7 },
-        { 7, 8 },
-        { 8, 8 },
-        { 9, 9 },
-        { 10, 11 },
-        { 11, 11 },
-        { 12, 12 },
-        { 13, 12 },
-        { 14, 14 },
-        { 15, 14 },
-        { 18, 19 },
-        { 24, 24 }
-    };
 
     font = lookup_font( font_type, font_size );
 
     if( font != 0 )
-    {
-        for_less( i, 0, SIZEOF_STATIC_ARRAY( some_corrections ) )
-        {
-            if( some_corrections[i].declared_size == (int) font_size )
-                break;
-        }
-
-        if( i < SIZEOF_STATIC_ARRAY( some_corrections ) )
-            height = (Real) some_corrections[i].actual_size;
-        else
-            height = font_size;
-    }
+        height = font_size;
     else
-        height = 10.0;
+        height = 18.0;
 
     return( height );
 }
