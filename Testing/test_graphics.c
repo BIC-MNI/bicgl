@@ -42,9 +42,15 @@ int main(
     if( !stereo_flag || sscanf( argv[1], "%lf", &eye_separation ) != 1 )
         eye_separation = 0.0;
 
-    status = G_create_window( "Test Window", -1, -1, -1, -1, &window );
+    status = G_create_window( "Test Window", 100, 100, 300, 300, &window );
 
+    if( status != OK )
+        return( 1 );
+
+/*
     if( stereo_flag )
+*/
+
         G_set_background_colour( window, WHITE );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
