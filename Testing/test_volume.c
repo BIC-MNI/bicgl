@@ -22,7 +22,9 @@ int  main(
     (void) get_string_argument( "/nil/david/big_data/sphere.fre", &filename );
     (void) get_int_argument( 1, &n_slices_displayed );
 
-    status = input_volume( filename, dim_names, FALSE, &volume );
+    status = input_volume( filename, 3, dim_names, NC_UNSPECIFIED, FALSE,
+                           0.0, 0.0, TRUE, &volume,
+                           (minc_input_options *) NULL );
 
     get_volume_voxel_range( volume, &min_value, &max_value );
 
