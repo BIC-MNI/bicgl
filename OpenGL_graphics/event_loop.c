@@ -118,6 +118,13 @@ public  void  GS_add_timer_function(
     WS_add_timer_function( seconds, func, data );
 }
 
+public  void  GS_delete_timer_function(
+    void          (*func) ( void * ),
+    void          *data )
+{
+    WS_delete_timer_function( func, data );
+}
+
 public  void  GS_add_idle_function(
     void  (*func) ( void * ),
     void          *data )

@@ -1065,7 +1065,8 @@ typedef struct
 {
     void  (*function) ( void * );
     void              *data;
-    BOOLEAN           active;
+    BOOLEAN           in_use;
+    BOOLEAN           deleted;
 } callback_info_struct;
 
 static  callback_info_struct   *timers;
@@ -1080,9 +1081,10 @@ private  void  global_timer_function(
         return;
     }
 
-    (*timers[index].function)( timers[index].data );
+    timers[index].in_use = FALSE;
 
-    timers[index].active = FALSE;
+    if( !timers[index].deleted )
+        (*timers[index].function)( timers[index].data );
 }
 
 public  void  WS_add_timer_function(
@@ -1094,7 +1096,7 @@ public  void  WS_add_timer_function(
 
     for_less( i, 0, n_timers )
     {
-        if( !timers[i].active )
+        if( !timers[i].in_use )
             break;
     }
 
@@ -1106,10 +1108,33 @@ public  void  WS_add_timer_function(
 
     timers[i].function = func;
     timers[i].data = data;
-    timers[i].active = TRUE;
+    timers[i].in_use = TRUE;
+    timers[i].deleted = FALSE;
 
     glutTimerFunc( (unsigned int) (1000.0 * seconds + 0.5),
                    global_timer_function, i );
+}
+
+public  void  WS_delete_timer_function(
+    void          (*func) ( void * ),
+    void          *data )
+{
+    int                   i;
+
+    for_less( i, 0, n_timers )
+    {
+        if( timers[i].in_use && !timers[i].deleted &&
+            timers[i].function == func && timers[i].data == data )
+            break;
+    }
+
+    if( i >= n_timers )
+    {
+        handle_internal_error( "WS_delete_timer_function" );
+        return;
+    }
+
+    timers[i].deleted = TRUE;
 }
 
 static  callback_info_struct   *idles;
@@ -1174,3 +1199,13 @@ public  void  WS_set_update_flag(
 {
     glutPostRedisplay();
 }
+
+public  void  WS_terminate( void )
+{
+    if( n_timers > 0 )
+        FREE( timers );
+
+    if( n_idles > 0 )
+        FREE( idles );
+}
+
