@@ -136,23 +136,22 @@ private  Gwindow  get_key_or_mouse_event_window(
 private  void  update_the_window(
     Gwindow  window )
 {
-/*
-    if( !window->last_update_was_idle )
+    --n_windows_to_update_on_idle;
+    if( n_windows_to_update_on_idle == 0 )
     {
-        --n_windows_to_update_on_idle;
-        if( n_windows_to_update_on_idle == 0 )
-            G_remove_idle_function( check_update_windows, NULL );
+        G_remove_idle_function( check_update_windows, NULL );
     }
-*/
+
+    if( window->update_callback != NULL )
+    {
+        (*window->update_callback)( window, window->update_data );
+    }
 
     window->last_update_time = current_realtime_seconds();;
 
-    if( window->update_callback != NULL )
-        (*window->update_callback)( window, window->update_data );
-
     window->n_update_timers_to_ignore += window->n_update_timers;
+    window->n_update_timers = 0;
     window->update_required_flag = FALSE;
-    window->last_update_was_idle = FALSE;
 }
 
 private  void  global_update_function(
@@ -628,7 +627,6 @@ public  void  initialize_callbacks_for_window(
 {
     window->update_required_flag = FALSE;
     window->last_update_time = -1.0e30;
-    window->last_update_was_idle = FALSE;
     window->n_update_timers = 0;
     window->n_update_timers_to_ignore = 0;
 
@@ -664,16 +662,18 @@ private  void  timer_update_window(
 
     window = (Gwindow) void_ptr;
 
-    --window->n_update_timers;
-
     if( window->n_update_timers_to_ignore > 0 )
     {
         --window->n_update_timers_to_ignore;
         return;
     }
 
+    --window->n_update_timers;
+
     if( window->update_required_flag )
+    {
         update_the_window( window );
+    }
 }
 
 /* ARGSUSED */
@@ -691,10 +691,9 @@ private  void  check_update_windows(
     {
         window = get_nth_graphics_window( i );
 
-        if( window->update_required_flag && !window->last_update_was_idle )
+        if( window->update_required_flag )
         {
             update_the_window( window );
-            window->last_update_was_idle = TRUE;
         }
     }
 
@@ -710,15 +709,12 @@ public  void  G_set_update_flag(
 
     window->update_required_flag = TRUE;
 
-/*
-    if( !window->last_update_was_idle )
+    if( n_windows_to_update_on_idle == 0 )
     {
-        if( n_windows_to_update_on_idle == 0 )
-            G_add_idle_function( check_update_windows, NULL );
-
-        ++n_windows_to_update_on_idle;
+        G_add_idle_function( check_update_windows, NULL );
     }
-*/
+
+    ++n_windows_to_update_on_idle;
 
     current_time = current_realtime_seconds();
 

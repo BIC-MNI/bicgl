@@ -59,12 +59,9 @@ Real  end_time;
     G_set_zbuffer_state( window, OFF );
     G_set_lighting_state( window, OFF );
     G_set_view_type( window, PIXEL_VIEW );
-/*
     G_draw_pixels( window, &info->pixels ); 
-*/
     G_draw_pixels( window, &info->ball ); 
 
-/*
     G_set_zbuffer_state( window, ON );
     G_set_lighting_state( window, ON );
     G_set_view_type( window, MODEL_VIEW );
@@ -80,7 +77,6 @@ Real  end_time;
 
     for_less( i, 0, N_FONTS_TO_DRAW )
         G_draw_text( window, &info->font_examples[i] );
-*/
 
     G_update_window( window );
 
@@ -241,6 +237,7 @@ private  void  right_mouse_down(
         print( "Double buffering: Off\n" );
 
     G_set_double_buffer_state( window, info->double_buffer_flag );
+
     G_set_update_flag( window );
 }
 
@@ -483,15 +480,13 @@ int main(
         eye_separation = 0.0;
 
     status = G_create_window( "Test Window",
-                              100, 600, 100, 100,
+                              100, 600, 300, 300,
                               FALSE, info.double_buffer_flag, TRUE, 0,
                               &info.window );
 
     G_set_transparency_state( info.window, ON );
 
-/*
     G_set_window_update_min_interval( info.window, 1.0 / (Real) MAX_FRAMES_PER_SECOND );
-*/
 
     if( status != OK )
         return( 1 );

@@ -2,16 +2,20 @@
 #include  <internal_volume_io.h>
 #include  <GS_graphics.h>
 
-/* ARGSUSED */
-
-public  void  GS_initialize_lights(
-    GSwindow        window )
+private  void  initialize_lights( void )
 {
     static  float ambient_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     glLightModelfv( GL_LIGHT_MODEL_AMBIENT, ambient_light );
     glLightModeli( GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE );
     glLightModeli( GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE );
+}
+
+
+public  void  GS_initialize_lights(
+    GSwindow        window )
+{
+    initialize_lights();
 
     window->ambient_set = 0;
     window->n_lights_defined = 0;
@@ -234,12 +238,14 @@ public  void  redefine_lights(
 {
     int                ind;
     light_info_struct  *l;
+    Transform          identity;
 
-    for_less( ind, 0, window->n_light_states )
-    {
-        set_light_state( window->light_indices[ind],
-                         window->light_states[ind] );
-    }
+    GS_push_transform();
+
+    make_identity_transform( &identity );
+    GS_load_transform( &identity );
+
+    initialize_lights();
 
     for_less( ind, 0, window->n_lights_defined )
     {
@@ -249,4 +255,12 @@ public  void  redefine_lights(
                       &l->direction, &l->position,
                       l->spot_exponent, l->spot_angle );
     }
+
+    for_less( ind, 0, window->n_light_states )
+    {
+        set_light_state( window->light_indices[ind],
+                         window->light_states[ind] );
+    }
+
+    GS_pop_transform();
 }

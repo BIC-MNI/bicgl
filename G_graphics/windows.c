@@ -133,8 +133,6 @@ private  void  reinitialize_window(
 
     GS_set_surface_property( window->GS_window, WHITE, &spr );
 
-    initialize_graphics_lights( window );
-
     update_transforms( window );
 }
 
@@ -182,6 +180,8 @@ private  void  initialize_window(
     initialize_window_view( window );
 
     reinitialize_window( window );
+
+    initialize_graphics_lights( window );
 
     initialize_callbacks_for_window( window );
 }
