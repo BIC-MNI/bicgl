@@ -126,7 +126,7 @@ public  void  set_continuation_flag(
 
 #define  BEGIN_DRAW_OBJECTS( window, check_every, n_objects, wireframe_flag ) \
 { \
-    int                         OBJECT_INDEX; \
+    unsigned long               OBJECT_INDEX; \
     int                         _i, _iter, _n_iters, _n_done, _n_before_check; \
     int                         _check_every, _n_objects_to_do; \
     BOOLEAN                     _random_order, _interrupt_allowed; \
@@ -561,7 +561,7 @@ private  void  draw_polygons(
         }
 
         if( polygons->line_thickness != 1.0 )
-            GS_set_line_width( polygons->line_thickness );
+            GS_set_line_width( (Real) polygons->line_thickness );
     }
 #endif
 
@@ -859,7 +859,7 @@ public  void  G_draw_lines(
     about_to_draw_graphics( window );
 
     if( lines->line_thickness != 1.0 )
-        GS_set_line_width( lines->line_thickness );
+        GS_set_line_width( (Real) lines->line_thickness );
 
     n_lines = lines->n_items;
 
@@ -969,6 +969,7 @@ typedef  struct
 {
     Font_types   font_type;
     int          size;
+    BOOLEAN      exists;
     WS_font_info font_info;
 } font_struct;
 
@@ -978,9 +979,12 @@ private  font_struct    *fonts;
 private  BOOLEAN  lookup_font(
     Font_types       type,
     Real             size,
-    WS_font_info     **font_info )
+    WS_font_info     **font_info,
+    int              *font_index )
 {
-    int            i, int_size;
+    int            i, int_size, w;
+    Gwindow        win, current_window;
+    BOOLEAN        exists;
     WS_font_info   fi;
 
     int_size = (int) size;
@@ -991,32 +995,96 @@ private  BOOLEAN  lookup_font(
             (type == FIXED_FONT || fonts[i].size == int_size) )
         {
             *font_info = &fonts[i].font_info;
-            return( TRUE );
+            *font_index = i;
+            return( fonts[i].exists );
         }
     }
 
-    if( WS_get_font( type, size, &fi ) )
+    exists = WS_get_font( type, size, &fi );
+
+    SET_ARRAY_SIZE( fonts, n_fonts, n_fonts+1, DEFAULT_CHUNK_SIZE );
+    fonts[n_fonts].size = int_size;
+    fonts[n_fonts].font_type = type;
+    fonts[n_fonts].exists = exists;
+
+    if( exists )
     {
-        SET_ARRAY_SIZE( fonts, n_fonts, n_fonts+1, DEFAULT_CHUNK_SIZE );
-        fonts[n_fonts].size = int_size;
-        fonts[n_fonts].font_type = type;
         fonts[n_fonts].font_info = fi;
         *font_info = &fonts[n_fonts].font_info;
-        ++n_fonts;
-        return( TRUE );
     }
 
-    print_error( "Could not find font: %d %g\n", (int) type, size );
+    *font_index = n_fonts;
+    ++n_fonts;
 
-    return( FALSE );
+    if( exists )
+    {
+        current_window = get_current_window();
+
+        for_less( w, 0, get_n_graphics_windows() )
+        {
+            win = get_nth_graphics_window( w );
+
+            set_current_window( win );
+
+            WS_build_font_in_window( win->WS_window, n_fonts-1, *font_info );
+        }
+
+        set_current_window( current_window );
+    }
+    else
+        print_error( "Could not find font: %d %g\n", (int) type, size );
+
+    return( exists );
 }
 
-public  void  delete_fonts()
+public  void  add_fonts_for_window(
+    Gwindow        window )
 {
     int   i;
 
     for_less( i, 0, n_fonts )
-        WS_delete_font( &fonts[i].font_info );
+    {
+        if( fonts[i].exists )
+            WS_build_font_in_window( window->WS_window, i, &fonts[i].font_info);
+    }
+}
+
+public  void  delete_fonts_for_window(
+    Gwindow        window )
+{
+    int   i;
+
+    for_down( i, n_fonts-1, 0 )
+    {
+        if( fonts[i].exists )
+            WS_delete_font_in_window( window->WS_window, i,
+                                      &fonts[i].font_info );
+    }
+}
+
+public  void  delete_fonts()
+{
+    int            i, w;
+    Gwindow        win, current_window;
+
+    current_window = get_current_window();
+
+    for_less( w, 0, get_n_graphics_windows() )
+    {
+        win = get_nth_graphics_window( w );
+
+        set_current_window( win );
+
+        delete_fonts_for_window( win );
+    }
+
+    set_current_window( current_window );
+
+    for_less( i, 0, n_fonts )
+    {
+        if( fonts[i].exists )
+            WS_delete_font( &fonts[i].font_info );
+    }
 
     if( n_fonts > 0 )
     {
@@ -1026,9 +1094,11 @@ public  void  delete_fonts()
 }
 
 private  BOOLEAN  set_font(
+    Gwindow          win,
     Font_types       type,
     Real             size )
 {
+    int           font_index;
     WS_font_info  *font_info;
     BOOLEAN       found;
 
@@ -1042,10 +1112,10 @@ private  BOOLEAN  set_font(
         print_error( "Invalid font size: %g\n", size );
     }
 
-    found = lookup_font( type, size, &font_info );
+    found = lookup_font( type, size, &font_info, &font_index );
 
     if( found )
-        GS_set_font( font_info );
+        found = GS_set_font( win, font_index, font_info );
 
     return( found );
 }
@@ -1054,9 +1124,10 @@ public  Real  G_get_text_height(
     Font_types       type,
     Real             size )
 {
+    int           font_index;
     WS_font_info  *font_info;
 
-    if( !lookup_font( type, size, &font_info ) )
+    if( !lookup_font( type, size, &font_info, &font_index ) )
         return( 1.0 );
 
     return( WS_get_character_height( font_info ) );
@@ -1067,9 +1138,10 @@ public  Real  G_get_text_length(
     Font_types       type,
     Real             size )
 {
+    int           font_index;
     WS_font_info  *font_info;
 
-    if( !lookup_font( type, size, &font_info ) )
+    if( !lookup_font( type, size, &font_info, &font_index ) )
         return( 1.0 );
 
     return( WS_get_text_length( font_info, str ) );
@@ -1097,14 +1169,14 @@ public  void  G_draw_text(
 
     set_colour( window, text->colour );
 
-    if( !set_font( text->font, text->size ) )
+    if( !set_font( window, text->font, text->size ) )
         return;
 
     BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, 1, TRUE )
 
-        GS_set_raster_position( Point_x(text->origin),
-                                Point_y(text->origin),
-                                Point_z(text->origin) );
+        GS_set_raster_position( (Real) Point_x(text->origin),
+                                (Real) Point_y(text->origin),
+                                (Real) Point_z(text->origin) );
 
         GS_draw_text( text->font, text->string );
 
@@ -1148,9 +1220,9 @@ public  void  G_draw_marker(
         {
             GS_push_transform();
 
-            make_translation_transform( Point_x(marker->position),
-                                        Point_y(marker->position),
-                                        Point_z(marker->position),
+            make_translation_transform( (Real) Point_x(marker->position),
+                                        (Real) Point_y(marker->position),
+                                        (Real) Point_z(marker->position),
                                         &transform );
             GS_mult_transform( &transform );
 
@@ -1174,12 +1246,12 @@ public  void  G_draw_marker(
 
         if( window->marker_labels_visibility )
         {
-            if( set_font( FIXED_FONT, 0.0 ) )
+            if( set_font( window, FIXED_FONT, 0.0 ) )
             {
-                GS_set_raster_position( Point_x(marker->position) +
-                                             1.5 * marker->size / 2.0,
-                                        Point_y(marker->position),
-                                        Point_z(marker->position) );
+                GS_set_raster_position( (Real) Point_x(marker->position) +
+                                           1.5 * (Real) marker->size / 2.0,
+                                        (Real) Point_y(marker->position),
+                                        (Real) Point_z(marker->position) );
 
                 GS_draw_text( FIXED_FONT, marker->label );
             }
