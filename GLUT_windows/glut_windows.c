@@ -279,6 +279,7 @@ private  Window_id  create_GLUT_window(
               buffer mode, but reports double, so there may be a bug
               in GLUT, and we just assign the double buffering to FALSE */
         actual_double_buffer_flag = FALSE;
+        glDrawBuffer( GL_FRONT );
     }
     else if( !actual_double_buffer_flag && double_buffer_flag )
     {
@@ -314,7 +315,16 @@ private  Window_id  create_GLUT_window(
 private  void  delete_GLUT_window(
     Window_id   window_id )
 {
+#ifdef DEBUG
+    Window_id  current;
+
+    current = glutGetWindow();
+    glutSetWindow( window_id );
+    glutHideWindow();
+    glutSetWindow( current );
+#else
     glutDestroyWindow( window_id );
+#endif
 }
 
 private  void  reestablish_colour_map_in_new_window(
