@@ -1,3 +1,12 @@
+2000-10-07  Steve ROBBINS  <stever@bottom.bic.mni.mcgill.ca>
+
+	* GLUT_windows/Include/glut_window_prototypes.h:
+	* Include/graphics_prototypes.h:
+	* IrisGL_graphics/Include/irisgl_graphics_prototypes.h:
+	* OpenGL_graphics/Include/opengl_graphics_prototypes.h:
+	revert to revision 1.1, the newer version, as 1.2 was the version 
+	copied from the source tarball.
+
 2000-10-07  Steve Robbins  <steve@nyongwa.montreal.qc.ca>
 
 	* tagged as release-1_3: sources copied from ~david/Source/Graphics, 

@@ -110,7 +110,7 @@ public  void   GS_draw_text(
     STRING       string );
 
 public  void  GS_set_update_function(
-    void  (*func)( Window_id ) );
+    void  (*func)( Window_id, int, int ) );
 
 public  void  GS_set_update_overlay_function(
     void  (*func)( Window_id ) );
@@ -165,6 +165,10 @@ public  void  GS_set_update_flag(
 
 public  void  GS_add_timer_function(
     Real          seconds,
+    void          (*func) ( void * ),
+    void          *data );
+
+public  void  GS_delete_timer_function(
     void          (*func) ( void * ),
     void          *data );
 
@@ -228,6 +232,9 @@ public  void  GS_backface_culling_state(
 
 public  void  GS_set_n_curve_segments(
     int      n_segments );
+
+public  void  GS_set_dither_state(
+    BOOLEAN      state );
 
 public  void  GS_mult_transform(
     Transform  *transform );
@@ -407,4 +414,16 @@ public  void  GS_get_window_position(
 public  void  GS_get_window_size(
     int       *x_size,
     int       *y_size );
+
+public  void  GS_raise_window(
+    GSwindow        window );
+
+public  void  GS_lower_window(
+    GSwindow        window );
+
+public  void  GS_iconify_window(
+    GSwindow        window );
+
+public  void  GS_deiconify_window(
+    GSwindow        window );
 #endif

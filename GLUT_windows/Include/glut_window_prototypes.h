@@ -99,7 +99,7 @@ public  void  WS_set_mouse_position(
     int       y_screen );
 
 public  void  WS_set_update_function(
-    void  (*func)( Window_id ) );
+    void  (*func)( Window_id, int, int ) );
 
 public  void  WS_set_update_overlay_function(
     void  (*func)( Window_id ) );
@@ -154,6 +154,10 @@ public  void  WS_add_timer_function(
     void          (*func) ( void * ),
     void          *data );
 
+public  void  WS_delete_timer_function(
+    void          (*func) ( void * ),
+    void          *data );
+
 public  void  WS_add_idle_function(
     void  (*func) ( void * ),
     void          *data );
@@ -165,6 +169,20 @@ public  void  WS_remove_idle_function(
 public  void  WS_event_loop( void );
 
 public  void  WS_set_update_flag(
+    WSwindow   window  );
+
+public  void  WS_terminate( void );
+
+public  void  WS_raise_window(
+    WSwindow   window  );
+
+public  void  WS_lower_window(
+    WSwindow   window  );
+
+public  void  WS_iconify_window(
+    WSwindow   window  );
+
+public  void  WS_deiconify_window(
     WSwindow   window  );
 
 public  void  copy_X_colours(
