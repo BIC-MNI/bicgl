@@ -85,7 +85,7 @@ int  main(
                          0.0, 0.0, 0.0, 0.0,
                          x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
-                         &rgb_map, BLACK, &n_alloced, &pixels );
+                         &rgb_map, BLACK, NULL, &n_alloced, &pixels );
 
     G_set_view_type( window, PIXEL_VIEW );
     G_draw_pixels( window, &pixels );
