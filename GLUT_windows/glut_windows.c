@@ -79,7 +79,7 @@ public  Status  WS_create_window(
 
     *actual_colour_map_mode = (glutGet((GLenum) GLUT_WINDOW_RGBA) != 1);
     *actual_double_buffer_flag = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
-    *actual_depth_buffer_flag = (glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE) > 1);
+    *actual_depth_buffer_flag = (glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE) > 0);
     *actual_n_overlay_planes = 0;
 
     set_event_callbacks_for_current_window( *actual_n_overlay_planes );
@@ -117,10 +117,17 @@ private  void  set_window_overlay_planes(
 }
 
 public  void  WS_set_current_window(
-    WSwindow          window,
-    Bitplane_types    current_bitplanes )
+    WSwindow          window )
 {
-    if( current_bitplanes == OVERLAY_PLANES )
+    WS_set_bitplanes( window, NORMAL_PLANES );
+}
+
+
+public  void  WS_set_bitplanes(
+    WSwindow          window,
+    Bitplane_types    bitplanes )
+{
+    if( bitplanes == OVERLAY_PLANES )
         set_window_overlay_planes( window );
     else
         set_window_normal_planes( window );
@@ -174,6 +181,7 @@ public  void  WS_get_window_size(
 
 public  void  WS_set_colour_map_entry(
     WSwindow          window,
+    Bitplane_types    bitplane,
     int               ind,
     Colour            colour )
 {
@@ -322,6 +330,7 @@ static  void  (*iconify_callback) ( Window_id );
 static  void  (*deiconify_callback) ( Window_id );
 static  void  (*enter_callback) ( Window_id );
 static  void  (*leave_callback) ( Window_id );
+static  void  (*quit_callback) ( Window_id );
 
 public  void  WS_set_update_function(
     void  (*func)( Window_id ) )
@@ -417,6 +426,12 @@ public  void  WS_set_leave_function(
     void  (*func)( Window_id ) )
 {
     leave_callback = func;
+}
+
+public  void  WS_set_quit_function(
+    void  (*func)( Window_id ) )
+{
+    quit_callback = func;
 }
 
 private  int  get_keyboard_modifiers( void )
@@ -572,6 +587,110 @@ private  void  set_event_callbacks_for_current_window(
     glutMotionFunc( mouse_motion_function );
     glutPassiveMotionFunc( mouse_motion_function );
     glutEntryFunc( entry_function );
+}
+
+typedef struct
+{
+    void  (*function) ( void * );
+    void              *data;
+    BOOLEAN           active;
+} callback_info_struct;
+
+static  callback_info_struct   *timers;
+static  int                    n_timers = 0;
+
+private  void  global_timer_function(
+    int   index )
+{
+    if( index < 0 || index >= n_timers )
+    {
+        handle_internal_error( "global_timer_function" );
+        return;
+    }
+
+    (*timers[index].function)( timers[index].data );
+
+    timers[index].active = FALSE;
+}
+
+public  void  WS_add_timer_function(
+    Real          seconds,
+    void          (*func) ( void * ),
+    void          *data )
+{
+    int                   i;
+    callback_info_struct  info;
+
+    for_less( i, 0, n_timers )
+    {
+        if( !timers[i].active )
+            break;
+    }
+
+    if( i >= n_timers )
+    {
+        info.function = func;
+        info.data = data;
+
+        ADD_ELEMENT_TO_ARRAY( timers, n_timers, info, 1 );
+    }
+
+    timers[i].active = TRUE;
+
+    glutTimerFunc( (unsigned int) (1000.0 * seconds + 0.5),
+                   global_timer_function, i );
+}
+
+static  callback_info_struct   *idles;
+static  int                    n_idles = 0;
+
+private  void  global_idle_function( void )
+{
+    int   i;
+
+    for_less( i, 0, n_idles )
+    {
+        (*idles[i].function) ( idles[i].data );
+    }
+}
+
+public  void  WS_add_idle_function(
+    void  (*func) ( void * ),
+    void          *data )
+{
+    callback_info_struct  info;
+
+    if( n_idles == 0 )
+        glutIdleFunc( global_idle_function );
+
+    info.function = func;
+    info.data = data;
+
+    ADD_ELEMENT_TO_ARRAY( idles, n_idles, info, 1 );
+}
+
+public  void  WS_remove_idle_function(
+    void  (*func) ( void * ),
+    void          *data )
+{
+    int   i;
+
+    for_less( i, 0, n_idles )
+    {
+        if( idles[i].function == func && idles[i].data == data )
+            break;
+    }
+
+    if( i >= n_idles )
+    {
+        handle_internal_error( "WS_delete_idle_func" );
+        return;
+    }
+
+    DELETE_ELEMENT_FROM_ARRAY( idles, n_idles, i, 1 );
+
+    if( n_idles == 0 )
+        glutIdleFunc( NULL );
 }
 
 public  void  WS_event_loop( void )
