@@ -160,8 +160,16 @@ public  void  GS_define_light(
     window->lights[ind].light_index = light_index;
     window->lights[ind].type = type;
     window->lights[ind].colour = colour;
-    window->lights[ind].direction = *direction;
-    window->lights[ind].position = *position;
+    if( direction != NULL )
+        window->lights[ind].direction = *direction;
+    else
+        fill_Vector( window->lights[ind].direction, 0.0, 0.0, 0.0 );
+
+    if( position != NULL )
+        window->lights[ind].position = *position;
+    else
+        fill_Vector( window->lights[ind].position, 0.0, 0.0, 0.0 );
+
     window->lights[ind].spot_exponent = spot_exponent;
     window->lights[ind].spot_angle = spot_angle;
 }

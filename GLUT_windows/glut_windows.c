@@ -211,6 +211,12 @@ private  Window_id  create_GLUT_window(
 
     glutInitDisplayMode( mode );
 
+#ifdef BUG_ON_DISPLAY_ON_LINUX_XTERM
+/*
+  --- when running on SGI, displaying on Linux xterm, doing this get causes
+      some windows to get the wrong colour map mode
+*/
+
     if( !glutGet( (GLenum) GLUT_DISPLAY_MODE_POSSIBLE ) &&
         double_buffer_flag )
     {
@@ -226,6 +232,7 @@ private  Window_id  create_GLUT_window(
                      colour_map_mode, double_buffer_flag );
         return( -1 );
     }
+#endif
 
     window_id = glutCreateWindow( title );
 
