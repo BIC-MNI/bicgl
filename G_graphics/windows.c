@@ -731,6 +731,13 @@ public  void  G_append_to_last_update(
 {
     set_current_window( window );
     GS_append_to_last_update( window );
-    set_continuation_flag( window, FALSE );
+    set_continuation_flag( window, TRUE );
     window->bitplanes_cleared[NORMAL_PLANES] = TRUE;
+}
+
+public  void  G_continue_last_update(
+     Gwindow   window )
+{
+    set_current_window( window );
+    set_continuation_flag( window, TRUE );
 }

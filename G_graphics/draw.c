@@ -40,7 +40,8 @@ public  void  initialize_display_interrupts(
     window->continuation_flag = FALSE;
     window->interrupt_occurred = FALSE;
     window->interrupt_interval = 100;
-    window->interrupt_time = 1.0;
+    window->interrupt_time_interval = 1.0;
+    window->interrupt_event_time_interval = 0.3;
 #endif
 }
 
@@ -83,10 +84,28 @@ public  void  G_set_smallest_interrupt_size(
 
 public  void  G_set_interrupt_time(
     Gwindow          window,
-    Real            int_time )
+    Real             interval )
+{
+    window->interrupt_time_interval = interval;
+}
+
+public  void  G_set_interrupt_event_time(
+    Gwindow          window,
+    Real             interval )
+{
+    window->interrupt_event_time_interval = interval;
+}
+
+public  void  G_start_interrupt_test(
+    Gwindow          window )
 {
 #ifndef  TWO_D_ONLY
-    window->interrupt_time = int_time;
+    Real   current_time;
+
+    current_time = current_realtime_seconds();
+    window->interrupt_time = current_time + window->interrupt_time_interval;
+    window->interrupt_event_time = current_time +
+                                   window->interrupt_event_time_interval;
 #endif
 }
 
@@ -131,7 +150,7 @@ public  void  set_continuation_flag(
     int                         _check_every, _n_objects_to_do; \
     BOOLEAN                     _random_order, _interrupt_allowed; \
     Random_mask_type            _random_order_mask; \
-    Real                        interrupt_at; \
+    Real                        interrupt_at, check_events_at, current_time; \
     int                         _n_objects, _first_object, _second_object; \
     BOOLEAN                     _wireframe_flag; \
     static   BOOLEAN            const_true = TRUE; \
@@ -142,6 +161,7 @@ public  void  set_continuation_flag(
     (window)->interrupt_occurred = FALSE; \
 \
     interrupt_at = (window)->interrupt_time; \
+    check_events_at = (window)->interrupt_event_time; \
     _interrupt_allowed = (G_get_drawing_interrupt_state( window ) && \
                          (_n_objects) > (window)->interrupt_size ); \
  \
@@ -225,8 +245,9 @@ public  void  set_continuation_flag(
                 --_n_before_check; \
                 if( _n_before_check == 0 ) \
                 { \
-                    if( G_events_pending() && \
-                        current_realtime_seconds() > interrupt_at ) \
+                    current_time = current_realtime_seconds(); \
+                    if( (current_time>=check_events_at && G_events_pending())||\
+                        current_time > interrupt_at ) \
                     { \
                         _n_objects_to_do = _i+1; \
                         (window)->n_items_done = _n_objects_to_do; \

@@ -107,6 +107,9 @@ typedef  struct
     BOOLEAN                UNUSED_IF_2D(interrupt_occurred);
     int                    UNUSED_IF_2D(interrupt_interval);
     Real                   UNUSED_IF_2D(interrupt_time);
+    Real                   UNUSED_IF_2D(interrupt_time_interval);
+    Real                   UNUSED_IF_2D(interrupt_event_time_interval);
+    Real                   UNUSED_IF_2D(interrupt_event_time);
     int                    UNUSED_IF_2D(next_item);
     int                    UNUSED_IF_2D(n_items_done);
 } window_struct;
