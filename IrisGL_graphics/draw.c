@@ -1,6 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 public  void  GS_set_point(
     Point  *point )
@@ -54,7 +54,7 @@ public  void  GS_initialize_surface_property(
 #ifndef  TWO_D_ONLY
     static  Surfprop  spr = { 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-    window->GS_window.unique_lmdef_id = get_unique_lmdef_id();
+    window->GS_window->unique_lmdef_id = get_unique_lmdef_id();
     GS_set_surface_property( window, WHITE, &spr );
 #endif
 }
@@ -88,7 +88,7 @@ public  void  GS_set_surface_property(
 
     props[15] = Surfprop_t( *surfprop );
 
-    lmdef( DEFMATERIAL, window->GS_window.unique_lmdef_id,
+    lmdef( DEFMATERIAL, window->GS_window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(props), props );
 #endif
 }
@@ -160,23 +160,6 @@ public  void  GS_set_raster_position(
     Real  z )
 {
     cmov( x, y, z );
-}
-
-public  void  GS_set_font(
-    WS_font_info     *font )
-{
-    if( font->type != FIXED_FONT )
-        fmsetfont( font->font_handle );
-}
-
-public  void   GS_draw_text(
-    Font_types   type,
-    char         string[] )
-{
-    if( type == SIZED_FONT )
-        fmprstr( string );
-    else
-        charstr( string );
 }
 
 public  void  GS_set_pixel_zoom(
@@ -322,7 +305,10 @@ public  Real  WS_get_text_length(
 {
     Real   width;
 
-    width = (Real) fmgetstrwidth( font_info->font_handle, str );
+    if( font_info->type == SIZED_FONT )
+        width = (Real) fmgetstrwidth( font_info->font_handle, str );
+    else
+        width = (Real) strwidth( str );
 
     return( width );
 }
@@ -339,3 +325,21 @@ public  Real  WS_get_character_height(
 
     return( height );
 }
+
+public  void  GS_set_font(
+    WS_font_info     *font )
+{
+    if( font->type != FIXED_FONT )
+        fmsetfont( font->font_handle );
+}
+
+public  void   GS_draw_text(
+    Font_types   type,
+    char         string[] )
+{
+    if( type == SIZED_FONT )
+        fmprstr( string );
+    else
+        charstr( string );
+}
+
