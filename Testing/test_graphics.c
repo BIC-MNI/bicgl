@@ -14,7 +14,7 @@ int main(
     BOOLEAN           stereo_flag;
     window_struct     *window, *event_window;
     text_struct       text;
-    lines_struct      lines;
+    lines_struct      lines, lines_2d;
     polygons_struct   polygons;
     pixels_struct     pixels;
     static Surfprop   spr = { 0.2, 0.5, 0.5, 20.0, 1.0 };
@@ -87,6 +87,30 @@ int main(
     lines.indices[3] = 2;
 
     lines.indices[4] = 3;
+
+    /* ------------ define 2d line to be drawn  ------------- */
+
+    initialize_lines( &lines_2d, make_Colour(255,255,0) );
+
+    G_get_window_size( window, &x_size, &y_size );
+
+    lines_2d.n_points = 4;
+    ALLOC( lines_2d.points, 4 );
+    fill_Point( lines_2d.points[0], 5.0, 5.0, 0.0 );
+    fill_Point( lines_2d.points[1], x_size - 5.0, 5.0, 0.0 );
+    fill_Point( lines_2d.points[2], x_size - 5.0, y_size - 5.0, 0.0 );
+    fill_Point( lines_2d.points[3], 5.0, y_size - 5.0, 0.0 );
+
+    lines_2d.n_items = 1;
+    ALLOC( lines_2d.end_indices, lines_2d.n_items );
+    lines_2d.end_indices[0] = 5;
+
+    ALLOC( lines_2d.indices, lines_2d.end_indices[lines_2d.n_items-1] );
+    lines_2d.indices[0] = 0;
+    lines_2d.indices[1] = 1;
+    lines_2d.indices[2] = 2;
+    lines_2d.indices[3] = 3;
+    lines_2d.indices[4] = 0;
 
     /* ------------ define pixels to be drawn  ------------- */
 
@@ -204,6 +228,11 @@ int main(
                 case WINDOW_RESIZE_EVENT:
                     G_get_window_position( window, &x_position, &y_position );
                     G_get_window_size( window, &x_size, &y_size );
+                    fill_Point( lines_2d.points[0], 5.0, 5.0, 0.0 );
+                    fill_Point( lines_2d.points[1], x_size - 5.0, 5.0, 0.0 );
+                    fill_Point( lines_2d.points[2], x_size - 5.0, y_size - 5.0,
+                                                    0.0 );
+                    fill_Point( lines_2d.points[3], 5.0, y_size - 5.0, 0.0 );
                     print( "Window resized, " );
                     print( " new position: %d %d   New size: %d %d\n",
                             x_position, y_position, x_size, y_size );
@@ -267,17 +296,16 @@ int main(
 
         if( update_required )
         {
-/*
+            G_clear_window( window );
+
             G_draw_pixels( window, &pixels );
-*/
 
             G_set_view_type( window, MODEL_VIEW );
             G_draw_lines( window, &lines );
-/*
             G_draw_polygons( window, &polygons );
-*/
 
             G_set_view_type( window, PIXEL_VIEW );
+            G_draw_lines( window, &lines_2d );
             G_draw_text( window, &text );
 
             G_update_window( window );
