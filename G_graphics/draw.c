@@ -868,12 +868,6 @@ public  void  G_draw_lines(
     BOOLEAN  lines_as_curves, save_lights;
 #endif
 
-    if( lines->line_thickness < 1.0f || lines->line_thickness > 20.0f )
-    {
-        print_error( "Line thickness %g\n", lines->line_thickness );
-        handle_internal_error( "line thickness" );
-    }
-
     about_to_draw_graphics( window );
 
     save_lights = G_get_lighting_state( window );

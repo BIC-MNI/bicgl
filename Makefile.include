@@ -22,7 +22,7 @@ OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR) -lmesa_x_graphics \
                           $(MESA_LIB) -lXext -lX11 $(BIC_PL_LIBS)
 MESA_GRAPHICS_LIBS-O3   = -L$(TOP_DIR) -lmesa_x_graphics-O3 \
-                          $(MESA_LIB) -lXext -lX11 $(BIC_PL_LIBS-O3)
+                          $(MESA_LIB-O3) -lXext -lX11 $(BIC_PL_LIBS-O3)
 MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------

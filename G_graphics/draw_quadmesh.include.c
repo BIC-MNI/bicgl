@@ -76,13 +76,11 @@
     GS_set_ambient_and_diffuse_mode( ON );
 #endif
 
-    BEGIN_DRAW_OBJECTS( window, 1, n_objects,
 #ifdef  DEF_WIREFRAME
-                        TRUE
+    BEGIN_DRAW_OBJECTS( window, 1, n_objects, TRUE )
 #else
-                        FALSE
+    BEGIN_DRAW_OBJECTS( window, 1, n_objects, FALSE )
 #endif
-                      )
 
 #ifdef  DEF_WIREFRAME
         if( (int) OBJECT_INDEX < m )

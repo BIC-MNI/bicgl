@@ -1,7 +1,7 @@
 #include  <internal_volume_io.h>
 #include  <WS_windows.h>
 
-#if !defined(MESA_OPENGL) && defined(dec)
+#if 0
 #define  USE_STORED_FONT_ONLY
 #endif
 

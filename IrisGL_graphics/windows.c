@@ -151,6 +151,15 @@ public  Status  GS_create_window(
 
     if( GS_get_window_id(window) >= 0 )
     {
+        if( !GS_is_double_buffer_supported() )
+            double_buffer_desired = FALSE;
+
+        if( !GS_is_depth_buffer_supported() )
+            depth_buffer_desired = FALSE;
+
+        n_overlay_planes_desired = MIN( n_overlay_planes_desired,
+                                        GS_get_n_overlay_planes() );
+
         *actual_colour_map_flag = colour_map_desired;
         *actual_double_buffer_flag = double_buffer_desired;
         *actual_depth_buffer_flag = depth_buffer_desired;

@@ -182,7 +182,11 @@ public  void  GS_set_window_title(
 
 public  BOOLEAN  GS_has_transparency_mode( void )
 {
-    return( TRUE );
+    GLint   blend_flag;
+
+    glGetIntegerv( GL_BLEND, &blend_flag );
+
+    return( blend_flag > 0 );
 }
 
 /* ----------------------------- MNI Header -----------------------------------

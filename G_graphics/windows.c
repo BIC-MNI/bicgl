@@ -183,15 +183,6 @@ public  Status  G_create_window(
     ALLOC( (*window)->GS_window, 1 );
     ALLOC( (*window)->WS_window, 1 );
 
-    if( !G_is_double_buffer_supported() )
-        double_buffer_desired = FALSE;
-
-    if( !G_is_depth_buffer_supported() )
-        depth_buffer_desired = FALSE;
-
-    n_overlay_planes_desired = MIN( n_overlay_planes_desired,
-                                    G_get_n_overlay_planes() );
-
     status = GS_create_window( *window, title, x_pos, y_pos, width, height,
                                colour_map_desired,
                                double_buffer_desired,
@@ -208,11 +199,14 @@ public  Status  G_create_window(
     }
     else
     {
+        (*window)->double_buffer_available = actual_double_buffer_flag;
         (*window)->double_buffer_state = actual_double_buffer_flag;
+
         (*window)->colour_map_state = actual_colour_map_flag;
 #ifndef  TWO_D_ONLY
         (*window)->n_overlay_planes = actual_n_overlay_planes;
         (*window)->zbuffer_state = actual_depth_buffer_flag;
+        (*window)->zbuffer_available = actual_depth_buffer_flag;
 #endif
 
         initialize_window( *window );
@@ -302,17 +296,17 @@ public  void  G_set_double_buffer_state(
     Gwindow        window,
     BOOLEAN        flag )
 {
-    if( G_can_switch_double_buffering() &&
-        flag != window->double_buffer_state )
+    if( flag && (!G_can_switch_double_buffering() ||
+                 !window->double_buffer_available) )
+        flag = FALSE;
+
+    if( flag != window->double_buffer_state )
     {
         set_current_window( window );
 
         set_bitplanes( window, NORMAL_PLANES );
 
-        if( !G_is_double_buffer_supported() )
-            flag = FALSE;
-
-        window->double_buffer_state = GS_set_double_buffer_state( flag);
+        window->double_buffer_state = GS_set_double_buffer_state( flag );
 
         restore_bitplanes( window );
     }
@@ -338,14 +332,16 @@ public  void  G_set_zbuffer_state(
     BOOLEAN         flag )
 {
 #ifndef  TWO_D_ONLY
+    if( flag && (!G_is_depth_buffer_supported() || !window->zbuffer_available) )
+        flag = FALSE;
+
     if( flag != window->zbuffer_state )
     {
         set_current_window( window );
 
-        GS_set_depth_buffer_state( flag && G_is_depth_buffer_supported() );
+        GS_set_depth_buffer_state( flag );
 
-        if( !flag || G_is_depth_buffer_supported() )
-            window->zbuffer_state = flag;
+        window->zbuffer_state = flag;
     }
 #endif
 }

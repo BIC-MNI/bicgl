@@ -43,13 +43,11 @@
     GS_set_ambient_and_diffuse_mode( ON );
 #endif
 
-    BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, n_polygons, 
 #ifdef  DEF_WIREFRAME
-                        TRUE
+    BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, n_polygons, TRUE )
 #else
-                        FALSE
+    BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, n_polygons, FALSE )
 #endif
-)
 
         if( visibilities == NULL || visibilities[OBJECT_INDEX] )
         {

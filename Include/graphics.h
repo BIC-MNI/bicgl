@@ -81,6 +81,7 @@ typedef  struct
     Real                   UNUSED_IF_2D(window_width);
     Real                   UNUSED_IF_2D(window_height);
 
+    BOOLEAN                double_buffer_available;
     BOOLEAN                double_buffer_state;
 
     BOOLEAN                UNUSED_IF_2D(zbuffer_available);

@@ -81,8 +81,30 @@ public  void  GS_ortho_2d(
     glLoadIdentity();
 
 #ifdef MESA_OPENGL
-    glOrtho( (Real) x_min, (Real) x_max + 1.5,
-             (Real) y_min, (Real) y_max + 1.5, -1.0, 1.0 );
+
+#ifdef NOT_NEEDED
+{
+    static  BOOLEAN  first = TRUE;
+    static  Real     start, end;
+
+    if( first )
+    {
+        first = FALSE;
+        if( getenv( "START" ) == NULL ||
+            sscanf( getenv("START"), "%lf", &start ) != 1 )
+            start = 0.0;
+        if( getenv( "END" ) == NULL ||
+            sscanf( getenv("END"), "%lf", &end ) != 1 )
+            end = 1.0;
+    }
+
+    glOrtho( (Real) x_min + start, (Real) x_max + end,
+             (Real) y_min + start, (Real) y_max + end, -1.0, 1.0 );
+}
+#endif
+
+    glOrtho( (Real) x_min, (Real) x_max + 1.0,
+             (Real) y_min, (Real) y_max + 1.0, -1.0, 1.0 );
 #else
 
 #ifdef __alpha
