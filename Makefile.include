@@ -27,10 +27,10 @@ MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics $(BIC_PL_LI
 
 #-------------------------- SGI/GL --------------------------
 
-IRISGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lirisgl_graphics -lfm_s -lgl_s \
-                            $(BIC_PL_LIBS)
-IRISGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lirisgl_graphics-O3 -lfm_s -lgl_s \
-                            $(BIC_PL_LIBS-O3)
+IRISGL_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lirisgl_graphics \
+                            $(IRIS_GL_SYS_LIBS) $(BIC_PL_LIBS)
+IRISGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lirisgl_graphics-O3 \
+                            $(IRIS_GL_SYS_LIBS) $(BIC_PL_LIBS-O3)
 IRISGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lirisgl_graphics $(BIC_PL_LINTLIBS)
 
 #--------------------------- lint -----------------------------

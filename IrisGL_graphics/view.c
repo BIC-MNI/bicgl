@@ -3,8 +3,8 @@
 #include  <gs_specific.h>
 
 private  void  make_matrix(
-    Transform  *trans,
-    Matrix     gl_trans )
+    Transform   *trans,
+    Matrix      gl_trans )
 {
     int      i, j;
 
