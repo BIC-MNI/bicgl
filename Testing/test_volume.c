@@ -5,10 +5,11 @@ int  main(
     char  *argv[] )
 {
     Status         status;
-    int            n_alloced, x_size, y_size, i;
-    Real           intensity;
+    int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
+    Real           intensity, separations[MAX_DIMENSIONS];
+    Real           min_value, max_value;
     pixels_struct  pixels;
-    volume_struct  volume;
+    Volume         volume;
     window_struct  *window;
     Real           scale;
     Colour         *rgb_map;
@@ -19,13 +20,21 @@ int  main(
 
     status = input_volume( filename, &volume );
 
-    if( status == OK )
-    {
-        print( "Volume %s: %d by %d by %d\n",
-                filename, volume.sizes[X], volume.sizes[Y], volume.sizes[Z] );
-        print( "Thickness: %g %g %g\n",
-                volume.thickness[X], volume.thickness[Y], volume.thickness[Z] );
-    }
+    get_volume_voxel_range( volume, &min_value, &max_value );
+
+    print( "%g %g   %g %g\n", min_value, max_value,
+           CONVERT_VOXEL_TO_VALUE( volume, min_value ),
+           CONVERT_VOXEL_TO_VALUE( volume, max_value ) );
+
+    if( status != OK )
+        return( 1 );
+
+    get_volume_sizes( volume, sizes );
+    get_volume_separations( volume, separations );
+    print( "Volume %s: %d by %d by %d\n",
+            filename, sizes[X], sizes[Y], sizes[Z] );
+    print( "Thickness: %g %g %g\n",
+            separations[X], separations[Y], separations[Z] );
 
     status = G_create_window( "Volume Browser", -1, -1, -1, -1, &window );
 
@@ -33,21 +42,22 @@ int  main(
 
     n_alloced = 0;
 
-    ALLOC( rgb_map, volume.max_value+1 );
+    get_volume_voxel_range( volume, &min_value, &max_value );
+    ALLOC( rgb_map, (int)max_value+1 );
 
-    for_less( i, 0, volume.max_value+1 )
+    for_less( i, 0, (int) max_value+1 )
     {
-        intensity = (Real) i / (Real) volume.max_value;
+        intensity = (Real) i / max_value;
         rgb_map[i] = make_Colour_0_1( intensity, intensity, intensity );
     }
 
-    scale = (Real) x_size / (Real) volume.sizes[X];
-    if( (Real) y_size / (Real) volume.sizes[Y] < scale )
-        scale = (Real) y_size / (Real) volume.sizes[Y];
+    scale = (Real) x_size / (Real) sizes[X];
+    if( (Real) y_size / (Real) sizes[Y] < scale )
+        scale = (Real) y_size / (Real) sizes[Y];
 
-    create_volume_slice( &volume, (Real) volume.sizes[Z] / 2.0,
+    create_volume_slice( volume, (Real) sizes[Z] / 2.0,
                          0.0, 0.0, scale, scale,
-                         (volume_struct *) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
+                         (Volume) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
                          X, Y, x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
                          &rgb_map, &n_alloced, &pixels );
