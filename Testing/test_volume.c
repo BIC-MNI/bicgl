@@ -9,6 +9,10 @@ int  main(
     int            n_slices_displayed;
     Real           intensity, separations[MAX_DIMENSIONS];
     Real           min_value, max_value;
+    Real           x_axis[N_DIMENSIONS];
+    Real           y_axis[N_DIMENSIONS];
+    Real           origin[N_DIMENSIONS];
+    int            used_x_viewport_size, used_y_viewport_size;
     pixels_struct  pixels;
     Volume         volume;
     window_struct  *window;
@@ -57,18 +61,31 @@ int  main(
         rgb_map[i] = make_Colour_0_1( intensity, intensity, intensity );
     }
 
-    fit_volume_slice_to_viewport( volume, X, Y,
-               FALSE, FALSE, x_size, y_size,
-               slice_fit_oversize,
-               &x_scale, &y_scale, &x_translation, &y_translation );
+    origin[X] = 0.0;
+    origin[Y] = 0.0;
+    origin[Z] = (Real) (sizes[Z] - 1) / 2.0;
+    x_axis[X] = 1.0;
+    x_axis[Y] = 0.0;
+    x_axis[Z] = 0.0;
+    y_axis[X] = 0.0;
+    y_axis[Y] = 1.0;
+    y_axis[Z] = 0.0;
+    fit_volume_slice_to_viewport( volume, origin, x_axis, y_axis,
+                                  x_size, y_size, slice_fit_oversize,
+                                  &x_translation, &y_translation,
+                                  &x_scale, &y_scale,
+                                  &used_x_viewport_size, &used_y_viewport_size);
 
-    create_volume_slice( BOX_FILTER, (Real) n_slices_displayed,
-                         volume, (Real) (sizes[Z] - 1) / 2.0,
-                         x_translation, y_translation, x_scale, y_scale,
-                         (Volume) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
-                         X, Y, Z, x_size, y_size, RGB_PIXEL, FALSE,
+    create_volume_slice( volume, BOX_FILTER, 0.0,
+                         origin, x_axis, y_axis,
+                         x_translation, y_translation,
+                         x_scale, y_scale,
+                         (Volume) NULL, BOX_FILTER, 0.0,
+                         (Real *) NULL, (Real *) NULL, (Real *) NULL,
+                         0.0, 0.0, 0.0, 0.0,
+                         x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
-                         &rgb_map, &n_alloced, &pixels );
+                         &rgb_map, BLACK, &n_alloced, &pixels );
 
     G_set_view_type( window, PIXEL_VIEW );
     G_draw_pixels( window, &pixels );
