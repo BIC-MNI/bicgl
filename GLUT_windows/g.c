@@ -341,7 +341,8 @@ private  Window_id  create_GLUT_window(
     doub = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
     depth = glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE);
 
-    glutUseLayer( (GLenum) GLUT_NORMAL );
+    /* why set this? it is the default layer and only gives greif with some GLUT implementations. */
+    /* glutUseLayer( GLUT_NORMAL ); */
 
     glutPopWindow();
 

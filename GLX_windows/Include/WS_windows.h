@@ -3,7 +3,12 @@
 
 #include  <volume_io.h>
 #include  <x_windows.h>
+
+#ifdef HAVE_APPLE_OPENGL_FRAMEWORK
+#include <OpenGL/glx.h>
+#else
 #include  <GL/glx.h>
+#endif
 
 typedef  struct
 {

@@ -54,7 +54,7 @@ static  void  create_GLUT_window(
 
     glutDisplayFunc( display_function );
 
-    glutUseLayer( (GLenum) GLUT_NORMAL );
+    glutUseLayer( GLUT_NORMAL );
 
     rgba = glutGet((GLenum) GLUT_WINDOW_RGBA);
 
