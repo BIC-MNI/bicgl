@@ -32,33 +32,34 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WS_window_struct       *window )
 {
-    int                      *attrib, n_attrib, flag;
-    Status                   status;
-    Colormap                 cmap;
-    XVisualInfo              *visual;
+    int           *attrib, n_attrib, flag, min_size, max_size, mid;
+    int           colour_req_index;
+    Status        status;
+    Colormap      cmap;
+    XVisualInfo   *visual;
 
     if( !GLX_supported() )
     {
         return( ERROR );
     }
 
-    n_attrib = 0;
-
     if( n_overlay_planes > 0 )
     {
-        print( "WS_create_window(): cannot handle overlay planes yet.\n" );
-    }
+        print_error( "WS_create_window(): cannot handle overlay planes yet.\n");    }
+
+    n_attrib = 0;
 
     ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_LEVEL, DEFAULT_CHUNK_SIZE);
     ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 0, DEFAULT_CHUNK_SIZE);
 
     if( colour_map_mode )
     {
-/*
         ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_BUFFER_SIZE,
                               DEFAULT_CHUNK_SIZE);
-        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 4096, DEFAULT_CHUNK_SIZE);
-*/
+        min_size = 1;
+        max_size = 4096;
+        colour_req_index = n_attrib;
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, max_size, DEFAULT_CHUNK_SIZE);
     }
     else
     {
@@ -89,24 +90,49 @@ public  Status  WS_create_window(
 
     ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, None, DEFAULT_CHUNK_SIZE);
 
-    visual = glXChooseVisual( X_get_display(), X_get_screen(), attrib );
+    /*--- if in colour map mode, do a binary search to find the largest colour
+          map */
+
+    if( colour_map_mode )
+    {
+        while( min_size < max_size )
+        {
+            attrib[colour_req_index] = mid;
+
+            visual = glXChooseVisual( X_get_display(), X_get_screen(), attrib );
+
+            if( visual == NULL )
+                max_size = mid;
+            else
+            {
+                min_size = mid;
+                XFree( visual );
+            }
+
+            mid = (min_size + max_size) / 2;
+        }
+    }
+
+    window->visual = glXChooseVisual( X_get_display(), X_get_screen(), attrib );
 
     FREE( attrib );
 
-    if( visual == NULL )
+    if( window->visual == NULL )
     {
-        print( "Cannot find matching visual.\n" );
+        print_error( "Cannot find matching visual.\n" );
         return( ERROR );
     }
 
-    glXGetConfig( X_get_display(), visual, GLX_RGBA, &flag );
+    glXGetConfig( X_get_display(), window->visual, GLX_RGBA, &flag );
     *actual_colour_map_mode = (flag == GL_FALSE);
 
-    glXGetConfig( X_get_display(), visual, GLX_DOUBLEBUFFER, &flag );
+    glXGetConfig( X_get_display(), window->visual, GLX_DOUBLEBUFFER, &flag );
     *actual_double_buffer_flag = (flag == GL_TRUE);
 
-    glXGetConfig( X_get_display(), visual, GLX_DEPTH_SIZE, &flag );
+    glXGetConfig( X_get_display(), window->visual, GLX_DEPTH_SIZE, &flag );
     *actual_depth_buffer_flag = (flag > 0);
+
+    window->visual = visual;
 
     *actual_n_overlay_planes = 0;
 
@@ -115,19 +141,20 @@ public  Status  WS_create_window(
 */
     cmap = XCreateColormap( X_get_display(), RootWindow(X_get_display(),
                                                         X_get_screen()),
-                            visual->visual, AllocNone );
+                            window->visual->visual, AllocNone );
 
 
     status = X_create_window_with_visual( title,
                               initial_x_pos, initial_y_pos,
                               initial_x_size, initial_y_size, 
-                              colour_map_mode, visual, cmap,
+                              colour_map_mode, window->visual, cmap,
                               &window->x_window );
 
     if( status == OK )
     {
         window->graphics_context = glXCreateContext( X_get_display(),
-                                                     visual, NULL, TRUE );
+                                                     window->visual, NULL,
+                                                     TRUE );
     }
 
     return( status );
@@ -137,6 +164,7 @@ public  void  WS_delete_window(
     WS_window_struct  *window )
 {
     glXDestroyContext( X_get_display(), window->graphics_context );
+    XFree( window->visual );
     X_delete_window( &window->x_window );
 }
 
@@ -197,15 +225,23 @@ public  BOOLEAN  WS_get_font(
     Real             size,
     WS_font_info     *font_info )
 {
+    int          first, last;
     Font         x_font;
-    static  int  n_fonts = 0;
 
     if( X_get_font( type, (int) size, &x_font ) )
     {
-        font_info->listBase = n_fonts * 256;
         font_info->x_font_info = XQueryFont( X_get_display(), x_font );
-        glXUseXFont( x_font, 0, 256, font_info->listBase );
-        ++n_fonts;
+
+        first = font_info->x_font_info->min_char_or_byte2;
+        last = font_info->x_font_info->max_char_or_byte2;
+
+        font_info->listBase = glGenLists( last+1 );
+
+        if( font_info->listBase == 0 )
+            return( FALSE );
+
+        glXUseXFont( x_font, first, last-first+1, font_info->listBase+first );
+
         return( TRUE );
     }
 
@@ -244,4 +280,11 @@ public  Real  WS_get_text_length(
     }
 
     return( (Real) len );
+}
+
+public  void  WS_get_screen_size(
+    int   *x_size, 
+    int   *y_size  )
+{
+    X_get_screen_size( x_size, y_size );
 }
