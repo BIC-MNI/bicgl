@@ -28,6 +28,12 @@ public  void  copy_X_colours(
     int                ind;
     Real               r, g, b;
 
+    /*--- for some reason on SGI/OpenGL, this MIN is needed */
+
+#ifdef __sgi
+    n_colours_to_copy = MIN( n_colours_to_copy, 256 );
+#endif
+
     screen = DefaultScreen( __glutDisplay );
 
     root_window =  RootWindow( __glutDisplay, screen ),
