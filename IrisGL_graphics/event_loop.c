@@ -1,6 +1,6 @@
 #include  <volume_io/internal_volume_io.h>
 #include  <GS_graphics.h>
-#include  <queue.h>
+#include  <bicpl/queue.h>
 #include  <gl/device.h>
 
 #define  SLEEP_WHEN_IDLE_IN_EVENT_LOOP   0.02    /* 20 milliseconds */

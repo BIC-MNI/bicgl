@@ -1,36 +1,31 @@
-all: opengl
+SUBDIRS = GLUT_windows G_graphics OpenGL_graphics
 
-include ../Makefile.include
+EXTRA_DIST = Include/GS_graphics.h Include/graphics.h \
+	Include/graphics_base.h Include/graphics_prototypes.h \
+	Include/graphics_struct.h Include/random_order.h \
+	Include/save.h
 
-OPENGL_X_LIBNAME = opengl_x_graphics
+noinst_LIBRARIES = libbicgl.a
 
-LIB_OPENGL_X = lib$(OPENGL_X_LIBNAME).a
+# Adding a dummy source file to register is a work-around for a bug in 
+# automake, which does not (in version 1.4) allow linking together
+# only objects in subdirectories.
+
+libbicgl_a_SOURCES = dummy.c
+
+dummy.c:
+	touch $@
+
+CLEANFILES = dummy.c
+
+
+libbicgl_a_LIBADD = $(OPENGL_X_OBJECTS)
+
+
 
 PRINT_X_COLOURS = print_X_colours
 
 
-GLUT_INCLUDES = -I/usr/include/GL
-
-OPENGL_INCLUDES = -IOpenGL_graphics/Include \
-                  -IInclude \
-                  -IGLUT_windows/Include $(GLUT_INCLUDES) $(X11_INCLUDES)
-OPENGL_TARGETS = $(LIB_OPENGL_X)
-OPENGL_-O3_TARGETS = $(LIB_OPENGL_X-O3)
-
-
-clean_obj:
-	\rm -f $(IRISGL_SRC:.c=.o) $(IRISGL_SRC:.c=.u) $(IRISGL_SRC:.c=.ln)
-	\rm -f $(OPENGL_X_SRC:.c=.o) $(OPENGL_X_OBJECTS:.c=.u) \
-               $(OPENGL_X_SRC:.c=.ln)
-
-OPT = -O
-
-
-opengl:
-	make library "TARGETS=$(OPENGL_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
-                     "OPT=$(OPT)" "CC=$(CC)"
-
-INCLUDE = $(G_INCLUDE) $(BIC_PL_INCLUDE)
 
 GLX_SRC = GLX_windows/glx_windows.c \
           GLX_windows/stored_font.c
@@ -77,6 +72,8 @@ OPENGL_X_OBJECTS = $(OPENGL_X_SRC:.c=.o)
 
 #-----
 
+MAKE_PROTOTYPES = echo make_prototypes
+
 PROTOTYPE_FILE = Include/graphics_prototypes.h
 
 $(PROTOTYPE_FILE): $(G_SRC)
@@ -117,43 +114,3 @@ GL_PROTOTYPE_FILE = IrisGL_graphics/Include/irisgl_graphics_prototypes.h
 $(GL_PROTOTYPE_FILE): $(GL_SRC)
 	@$(MAKE_PROTOTYPES) $@ $(GL_SRC)
 
-#-----
-
-$(LIB_OPENGL_X): $(OPENGL_X_OBJECTS)
-	\rm -f $@
-	$(MAKE_LIBRARY) $@ $(OPENGL_X_OBJECTS)
-	$(RANLIB) $@
-
-$(LIB_OPENGL_X-O3): $(OPENGL_X_OBJECTS:.o=.u)
-	\rm -f $@
-	$(MAKE_LIBRARY) $@ $(OPENGL_X_OBJECTS:.o=.u)
-	$(RANLIB) $@
-
-$(LINT_OPENGL_X): $(OPENGL_X_SRC:.c=.ln)
-	$(LINT) -x -u -o $(OPENGL_X_LIBNAME) $(OPENGL_X_SRC:.c=.ln)
-
-library: \
-         $(PROTOTYPE_FILE) \
-         $(GLUT_PROTOTYPE_FILE) \
-         $(OPENGL_PROTOTYPE_FILE) \
-         $(GL_PROTOTYPE_FILE) \
-         $(TARGETS)
-
-lint: \
-      $(PROTOTYPE_FILE) \
-      $(GLUT_PROTOTYPE_FILE) \
-      $(OPENGL_PROTOTYPE_FILE) \
-      $(GL_PROTOTYPE_FILE) \
-      $(LINT_LIBRARY)
-
-$(OPENGL_X_SRC) $(GL_SRC) \
-G_graphics/draw_polygons.include.c \
-G_graphics/draw_quadmesh.include.c :
-	@$(MAKE_SOURCE_LINKS)
-
-G_graphics/draw.u \
-G_graphics/draw.o: G_graphics/draw_polygons.include.c \
-                               G_graphics/draw_quadmesh.include.c
-
-$(PRINT_X_COLOURS): GLUT_windows/print_X_colours.c
-	$(CC) $(X11_INCLUDES) GLUT_windows/print_X_colours.c -o $@ $(X11_LIBS)

@@ -1,7 +1,7 @@
 2000-11-12  Steve Robbins  <steve@nyongwa.montreal.qc.ca>
 
 	* various: Changed include from "foo.h" to "volume_io/foo.h",
-	or to "bicpl/foo.h", to match current practice.
+	to "bicpl/foo.h", or to "GL/foo.h" to match current practice.
 
 	* Makefile: Include one other file, namely ../Makefile.include
 	which is provided by either Register or Display.  Removed many
