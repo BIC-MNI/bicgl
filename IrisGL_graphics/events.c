@@ -165,16 +165,16 @@ public  BOOLEAN  GS_get_event(
                 set_current_window( event_window );
                 clear_overlay_planes();
                 getorigin( &x_pos, &y_pos );
-                event_window->x_origin = x_pos;
-                event_window->y_origin = y_pos;
+                event_window->x_origin = (int) x_pos;
+                event_window->y_origin = (int) y_pos;
 
                 getsize( &x_size, &y_size );
-                if( event_window->x_size != x_size ||
-                    event_window->y_size != y_size )
+                if( event_window->x_size != (int) x_size ||
+                    event_window->y_size != (int) y_size )
                 {
                     *type = WINDOW_RESIZE_EVENT;
-                    event_window->x_size = x_size;
-                    event_window->y_size = y_size;
+                    event_window->x_size = (int) x_size;
+                    event_window->y_size = (int) y_size;
                 }
                 else
                     *type = WINDOW_REDRAW_EVENT;
@@ -245,7 +245,7 @@ public  BOOLEAN  GS_get_event(
         case KEYBD:
             *type = KEY_DOWN_EVENT;
             event_found = TRUE;
-            *key_pressed = val;
+            *key_pressed = (int) val;
             break;
 
         case MOUSEX:
@@ -336,11 +336,11 @@ public  void  GS_set_mouse_position(
     int   x_screen,
     int   y_screen )
 {
-    setvaluator( MOUSEX, x_screen, 0, 10000 );
-    setvaluator( MOUSEY, y_screen, 0, 10000 );
+    setvaluator( MOUSEX, (short) x_screen, 0, 10000 );
+    setvaluator( MOUSEY, (short) y_screen, 0, 10000 );
 }
 
-public  BOOLEAN  WS_mouse_events_in_screen_coordinates()
+public  BOOLEAN  WS_mouse_events_in_screen_coordinates( void )
 {
     return( TRUE );
 }

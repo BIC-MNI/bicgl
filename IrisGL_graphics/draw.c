@@ -23,7 +23,7 @@ public  void  GS_set_colour(
 public  void  GS_set_colour_index(
     Colour  colour )
 {
-    color( colour );
+    color( (Colorindex) colour );
 }
 
 public  void  GS_set_ambient_and_diffuse_mode(
@@ -52,7 +52,7 @@ public  void  GS_initialize_surface_property(
     Gwindow        window )
 {
 #ifndef  TWO_D_ONLY
-    static  Surfprop  spr = { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    static  Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
     window->GS_window->unique_lmdef_id = get_unique_lmdef_id();
     GS_set_surface_property( window, WHITE, &spr );
@@ -65,20 +65,20 @@ public  void  GS_set_surface_property(
     Surfprop       *surfprop )
 {
 #ifndef  TWO_D_ONLY
-    static  float  props[] = { AMBIENT, 0.0, 0.0, 0.0,
-                               DIFFUSE, 0.0, 0.0, 0.0,
-                               SPECULAR, 0.0, 0.0, 0.0,
-                               SHININESS, 0.0,
-                               ALPHA, 0.0,
-                               LMNULL };
+    static  float  props[] = { (float) AMBIENT, 0.0f, 0.0f, 0.0f,
+                               (float) DIFFUSE, 0.0f, 0.0f, 0.0f,
+                               (float) SPECULAR, 0.0f, 0.0f, 0.0f,
+                               (float) SHININESS, 0.0f,
+                               (float) ALPHA, 0.0f,
+                               (float) LMNULL };
 
-    props[1] = Surfprop_a( *surfprop ) * get_Colour_r_0_1( col );
-    props[2] = Surfprop_a( *surfprop ) * get_Colour_g_0_1( col );
-    props[3] = Surfprop_a( *surfprop ) * get_Colour_b_0_1( col );
+    props[1] = (float) ((Real) Surfprop_a( *surfprop )*get_Colour_r_0_1( col ));
+    props[2] = (float) ((Real) Surfprop_a( *surfprop )*get_Colour_g_0_1( col ));
+    props[3] = (float) ((Real) Surfprop_a( *surfprop )*get_Colour_b_0_1( col ));
 
-    props[5] = Surfprop_d( *surfprop ) * get_Colour_r_0_1( col );
-    props[6] = Surfprop_d( *surfprop ) * get_Colour_g_0_1( col );
-    props[7] = Surfprop_d( *surfprop ) * get_Colour_b_0_1( col );
+    props[5] = (float) ((Real) Surfprop_d( *surfprop )*get_Colour_r_0_1( col ));
+    props[6] = (float) ((Real) Surfprop_d( *surfprop )*get_Colour_g_0_1( col ));
+    props[7] = (float) ((Real) Surfprop_d( *surfprop )*get_Colour_b_0_1( col ));
 
     props[9] = Surfprop_s( *surfprop );
     props[10] = Surfprop_s( *surfprop );
@@ -88,7 +88,7 @@ public  void  GS_set_surface_property(
 
     props[15] = Surfprop_t( *surfprop );
 
-    lmdef( DEFMATERIAL, window->GS_window->unique_lmdef_id,
+    lmdef( DEFMATERIAL, (short) window->GS_window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(props), props );
 #endif
 }
@@ -105,51 +105,51 @@ public  void  GS_curve(
     crv( geom );
 }
 
-public  void  GS_begin_point()
+public  void  GS_begin_point( void )
 {
     bgnpoint();
 }
 
-public  void  GS_end_point()
+public  void  GS_end_point( void )
 {
     endpoint();
 }
 
-public  void  GS_begin_line()
+public  void  GS_begin_line( void )
 {
     bgnline();
 }
 
-public  void  GS_end_line()
+public  void  GS_end_line( void )
 {
     endline();
 }
 
-public  void  GS_begin_closed_line()
+public  void  GS_begin_closed_line( void )
 {
     bgnclosedline();
 }
 
-public  void  GS_end_closed_line()
+public  void  GS_end_closed_line( void )
 {
     endclosedline();
 }
 
-public  void  GS_begin_polygon()
+public  void  GS_begin_polygon( void )
 {
     bgnpolygon();
 }
 
-public  void  GS_end_polygon()
+public  void  GS_end_polygon( void )
 {
     endpolygon();
 }
-public  void  GS_begin_quad_strip()
+public  void  GS_begin_quad_strip( void )
 {
     bgnqstrip();
 }
 
-public  void  GS_end_quad_strip()
+public  void  GS_end_quad_strip( void )
 {
     endqstrip();
 }
@@ -159,7 +159,7 @@ public  void  GS_set_raster_position(
     Real  y,
     Real  z )
 {
-    cmov( x, y, z );
+    cmov( (Coord) x, (Coord) y, (Coord) z );
 }
 
 public  void  GS_set_pixel_zoom(
@@ -184,13 +184,17 @@ public  void  GS_draw_colour_map_pixels(
     {
     case COLOUR_INDEX_8BIT_PIXEL:
         pixmode( PM_SIZE, 8 );
-        lrectwrite( x, y, x + x_size - 1, y + y_size - 1,
+        lrectwrite( (Screencoord) x, (Screencoord) y,
+                    (Screencoord) (x + x_size - 1),
+                    (Screencoord) (y + y_size - 1),
                     (unsigned long *) ((void *)
                      (pixels->data.pixels_8bit_colour_index)) );
         break;
 
     case COLOUR_INDEX_16BIT_PIXEL:
-        rectwrite( x, y, x + x_size - 1, y + y_size - 1,
+        rectwrite( (Screencoord) x, (Screencoord) y,
+                   (Screencoord) (x + x_size - 1),
+                   (Screencoord) (y + y_size - 1),
                    (Colorindex *)
                     (pixels->data.pixels_16bit_colour_index) );
         break;
@@ -210,7 +214,9 @@ public  void  GS_draw_rgb_pixels(
     x_size = pixels->x_size;
     y_size = pixels->y_size;
 
-    lrectwrite( x, y, x + x_size - 1, y + y_size - 1,
+    lrectwrite( (Screencoord) x, (Screencoord) y,
+                (Screencoord) (x + x_size - 1),
+                (Screencoord) (y + y_size - 1),
                 pixels->data.pixels_rgb );
 }
 
@@ -236,7 +242,8 @@ public  void  GS_read_pixels(
 
     readsource( SRC_FRONT );
 
-    (void) lrectread( x_min, y_min, x_max, y_max, pixels );
+    (void) lrectread( (Screencoord) x_min, (Screencoord) y_min,
+                      (Screencoord) x_max, (Screencoord) y_max, pixels );
 
     n_pixels = (x_max - x_min + 1) * (y_max - y_min + 1);
     for_less( i, 0, n_pixels )

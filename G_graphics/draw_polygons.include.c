@@ -17,7 +17,8 @@
     int                *indices;
     Point              *points;
 #if  !defined(DEF_ONE_COLOUR) && defined(DEF_NORMALS)
-    Real               diffuse_coefficient = Surfprop_d( polygons->surfprop );
+    Real               diffuse_coefficient =
+                                  (Real) Surfprop_d( polygons->surfprop );
     Colour             scaled_colour;
 #endif
 
@@ -50,7 +51,7 @@
 #endif
 )
 
-        if( visibilities == (Smallest_int *) 0 || visibilities[OBJECT_INDEX] )
+        if( visibilities == NULL || visibilities[OBJECT_INDEX] )
         {
             start_index = START_INDEX( polygons->end_indices, OBJECT_INDEX );
             end_index = polygons->end_indices[OBJECT_INDEX];

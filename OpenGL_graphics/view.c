@@ -77,10 +77,16 @@ public  void  GS_ortho_2d(
     int   y_min,
     int   y_max )
 {
+
     glLoadIdentity();
 
+#ifdef MESA_OPENGL
     glOrtho( (Real) x_min, (Real) x_max + 1.0,
              (Real) y_min, (Real) y_max + 1.0, -1.0, 1.0 );
+#else
+    glOrtho( (Real) x_min - 0.5, (Real) x_max + 0.5,
+             (Real) y_min - 0.5, (Real) y_max + 0.5, -1.0, 1.0 );
+#endif
 }
 
 public  void  GS_frustum(

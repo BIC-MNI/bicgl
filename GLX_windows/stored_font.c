@@ -153,17 +153,17 @@ public  void create_fixed_font(
 
     for (i = 32; i < 127; i++) {
 	glNewList(i+fontOffset, GL_COMPILE);
-	glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, rasters[i-32]);
+	glBitmap(8, 13, 0.0f, 2.0f, 10.0f, 0.0f, rasters[i-32]);
 	glEndList();
     }
 }
 
-public  int  get_fixed_font_n_chars()
+public  int  get_fixed_font_n_chars( void )
 {
     return( 127 );
 }
 
-public  Real  get_fixed_font_height()
+public  Real  get_fixed_font_height( void )
 {
     return( 13.0 );
 }

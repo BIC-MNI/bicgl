@@ -47,12 +47,12 @@ public  void  GS_terminate( void )
 {
 }
 
-public  BOOLEAN  GS_can_switch_double_buffering()
+public  BOOLEAN  GS_can_switch_double_buffering( void )
 {
     return( FALSE );
 }
 
-public  BOOLEAN  GS_can_switch_colour_map_mode()
+public  BOOLEAN  GS_can_switch_colour_map_mode( void )
 {
     return( FALSE );
 }
@@ -102,11 +102,42 @@ public  Status  GS_create_window(
                                actual_depth_buffer_flag,
                                actual_n_overlay_planes, window->WS_window);
 
+
     if( status == OK )
         initialize_window( window );
 
     return( status );
 }
+
+#ifdef DEBUG
+public  void  print_info( void )
+{
+    int     i, j;
+    double  list[4];
+    double  trans[16];
+
+    glGetDoublev( GL_VIEWPORT, list );
+
+    print( "Viewport: %g %g %g %g\n", list[0], list[1], list[2], list[3] );
+    glGetDoublev( GL_MODELVIEW_MATRIX, trans );
+    print( "Modelview\n" );
+    for_less( i, 0, 4 )
+    {
+        for_less( j, 0, 4 )
+            print( " %15.10g", trans[IJ(i,j,4)] );
+        print( "\n" );
+    }
+
+    glGetDoublev( GL_PROJECTION_MATRIX, trans );
+    print( "Projection\n" );
+    for_less( i, 0, 4 )
+    {
+        for_less( j, 0, 4 )
+            print( " %15.10g", trans[IJ(i,j,4)] );
+        print( "\n" );
+    }
+}
+#endif
 
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : initialize_window
@@ -149,7 +180,7 @@ public  void  GS_set_window_title(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_has_transparency_mode()
+public  BOOLEAN  GS_has_transparency_mode( void )
 {
     return( TRUE );
 }
@@ -167,7 +198,7 @@ public  BOOLEAN  GS_has_transparency_mode()
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_has_rgb_mode()
+public  BOOLEAN  GS_has_rgb_mode( void )
 {
     GLint  r_bits, g_bits, b_bits;
 
@@ -296,7 +327,7 @@ public  void  GS_set_depth_function(
         break;
     }
 
-    glDepthFunc( gl_depth_func );
+    glDepthFunc( (GLenum) gl_depth_func );
 }
 
 public  void  GS_set_depth_buffer_state(
@@ -362,7 +393,7 @@ public  int  GS_get_monitor_height( void )
     return( height );
 }
 
-public  void  GS_clear_depth_buffer()
+public  void  GS_clear_depth_buffer( void )
 {
     glClear( GL_DEPTH_BUFFER_BIT );
 }
@@ -382,7 +413,7 @@ private  void  clear_viewport(
             glClearColor( (GLclampf) get_Colour_r_0_1(colour),
                           (GLclampf) get_Colour_g_0_1(colour),
                           (GLclampf) get_Colour_b_0_1(colour),
-                          1.0 );
+                          (GLclampf) 1.0 );
         }
 
         glClear( GL_COLOR_BUFFER_BIT );
@@ -398,10 +429,10 @@ private  void  clear_viewport(
 #endif
 }
 
-public  void  GS_clear_overlay()
+public  void  GS_clear_overlay( void )
 {
 #ifndef  TWO_D_ONLY
-    glClearIndex( 0.0 );
+    glClearIndex( 0.0f );
     glClear( GL_COLOR_BUFFER_BIT );
 #endif
 }
@@ -466,7 +497,7 @@ public  void  GS_clear_viewport(
         glDisable( GL_SCISSOR_TEST );
 }
 
-public  void  GS_flush()
+public  void  GS_flush( void )
 {
     glFlush();
 }
@@ -495,7 +526,7 @@ public  void  GS_append_to_last_update(
 #endif
 }
 
-public  int  GS_get_num_overlay_planes()
+public  int  GS_get_num_overlay_planes( void )
 {
 #ifdef  TWO_D_ONLY
     return( 0 );

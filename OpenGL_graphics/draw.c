@@ -59,23 +59,28 @@ public  void  GS_set_surface_property(
 {
 #ifndef  TWO_D_ONLY
     float  props[4];
+    Real   a, d, s;
 
-    props[0] = Surfprop_a( *surfprop ) * get_Colour_r_0_1( col );
-    props[1] = Surfprop_a( *surfprop ) * get_Colour_g_0_1( col );
-    props[2] = Surfprop_a( *surfprop ) * get_Colour_b_0_1( col );
-    props[3] = get_Colour_a_0_1( col );
+    a = (Real) Surfprop_a( *surfprop );
+    d = (Real) Surfprop_d( *surfprop );
+    s = (Real) Surfprop_s( *surfprop );
+
+    props[0] = (float) (a * get_Colour_r_0_1( col ));
+    props[1] = (float) (a * get_Colour_g_0_1( col ));
+    props[2] = (float) (a * get_Colour_b_0_1( col ));
+    props[3] = (float) get_Colour_a_0_1( col );
     glMaterialfv( GL_FRONT_AND_BACK, GL_AMBIENT, props );
 
-    props[0] = Surfprop_d( *surfprop ) * get_Colour_r_0_1( col );
-    props[1] = Surfprop_d( *surfprop ) * get_Colour_g_0_1( col );
-    props[2] = Surfprop_d( *surfprop ) * get_Colour_b_0_1( col );
-    props[3] = get_Colour_a_0_1( col );
+    props[0] = (float) (d * get_Colour_r_0_1( col ));
+    props[1] = (float) (d * get_Colour_g_0_1( col ));
+    props[2] = (float) (d * get_Colour_b_0_1( col ));
+    props[3] = (float) get_Colour_a_0_1( col );
     glMaterialfv( GL_FRONT_AND_BACK, GL_DIFFUSE, props );
 
-    props[0] = Surfprop_s( *surfprop );
-    props[1] = Surfprop_s( *surfprop );
-    props[2] = Surfprop_s( *surfprop );
-    props[3] = 1.0;
+    props[0] = (float) s;
+    props[1] = (float) s;
+    props[2] = (float) s;
+    props[3] = 1.0f;
     glMaterialfv( GL_FRONT_AND_BACK, GL_SPECULAR, props );
 
     props[0] = Surfprop_se( *surfprop );
@@ -96,52 +101,52 @@ public  void  GS_curve(
 {
 }
 
-public  void  GS_begin_point()
+public  void  GS_begin_point( void )
 {
     glBegin( GL_POINTS );
 }
 
-public  void  GS_end_point()
+public  void  GS_end_point( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_line()
+public  void  GS_begin_line( void )
 {
     glBegin( GL_LINE_STRIP );
 }
 
-public  void  GS_end_line()
+public  void  GS_end_line( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_closed_line()
+public  void  GS_begin_closed_line( void )
 {
     glBegin( GL_LINE_LOOP );
 }
 
-public  void  GS_end_closed_line()
+public  void  GS_end_closed_line( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_polygon()
+public  void  GS_begin_polygon( void )
 {
     glBegin( GL_POLYGON );
 }
 
-public  void  GS_end_polygon()
+public  void  GS_end_polygon( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_quad_strip()
+public  void  GS_begin_quad_strip( void )
 {
     glBegin( GL_QUAD_STRIP );
 }
 
-public  void  GS_end_quad_strip()
+public  void  GS_end_quad_strip( void )
 {
     glEnd();
 }
@@ -170,7 +175,8 @@ public  void  GS_draw_text(
     Font_types   type,
     STRING       string )
 {
-    glCallLists( strlen( string ), GL_UNSIGNED_BYTE, (GLubyte *) string );
+    glCallLists( (GLsizei) strlen( string ), GL_UNSIGNED_BYTE,
+                 (GLubyte *) string );
 }
 
 public  void  GS_set_pixel_zoom(

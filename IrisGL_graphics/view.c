@@ -12,7 +12,7 @@ private  void  make_matrix(
     {
         for_less( j, 0, 4 )
         {
-            gl_trans[i][j] = Transform_elem( *trans, j, i );
+            gl_trans[i][j] = (float) Transform_elem( *trans, j, i );
         }
     }
 }
@@ -50,7 +50,7 @@ public  void  GS_get_transform(
     {
         for_less( j, 0, 4 )
         {
-            Transform_elem( *trans, j, i ) = gl_trans[i][j];
+            Transform_elem( *trans, j, i ) = (Real) gl_trans[i][j];
         }
     }
 }
@@ -63,7 +63,8 @@ public  void  GS_ortho(
     Real   z_min,
     Real   z_max )
 {
-    ortho( x_min, x_max, y_min, y_max, z_min, z_max );
+    ortho( (Coord) x_min, (Coord) x_max, (Coord) y_min, (Coord) y_max,
+           (Coord) z_min, (Coord) z_max );
 }
 
 public  void  GS_ortho_2d(
@@ -72,8 +73,9 @@ public  void  GS_ortho_2d(
     int   y_min,
     int   y_max )
 {
-    ortho( (Real) x_min - 0.5, (Real) x_max + 0.5,
-           (Real) y_min - 0.5, (Real) y_max + 0.5, -1.0, 1.0 );
+    ortho( (Coord) x_min - (Coord) 0.5, (Coord) x_max + (Coord) 0.5,
+           (Coord) y_min - (Coord) 0.5, (Coord) y_max + (Coord) 0.5,
+           (Coord) -1.0,                (Coord) 1.0 );
 }
 
 public  void  GS_frustum(
@@ -84,7 +86,8 @@ public  void  GS_frustum(
     Real   z_min,
     Real   z_max )
 {
-    window( x_min, x_max, y_min, y_max, z_min, z_max );
+    window( (Coord) x_min, (Coord) x_max, (Coord) y_min, (Coord) y_max,
+            (Coord) z_min, (Coord) z_max );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -107,12 +110,12 @@ public  void  GS_initialize_window_view(
 {
 }
 
-public  void  GS_push_transform()
+public  void  GS_push_transform( void )
 {
     pushmatrix();
 }
 
-public  void  GS_pop_transform()
+public  void  GS_pop_transform( void )
 {
     popmatrix();
 }
@@ -123,10 +126,11 @@ public  void  GS_set_viewport(
     int            y_min,
     int            y_max )
 {
-    viewport( x_min, x_max, y_min, y_max );
+    viewport( (Screencoord) x_min, (Screencoord) x_max,
+              (Screencoord) y_min, (Screencoord) y_max );
 }
 
-public  void  clear_overlay_planes()
+public  void  clear_overlay_planes( void )
 {
 #ifndef  TWO_D_ONLY
     Matrix          save_projection;
@@ -177,5 +181,5 @@ public  void  GS_set_matrix_mode(
         break;
     }
 
-    mmode( gl_mode );
+    mmode( (short) gl_mode );
 }

@@ -2,9 +2,9 @@
 #include  <x_windows.h>
 #include  <X11/keysym.h>
 
-private  void  bind_special_keys();
+private  void  bind_special_keys( void );
 
-public  Display   *X_get_display()
+public  Display   *X_get_display( void )
 {
     static  BOOLEAN  first = TRUE;
     static  Display  *display;
@@ -24,7 +24,7 @@ public  Display   *X_get_display()
     return( display );
 }
 
-public  int  X_get_screen()
+public  int  X_get_screen( void )
 {
     static  BOOLEAN  first = TRUE;
     static  int      default_screen;
@@ -67,7 +67,8 @@ public  Status  X_create_window_with_visual(
     X_window_struct  *window )
 {
     BOOLEAN                  setting_position;
-    int                      event_mask, cwa_mask;
+    long                     event_mask;
+    unsigned long            cwa_mask;
     XEvent                   event;
     XSetWindowAttributes     cwa;
     XSizeHints               normal_hints;
@@ -107,7 +108,8 @@ public  Status  X_create_window_with_visual(
                                RootWindow( X_get_display(),
                                            X_get_screen() ),
                                initial_x_pos, initial_y_pos,
-                               initial_x_size, initial_y_size,
+                               (unsigned int) initial_x_size,
+                               (unsigned int) initial_y_size,
                                0, visual->depth, InputOutput, visual->visual,
                                cwa_mask, &cwa );
 
@@ -180,8 +182,10 @@ public  Status  X_create_overlay_window(
 
     overlay_window->window_id = XCreateWindow( X_get_display(),
                                       window->window_id,
-                                      0, 0, x_size, y_size, 0,
-                                      visual->depth, InputOutput,
+                                      0, 0,
+                                      (unsigned int) x_size,
+                                      (unsigned int) y_size,
+                                      0, visual->depth, InputOutput,
                                       visual->visual,
                                       CWBackPixmap|CWBorderPixel|CWColormap,
                                       &cwa );
@@ -225,11 +229,11 @@ public  void  X_set_colour_map_entry(
         return;
     }
 
-    def.red = r << 8;
-    def.green = g << 8;
-    def.blue = b << 8;
+    def.red = (unsigned short) ((unsigned short) r << 8);
+    def.green = (unsigned short) ((unsigned short) g << 8);
+    def.blue = (unsigned short) ((unsigned short) b << 8);
     def.flags = DoRed | DoGreen | DoBlue;
-    def.pixel = ind;
+    def.pixel = (unsigned long) ind;
 
     XStoreColor( X_get_display(), window->colour_map, &def );
 }
@@ -252,8 +256,8 @@ public  void  X_get_window_geometry(
         X_get_screen_size( &screen_width, &screen_height );
         *x_position = x;
         *y_position = screen_height - 1 - y;
-        *x_size = width;
-        *y_size = height;
+        *x_size = (int) width;
+        *y_size = (int) height;
     }
     else
     {
@@ -287,8 +291,8 @@ public  void  X_get_screen_size(
         }
     }
 
-    *x_size = width;
-    *y_size = height;
+    *x_size = (int) width;
+    *y_size = (int) height;
 }
 
 /*--------------------------------- events ----------------------------- */
@@ -304,7 +308,7 @@ private  BOOLEAN  translate_key(
 
     char_count = XLookupString( &x_event->xkey, buffer, 10, &keysym, &compose );
 
-    *key = ((unsigned char *) buffer) [0];
+    *key = (int) ((unsigned char *) buffer) [0];
 
     return( char_count >= 1 );
 }
@@ -458,7 +462,7 @@ private  void  bind_key(
     }
 }
 
-private  void  bind_special_keys()
+private  void  bind_special_keys( void )
 {
     int      i;
     static   BOOLEAN  first = TRUE;

@@ -57,7 +57,7 @@ private  void  check_initialize_event_queue( void )
     }
 }
 
-public  void  delete_event_queue()
+public  void  delete_event_queue( void )
 {
     if( initialized )
     {
@@ -302,7 +302,7 @@ private  void  record_current_mouse_pos(
     current_mouse_y = y_mouse;
 }
 
-public  BOOLEAN  G_events_pending()
+public  BOOLEAN  G_events_pending( void )
 {
     check_event_queue();
 
@@ -472,8 +472,8 @@ public  BOOLEAN  G_get_mouse_position_0_to_1(
 
     if( window != (Gwindow) NULL )
     {
-        *x_pos = (Real) (x_pixel + 0.5) / (Real) window->x_size;
-        *y_pos = (Real) (y_pixel + 0.5) / (Real) window->y_size;
+        *x_pos = ((Real) x_pixel + 0.5) / (Real) window->x_size;
+        *y_pos = ((Real) y_pixel + 0.5) / (Real) window->y_size;
     }
     
     return( in_window );

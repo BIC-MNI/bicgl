@@ -3,6 +3,8 @@
 #include  <gs_specific.h>
 #include  <random_order.h>
 
+#define  MAX_LINE_WIDTH  1000.0f
+
 private  void     draw_marker_as_cube( Gwindow, Colour );
 
 private  void  set_colour(
@@ -145,7 +147,7 @@ public  void  set_continuation_flag(
 
 #define  BEGIN_DRAW_OBJECTS( window, check_every, n_objects, wireframe_flag ) \
 { \
-    unsigned long               OBJECT_INDEX; \
+    Random_mask_type            OBJECT_INDEX; \
     int                         _i, _iter, _n_iters, _n_done, _n_before_check; \
     int                         _check_every, _n_objects_to_do; \
     BOOLEAN                     _random_order, _interrupt_allowed; \
@@ -206,7 +208,7 @@ public  void  set_continuation_flag(
                                                                               \
     for_less( _iter, 0, _n_iters )                                            \
     {                                                                         \
-        OBJECT_INDEX = _first_object;                                         \
+        OBJECT_INDEX = (Random_mask_type) _first_object;                      \
                                                                               \
         if( _iter == 1 )                                                      \
         {                                                                     \
@@ -224,7 +226,7 @@ public  void  set_continuation_flag(
             { \
                 if( _i == 0 ) \
                 { \
-                    OBJECT_INDEX = _second_object; \
+                    OBJECT_INDEX = (Random_mask_type) _second_object; \
                 } \
                 else \
                 { \
@@ -232,7 +234,7 @@ public  void  set_continuation_flag(
                     { \
                         INCREMENT_RANDOM_ORDER( OBJECT_INDEX, \
                                                 _random_order_mask ); \
-                    } while( OBJECT_INDEX >= _n_objects ); \
+                    } while( OBJECT_INDEX >= (Random_mask_type) _n_objects ); \
                 } \
             } \
             else \
@@ -251,7 +253,7 @@ public  void  set_continuation_flag(
                     { \
                         _n_objects_to_do = _i+1; \
                         (window)->n_items_done = _n_objects_to_do; \
-                        (window)->next_item = OBJECT_INDEX; \
+                        (window)->next_item = (int) OBJECT_INDEX; \
                         (window)->interrupt_occurred = TRUE; \
                         break; \
                     } \
@@ -329,7 +331,7 @@ public  void  initialize_surface_property(
     Gwindow        window )
 {
     Colour                 col;
-    static  Surfprop       surfprop = { 1.0, 1.0, 1.0, 40.0, 1.0 };
+    static  Surfprop       surfprop = { 1.0f, 1.0f, 1.0f, 40.0f, 1.0f };
 
     col = WHITE;
 
@@ -573,10 +575,11 @@ private  void  draw_polygons(
     polygons_struct *polygons )
 {
 #ifndef  TWO_D_ONLY
-    if( !window->shaded_mode_state )
+    if( !window->shaded_mode_state &&
+        polygons->line_thickness > 1.0f &&
+        polygons->line_thickness < MAX_LINE_WIDTH )
     {
-        if( polygons->line_thickness > 1.0 && polygons->line_thickness < 1000.0)
-            GS_set_line_width( (Real) polygons->line_thickness );
+        GS_set_line_width( (Real) polygons->line_thickness );
     }
 #endif
 
@@ -597,7 +600,8 @@ private  void  draw_polygons(
 
 #ifndef TWO_D_ONLY
     if( !window->shaded_mode_state &&
-        polygons->line_thickness > 1.0 && polygons->line_thickness < 1000.0 )
+        polygons->line_thickness > 1.0f &&
+        polygons->line_thickness < MAX_LINE_WIDTH )
         GS_set_line_width( 1.0 );
 #endif
 }
@@ -866,7 +870,7 @@ public  void  G_draw_lines(
     BOOLEAN  lines_as_curves, save_lights;
 #endif
 
-    if( lines->line_thickness < 1.0 || lines->line_thickness > 20.0 )
+    if( lines->line_thickness < 1.0f || lines->line_thickness > 20.0f )
     {
         print_error( "Line thickness %g\n", lines->line_thickness );
         handle_internal_error( "line thickness" );
@@ -877,7 +881,7 @@ public  void  G_draw_lines(
     save_lights = G_get_lighting_state( window );
     G_set_lighting_state( window, OFF );
 
-    if( lines->line_thickness > 1.0 && lines->line_thickness < 1000.0 )
+    if( lines->line_thickness > 1.0f && lines->line_thickness < MAX_LINE_WIDTH )
         GS_set_line_width( (Real) lines->line_thickness );
 
     n_lines = lines->n_items;
@@ -978,7 +982,7 @@ public  void  G_draw_lines(
 
     END_DRAW_OBJECTS
 
-    if( lines->line_thickness > 1.0 && lines->line_thickness < 1000.0 )
+    if( lines->line_thickness > 1.0f && lines->line_thickness < MAX_LINE_WIDTH )
         GS_set_line_width( 1.0 );
 
     G_set_lighting_state( window, save_lights );
@@ -1107,7 +1111,7 @@ public  void  delete_fonts_for_window(
     }
 }
 
-public  void  delete_fonts()
+public  void  delete_fonts( void )
 {
     int            i, w;
     Gwindow        win, current_window;
@@ -1313,68 +1317,68 @@ private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
 {
     static  Colour           colours[1];
     static  Point            points[24] = {
-                                   { -0.5, -0.5, -0.5 },
-                                   { -0.5, -0.5,  0.5 },
-                                   { -0.5,  0.5,  0.5 },
-                                   { -0.5,  0.5, -0.5 },
+                                   { -0.5f, -0.5f, -0.5f },
+                                   { -0.5f, -0.5f,  0.5f },
+                                   { -0.5f,  0.5f,  0.5f },
+                                   { -0.5f,  0.5f, -0.5f },
 
-                                   {  0.5, -0.5, -0.5 },
-                                   {  0.5,  0.5, -0.5 },
-                                   {  0.5,  0.5,  0.5 },
-                                   {  0.5, -0.5,  0.5 },
+                                   {  0.5f, -0.5f, -0.5f },
+                                   {  0.5f,  0.5f, -0.5f },
+                                   {  0.5f,  0.5f,  0.5f },
+                                   {  0.5f, -0.5f,  0.5f },
 
-                                   { -0.5, -0.5, -0.5 },
-                                   {  0.5, -0.5, -0.5 },
-                                   {  0.5, -0.5,  0.5 },
-                                   { -0.5, -0.5,  0.5 },
+                                   { -0.5f, -0.5f, -0.5f },
+                                   {  0.5f, -0.5f, -0.5f },
+                                   {  0.5f, -0.5f,  0.5f },
+                                   { -0.5f, -0.5f,  0.5f },
 
-                                   { -0.5,  0.5, -0.5 },
-                                   { -0.5,  0.5,  0.5 },
-                                   {  0.5,  0.5,  0.5 },
-                                   {  0.5,  0.5, -0.5 },
+                                   { -0.5f,  0.5f, -0.5f },
+                                   { -0.5f,  0.5f,  0.5f },
+                                   {  0.5f,  0.5f,  0.5f },
+                                   {  0.5f,  0.5f, -0.5f },
 
-                                   { -0.5, -0.5, -0.5 },
-                                   { -0.5,  0.5, -0.5 },
-                                   {  0.5,  0.5, -0.5 },
-                                   {  0.5, -0.5, -0.5 },
+                                   { -0.5f, -0.5f, -0.5f },
+                                   { -0.5f,  0.5f, -0.5f },
+                                   {  0.5f,  0.5f, -0.5f },
+                                   {  0.5f, -0.5f, -0.5f },
 
-                                   { -0.5, -0.5,  0.5 },
-                                   {  0.5, -0.5,  0.5 },
-                                   {  0.5,  0.5,  0.5 },
-                                   { -0.5,  0.5,  0.5 } };
+                                   { -0.5f, -0.5f,  0.5f },
+                                   {  0.5f, -0.5f,  0.5f },
+                                   {  0.5f,  0.5f,  0.5f },
+                                   { -0.5f,  0.5f,  0.5f } };
 
 
     static  Vector           normals[24] = {
 
-                                   { -1.0,  0.0,  0.0 },
-                                   { -1.0,  0.0,  0.0 },
-                                   { -1.0,  0.0,  0.0 },
-                                   { -1.0,  0.0,  0.0 },
+                                   { -1.0f,  0.0f,  0.0f },
+                                   { -1.0f,  0.0f,  0.0f },
+                                   { -1.0f,  0.0f,  0.0f },
+                                   { -1.0f,  0.0f,  0.0f },
 
-                                   {  1.0,  0.0,  0.0 },
-                                   {  1.0,  0.0,  0.0 },
-                                   {  1.0,  0.0,  0.0 },
-                                   {  1.0,  0.0,  0.0 },
+                                   {  1.0f,  0.0f,  0.0f },
+                                   {  1.0f,  0.0f,  0.0f },
+                                   {  1.0f,  0.0f,  0.0f },
+                                   {  1.0f,  0.0f,  0.0f },
 
-                                   {  0.0, -1.0,  0.0 },
-                                   {  0.0, -1.0,  0.0 },
-                                   {  0.0, -1.0,  0.0 },
-                                   {  0.0, -1.0,  0.0 },
+                                   {  0.0f, -1.0f,  0.0f },
+                                   {  0.0f, -1.0f,  0.0f },
+                                   {  0.0f, -1.0f,  0.0f },
+                                   {  0.0f, -1.0f,  0.0f },
 
-                                   {  0.0,  1.0,  0.0 },
-                                   {  0.0,  1.0,  0.0 },
-                                   {  0.0,  1.0,  0.0 },
-                                   {  0.0,  1.0,  0.0 },
+                                   {  0.0f,  1.0f,  0.0f },
+                                   {  0.0f,  1.0f,  0.0f },
+                                   {  0.0f,  1.0f,  0.0f },
+                                   {  0.0f,  1.0f,  0.0f },
 
-                                   {  0.0,  0.0, -1.0 },
-                                   {  0.0,  0.0, -1.0 },
-                                   {  0.0,  0.0, -1.0 },
-                                   {  0.0,  0.0, -1.0 },
+                                   {  0.0f,  0.0f, -1.0f },
+                                   {  0.0f,  0.0f, -1.0f },
+                                   {  0.0f,  0.0f, -1.0f },
+                                   {  0.0f,  0.0f, -1.0f },
 
-                                   {  0.0,  0.0,  1.0 },
-                                   {  0.0,  0.0,  1.0 },
-                                   {  0.0,  0.0,  1.0 },
-                                   {  0.0,  0.0,  1.0 }
+                                   {  0.0f,  0.0f,  1.0f },
+                                   {  0.0f,  0.0f,  1.0f },
+                                   {  0.0f,  0.0f,  1.0f },
+                                   {  0.0f,  0.0f,  1.0f }
                                            };
     static  int              end_indices[6] = { 4, 8, 12, 16, 20, 24 };
     static  int              indices[24] = {  0,  1,  2,  3,  4,  5,  6,  7,
@@ -1384,8 +1388,8 @@ private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
     static  polygons_struct  polygons = {
                                             ONE_COLOUR,
                                             colours,
-                                            { 0.4, 0.6, 0.6, 30.0, 1.0 },
-                                            1,
+                                            { 0.4f, 0.6f, 0.6f, 30.0f, 1.0f },
+                                            1.0f,
                                             24,
                                             points,
                                             normals,

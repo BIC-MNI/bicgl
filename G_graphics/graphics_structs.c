@@ -272,7 +272,7 @@ private  BOOLEAN  check_redraw_viewport(
                             viewport->y_min, viewport->y_max );
 
             if( G_get_colour_map_state(window) )
-                bg_colour_or_index = viewport->background_colour_index;
+                bg_colour_or_index = (Colour) viewport->background_colour_index;
             else
                 bg_colour_or_index = viewport->background_colour;
 

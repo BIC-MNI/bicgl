@@ -38,7 +38,8 @@
 #endif
 #endif
 #if  !defined(DEF_ONE_COLOUR) && defined(DEF_NORMALS)
-    Real               diffuse_coefficient = Surfprop_d( quadmesh->surfprop );
+    Real               diffuse_coefficient =
+                                     (Real) Surfprop_d( quadmesh->surfprop );
     Colour             scaled_colour;
 #endif
 
@@ -84,9 +85,9 @@
                       )
 
 #ifdef  DEF_WIREFRAME
-        if( OBJECT_INDEX < m )
+        if( (int) OBJECT_INDEX < m )
         {
-            item_index = OBJECT_INDEX;
+            item_index = (int) OBJECT_INDEX;
 #ifdef  DEF_PER_ITEM_COLOURS
             colour_index = item_index;
             if( !quadmesh->m_closed && colour_index == m-1 )
@@ -121,7 +122,7 @@
         }
         else
         {
-            item_index = OBJECT_INDEX - m;
+            item_index = (int) OBJECT_INDEX - m;
 
 #ifdef  DEF_PER_ITEM_COLOURS
             colour_index = item_index;
@@ -155,7 +156,7 @@
         }
 #else   /* DEF_WIREFRAME */
 
-        item_index = OBJECT_INDEX;
+        item_index = (int) OBJECT_INDEX;
 
         GS_begin_quad_strip();
 

@@ -9,6 +9,8 @@ public  Colour  make_rgba_Colour(
     Colour          c;
     unsigned  char  *byte_ptr;
 
+    c = 0;     /* to avoid used-before-set compiler messages */
+
     byte_ptr = (void *) &c;
 
     byte_ptr[0] = (unsigned char) a;

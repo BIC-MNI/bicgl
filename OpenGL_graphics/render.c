@@ -13,13 +13,13 @@ public  void  GS_set_shade_model(
 #endif
 }
 
-public  void  GS_turn_off_blend_function()
+public  void  GS_turn_off_blend_function( void )
 {
     glDisable( GL_BLEND );
     glBlendFunc( GL_ONE, GL_ZERO );
 }
 
-public  void  GS_turn_on_blend_function()
+public  void  GS_turn_on_blend_function( void )
 {
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
     glEnable( GL_BLEND );

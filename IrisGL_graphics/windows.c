@@ -42,10 +42,10 @@ private  long     zdepth_clear;
 public  void  GS_initialize( void )
 {
     static  Matrix   catmull_rom_matrix = {
-                                              { -0.5,  1.5, -1.5,  0.5 },
-                                              {  1.0, -2.5,  2.0, -0.5 },
-                                              { -0.5,  0.0,  0.5,  0.0 },
-                                              {  0.0,  1.0,  0.0,  0.0 },
+                                              { -0.5f,  1.5f, -1.5f,  0.5f },
+                                              {  1.0f, -2.5f,  2.0f, -0.5f },
+                                              { -0.5f,  0.0f,  0.5f,  0.0f },
+                                              {  0.0f,  1.0f,  0.0f,  0.0f },
                                           };
 
     noport();
@@ -80,12 +80,12 @@ public  void  GS_terminate( void )
     gexit();
 }
 
-public  BOOLEAN  GS_can_switch_double_buffering()
+public  BOOLEAN  GS_can_switch_double_buffering( void )
 {
     return( TRUE );
 }
 
-public  BOOLEAN  GS_can_switch_colour_map_mode()
+public  BOOLEAN  GS_can_switch_colour_map_mode( void )
 {
     return( TRUE );
 }
@@ -130,8 +130,8 @@ public  Status  GS_create_window(
     {
         if( x_pos >= 0 && y_pos >= 0 )
         {
-            prefposition( (long) x_pos, (long) x_pos + width - 1,
-                          (long) y_pos, (long) y_pos + height - 1 );
+            prefposition( (long) x_pos, (long) (x_pos + width - 1),
+                          (long) y_pos, (long) (y_pos + height - 1) );
         }
         else
         {
@@ -204,7 +204,7 @@ private  void  initialize_window(
 
     if( n_overlay_planes_desired > 0 )
     {
-        overlay( n_overlay_planes_desired );
+        overlay( (long) n_overlay_planes_desired );
         gconfig();
 
         G_set_overlay_colour_map( window, 1, RED );
@@ -236,7 +236,7 @@ public  void  GS_set_window_title(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_has_transparency_mode()
+public  BOOLEAN  GS_has_transparency_mode( void )
 {
     return( getgdesc( GD_BLEND ) != 0 );
 }
@@ -254,7 +254,7 @@ public  BOOLEAN  GS_has_transparency_mode()
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_has_rgb_mode()
+public  BOOLEAN  GS_has_rgb_mode( void )
 {
     return( getgdesc( GD_BITS_NORM_SNG_RED ) > 0 &&
             getgdesc( GD_BITS_NORM_SNG_GREEN ) > 0 &&
@@ -335,7 +335,7 @@ public  int  GS_get_n_colour_map_entries(
         query = GD_BITS_NORM_SNG_CMODE;
     }
 
-    n_bits = getgdesc( query );
+    n_bits = (int) getgdesc( (long) query );
 
     n_colours = (1 << n_bits);
 
@@ -418,7 +418,7 @@ public  void  GS_set_depth_buffer_state(
     BOOLEAN         flag )
 {
 #ifndef  TWO_D_ONLY
-    zbuffer( flag );
+    zbuffer( (Boolean) flag );
 #endif
 }
 
@@ -438,7 +438,7 @@ public  void  GS_set_depth_function(
         break;
     }
 
-    zfunction( gl_depth_func  );
+    zfunction( (long) gl_depth_func  );
 #endif
 }
 
@@ -465,7 +465,8 @@ public  Status  GS_delete_window(
 #ifndef  TWO_D_ONLY
         if( G_has_overlay_planes() )
         {
-            viewport( 0, window->x_size-1, 0, window->y_size-1 );
+            viewport( (Screencoord) 0, (Screencoord) (window->x_size-1),
+                      (Screencoord) 0, (Screencoord) (window->y_size-1) );
             drawmode( OVERDRAW );
             color( 0 );
             clear();
@@ -525,7 +526,7 @@ public  int  GS_get_monitor_height( void )
     return( (int) height );
 }
 
-public  void  GS_clear_depth_buffer()
+public  void  GS_clear_depth_buffer( void )
 {
     zclear();
 }
@@ -562,7 +563,7 @@ private   void  clear_viewport(
 #endif
 }
 
-public  void  GS_clear_overlay()
+public  void  GS_clear_overlay( void )
 {
     GS_set_colour_index( OVERLAY_CLEAR_INDEX );
     clear();
@@ -586,7 +587,8 @@ public  void  GS_clear_window(
     Colour     colour )
 {
     pushviewport();
-    viewport( 0, window->x_size-1, 0, window->y_size-1 );
+    viewport( (Screencoord) 0, (Screencoord) (window->x_size-1),
+              (Screencoord) 0, (Screencoord) (window->y_size-1) );
     clear_viewport( window, colour );
     popviewport();
 }
@@ -612,7 +614,7 @@ public  void  GS_clear_viewport(
     clear_viewport( window, colour );
 }
 
-public  void  GS_flush()
+public  void  GS_flush( void )
 {
     gflush();
 }
@@ -650,7 +652,7 @@ public  void  GS_append_to_last_update(
 #endif
 }
 
-public  int  GS_get_num_overlay_planes()
+public  int  GS_get_num_overlay_planes( void )
 {
 #ifdef  TWO_D_ONLY
     return( 0 );
@@ -661,7 +663,7 @@ public  int  GS_get_num_overlay_planes()
     if( first )
     {
         first = FALSE;
-        n_planes = getgdesc( GD_BITS_OVER_SNG_CMODE );
+        n_planes = (int) getgdesc( GD_BITS_OVER_SNG_CMODE );
     }
 
     return( n_planes );
@@ -707,8 +709,9 @@ public  void  GS_set_overlay_colour_map(
         if( window->current_bitplanes != OVERLAY_PLANES )
             set_bitplanes( window, OVERLAY_PLANES );
 
-        mapcolor( index, get_Colour_r(colour), get_Colour_g(colour),
-                         get_Colour_b(colour) );
+        mapcolor( (Colorindex) index, (short) get_Colour_r(colour),
+                                      (short) get_Colour_g(colour),
+                                      (short) get_Colour_b(colour) );
 
         if( window->current_bitplanes != OVERLAY_PLANES )
             restore_bitplanes( window );

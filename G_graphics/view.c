@@ -27,9 +27,9 @@ public  void  initialize_window_view(
 {
     Transform      identity;
 #ifndef  TWO_D_ONLY
-    static  Point  default_origin = { 0.0, 0.0, 1.0 };
-    static  Vector default_line_of_sight = { 0.0, 0.0, -1.0 };
-    static  Vector default_up_direction = { 0.0, 1.0, 0.0 };
+    static  Point  default_origin = { 0.0f, 0.0f, 1.0f };
+    static  Vector default_line_of_sight = { 0.0f, 0.0f, -1.0f };
+    static  Vector default_up_direction = { 0.0f, 1.0f, 0.0f };
     Real           default_front_clip_distance = 0.01;
     Real           default_back_clip_distance = 2.0;
     BOOLEAN        default_perspective_flag = TRUE;
@@ -357,8 +357,8 @@ public  void  G_transform_point(
     transform_point( &window->projection_matrices[view_type], x, y, z,
                      &x, &y, &z );
 
-    *x_pixel = (int) ((x + 1.0) / 2.0 *window->x_size);
-    *y_pixel = (int) ((y + 1.0) / 2.0 *window->y_size);
+    *x_pixel = (int) (((Real) x + 1.0) / 2.0 * (Real) window->x_size);
+    *y_pixel = (int) (((Real) y + 1.0) / 2.0 * (Real) window->y_size);
 }
 
 private  void  update_transforms(

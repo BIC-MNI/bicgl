@@ -33,7 +33,7 @@ private  int  lookup_window_index( Gwindow  window )
     return( i );
 }
 
-public  int  get_n_graphics_windows()
+public  int  get_n_graphics_windows( void )
 {
     return( n_windows );
 }
@@ -72,14 +72,14 @@ public  void  set_current_window( Gwindow   window )
     }
 }
 
-public  Gwindow  get_current_window()
+public  Gwindow  get_current_window( void )
 {
     return( current_window );
 }
 
 /*---------------------- window configurations ------------------------ */
 
-private  void  check_graphics_initialized()
+private  void  check_graphics_initialized( void )
 {
     static  BOOLEAN  first = TRUE;
 
@@ -100,6 +100,10 @@ private  void  initialize_window(
     default_background_col = BLACK;
 
     set_current_window( window );
+
+#ifdef DEBUG
+    print_info();
+#endif
 
     WS_get_window_size( window->WS_window, &window->x_size, &window->y_size );
     WS_get_window_position( window->WS_window, &window->x_origin,
@@ -151,7 +155,7 @@ private  void  initialize_window(
 public  long  G_get_window_id(
     Gwindow   window )
 {
-    return( GS_get_window_id( window ) );
+    return( (long) GS_get_window_id( window ) );
 }
 
 public  Status  G_create_window(
@@ -657,7 +661,7 @@ public  void  check_window_cleared(
     }
 }
 
-public  BOOLEAN  G_has_overlay_planes()
+public  BOOLEAN  G_has_overlay_planes( void )
 {
 #ifdef  TWO_D_ONLY
     return( FALSE );
@@ -691,27 +695,27 @@ public  void  G_set_bitplanes(
     }
 }
 
-public  BOOLEAN  G_can_switch_double_buffering()
+public  BOOLEAN  G_can_switch_double_buffering( void )
 {
     return( GS_can_switch_double_buffering() );
 }
 
-public  BOOLEAN  G_can_switch_colour_map_mode()
+public  BOOLEAN  G_can_switch_colour_map_mode( void )
 {
     return( GS_can_switch_colour_map_mode() );
 }
 
-public  BOOLEAN  G_has_transparency_mode()
+public  BOOLEAN  G_has_transparency_mode( void )
 {
     return( GS_has_transparency_mode() );
 }
 
-public  BOOLEAN  G_has_rgb_mode()
+public  BOOLEAN  G_has_rgb_mode( void )
 {
     return( GS_has_transparency_mode() );
 }
 
-public  int  G_get_n_overlay_planes()
+public  int  G_get_n_overlay_planes( void )
 {
     return( GS_get_num_overlay_planes() );
 }

@@ -5,13 +5,15 @@
 public  void   GS_initialize_lights(
     Gwindow  window )
 {
-    static   float    data[] = { AMBIENT, 1.0, 1.0, 1.0,
-                                 LOCALVIEWER, 0.0, TWOSIDE, 1.0, LMNULL };
+    static   float    data[] = { (float) AMBIENT, 1.0f, 1.0f, 1.0f,
+                                 (float) LOCALVIEWER, 0.0f,
+                                 (float) TWOSIDE, 1.0f,
+                                 (float) LMNULL };
 
-    lmdef( DEFLMODEL, window->GS_window->unique_lmdef_id,
+    lmdef( DEFLMODEL, (short) window->GS_window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(data), data );
 
-    lmbind( LMODEL, window->GS_window->unique_lmdef_id );
+    lmbind( LMODEL, (short) window->GS_window->unique_lmdef_id );
 
     lmbind( LIGHT0, 0 );
     lmbind( LIGHT1, 0 );
@@ -28,13 +30,14 @@ public  void  GS_set_ambient_light(
     Colour         colour )
 {
 #ifndef  TWO_D_ONLY
-    static   float    data[] = { AMBIENT, 0.0, 0.0, 0.0, LMNULL };
+    static   float    data[] = { (float) AMBIENT, 0.0f, 0.0f, 0.0f,
+                                 (float) LMNULL };
 
-    data[1] = get_Colour_r_0_1(colour);
-    data[2] = get_Colour_g_0_1(colour);
-    data[3] = get_Colour_b_0_1(colour);
+    data[1] = (float) get_Colour_r_0_1(colour);
+    data[2] = (float) get_Colour_g_0_1(colour);
+    data[3] = (float) get_Colour_b_0_1(colour);
 
-    lmdef( DEFLMODEL, window->GS_window->unique_lmdef_id,
+    lmdef( DEFLMODEL, (short) window->GS_window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(data), data );
 #endif
 }
@@ -60,66 +63,67 @@ public  void  GS_define_light(
     {
     case DIRECTIONAL_LIGHT:
         NORMALIZE_VECTOR( unit_direction, *direction );
-        data[n_data++] = AMBIENT;
-        data[n_data++] = 0.0;
-        data[n_data++] = 0.0;
-        data[n_data++] = 0.0;
-        data[n_data++] = LCOLOR;
-        data[n_data++] = get_Colour_r_0_1(colour);
-        data[n_data++] = get_Colour_g_0_1(colour);
-        data[n_data++] = get_Colour_b_0_1(colour);
-        data[n_data++] = POSITION;
+        data[n_data++] = (float) AMBIENT;
+        data[n_data++] = 0.0f;
+        data[n_data++] = 0.0f;
+        data[n_data++] = 0.0f;
+        data[n_data++] = (float) LCOLOR;
+        data[n_data++] = (float) get_Colour_r_0_1(colour);
+        data[n_data++] = (float) get_Colour_g_0_1(colour);
+        data[n_data++] = (float) get_Colour_b_0_1(colour);
+        data[n_data++] = (float) POSITION;
         data[n_data++] = -Vector_x(unit_direction);
         data[n_data++] = -Vector_y(unit_direction);
         data[n_data++] = -Vector_z(unit_direction);
-        data[n_data++] = 0.0;
-        data[n_data++] = LMNULL;
+        data[n_data++] = 0.0f;
+        data[n_data++] = (float) LMNULL;
         break;
 
     case POINT_LIGHT:
-        data[n_data++] = AMBIENT;
-        data[n_data++] = 0.0;
-        data[n_data++] = 0.0;
-        data[n_data++] = 0.0;
-        data[n_data++] = LCOLOR;
-        data[n_data++] = get_Colour_r_0_1(colour);
-        data[n_data++] = get_Colour_g_0_1(colour);
-        data[n_data++] = get_Colour_b_0_1(colour);
-        data[n_data++] = POSITION;
-        data[n_data++] = Point_x(*position);
-        data[n_data++] = Point_y(*position);
-        data[n_data++] = Point_z(*position);
-        data[n_data++] = 1.0;
-        data[n_data++] = LMNULL;
+        data[n_data++] = (float) AMBIENT;
+        data[n_data++] = 0.0f;
+        data[n_data++] = 0.0f;
+        data[n_data++] = 0.0f;
+        data[n_data++] = (float) LCOLOR;
+        data[n_data++] = (float) get_Colour_r_0_1(colour);
+        data[n_data++] = (float) get_Colour_g_0_1(colour);
+        data[n_data++] = (float) get_Colour_b_0_1(colour);
+        data[n_data++] = (float) POSITION;
+        data[n_data++] = (float) Point_x(*position);
+        data[n_data++] = (float) Point_y(*position);
+        data[n_data++] = (float) Point_z(*position);
+        data[n_data++] = 1.0f;
+        data[n_data++] = (float) LMNULL;
         break;
 
     case SPOT_LIGHT:
         NORMALIZE_VECTOR( unit_direction, *direction );
-        data[n_data++] = AMBIENT;
-        data[n_data++] = 0.0;
-        data[n_data++] = 0.0;
-        data[n_data++] = 0.0;
-        data[n_data++] = LCOLOR;
-        data[n_data++] = get_Colour_r_0_1(colour);
-        data[n_data++] = get_Colour_g_0_1(colour);
-        data[n_data++] = get_Colour_b_0_1(colour);
-        data[n_data++] = POSITION;
+        data[n_data++] = (float) AMBIENT;
+        data[n_data++] = 0.0f;
+        data[n_data++] = 0.0f;
+        data[n_data++] = 0.0f;
+        data[n_data++] = (float) LCOLOR;
+        data[n_data++] = (float) get_Colour_r_0_1(colour);
+        data[n_data++] = (float) get_Colour_g_0_1(colour);
+        data[n_data++] = (float) get_Colour_b_0_1(colour);
+        data[n_data++] = (float) POSITION;
         data[n_data++] = Point_x(*position);
         data[n_data++] = Point_y(*position);
         data[n_data++] = Point_z(*position);
-        data[n_data++] = SPOTLIGHT;
-        data[n_data++] = spot_exponent;
-        data[n_data++] = spot_angle;
-        data[n_data++] = SPOTDIRECTION;
+        data[n_data++] = (float) SPOTLIGHT;
+        data[n_data++] = (float) spot_exponent;
+        data[n_data++] = (float) spot_angle;
+        data[n_data++] = (float) SPOTDIRECTION;
         data[n_data++] = Vector_x(unit_direction);
         data[n_data++] = Vector_y(unit_direction);
         data[n_data++] = Vector_z(unit_direction);
-        data[n_data++] = LMNULL;
+        data[n_data++] = (float) LMNULL;
         break;
     }
 
-    lmdef( DEFLIGHT, window->GS_window->unique_lmdef_id + light_index,
-           n_data, data );
+    lmdef( DEFLIGHT, (short) ((int) window->GS_window->unique_lmdef_id +
+                              light_index),
+           (short) n_data, data );
 #endif
 }
 
@@ -145,7 +149,7 @@ public  void  GS_set_light_state(
 
     if( state )
         lmbind( gl_light_index,
-                window->GS_window->unique_lmdef_id+light_index );
+                (short) ((int)window->GS_window->unique_lmdef_id+light_index) );
     else
         lmbind( gl_light_index, 0 );
 #endif
