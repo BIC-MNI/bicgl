@@ -1,6 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 #include  <random_order.h>
 
 public  void  GS_set_point(
@@ -184,12 +184,14 @@ public  void  GS_draw_colour_map_pixels(
     switch( pixels->pixel_type )
     {
     case COLOUR_INDEX_8BIT_PIXEL:
+        glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
         glDrawPixels( x_size, y_size, GL_COLOR_INDEX,
                       GL_UNSIGNED_BYTE,
                       (void *) &PIXEL_COLOUR_INDEX_8(*pixels,0,0) );
         break;
 
     case COLOUR_INDEX_16BIT_PIXEL:
+        glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
         glDrawPixels( x_size, y_size, GL_COLOR_INDEX,
                       GL_UNSIGNED_SHORT,
                       (void *) &PIXEL_COLOUR_INDEX_16(*pixels,0,0) );
@@ -203,7 +205,7 @@ public  void  GS_draw_rgb_pixels(
     Gwindow         window,
     pixels_struct   *pixels )    /* ARGSUSED */
 {
-    int       x, y, x_size, y_size, n_pixels;
+    int       x, y, x_size, y_size;
     void      *void_ptr;
 
     x = pixels->x_position;
@@ -214,6 +216,7 @@ public  void  GS_draw_rgb_pixels(
     GS_set_raster_position( (Real) x, (Real) y, 0.0 );
 
     void_ptr = (void *) &PIXEL_RGB_COLOUR(*pixels,0,0);
+    glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
     glDrawPixels( x_size, y_size, GL_RGBA, GL_UNSIGNED_BYTE, void_ptr );
 }
 

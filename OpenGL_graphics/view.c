@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 typedef  double  Matrix[16];
 
@@ -117,7 +117,7 @@ public  void  GS_set_viewport(
     int            y_min,
     int            y_max )
 {
-    glViewport( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1 );
+    glViewport( x_min, y_min, x_max - x_min, y_max - y_min );
 }
 
 public  void  clear_overlay_planes()
@@ -161,6 +161,17 @@ public  void  clear_overlay_planes()
 public  void  GS_set_matrix_mode(
     Matrix_modes   mode )
 {
-    glMatrixMode( mode );
-}
+    int  gl_mode;
 
+    switch( mode )
+    {
+    case VIEWING_MATRIX:
+        gl_mode = GL_MODELVIEW;
+        break;
+    case PROJECTION_MATRIX:
+        gl_mode = GL_PROJECTION;
+        break;
+    }
+
+    glMatrixMode( gl_mode );
+}

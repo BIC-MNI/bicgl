@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 public  void  GS_set_shade_model(
     Shading_types  type )

@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : GS_get_event

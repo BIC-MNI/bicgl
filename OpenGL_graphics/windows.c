@@ -1,14 +1,14 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 private  void  initialize_window(
     Gwindow   window );
 
-public  Window_id  GS_get_window_id(
+private  Window_id  get_window_id(
     Gwindow  window )
 {
-    return( window->WS_window.x_window.window_id );
+    return( window->WS_window->x_window.window_id );
 }
 
 public  void  GS_initialize( void )
@@ -98,7 +98,7 @@ public  Status  GS_create_window(
                                actual_colour_map_flag,
                                actual_double_buffer_flag,
                                actual_depth_buffer_flag,
-                               actual_n_overlay_planes, &window->WS_window);
+                               actual_n_overlay_planes, window->WS_window);
 
     if( status == OK )
         initialize_window( window );
@@ -168,14 +168,14 @@ public  BOOLEAN  GS_has_rgb_mode()
 public  BOOLEAN  GS_set_double_buffer_state(
     BOOLEAN        flag )
 {
-    print( "GS_set_double_buffer_state():  OpenGL cannot change state.\n" );
+    print_error( "GS_set_double_buffer_state(): OpenGL cannot change state.\n");
     return( FALSE );
 }
 
 public  void  GS_set_colour_map_state(
     BOOLEAN        flag )
 {
-    print( "GS_set_colour_map_state():  OpenGL cannot change state.\n" );
+    print_error( "GS_set_colour_map_state():  OpenGL cannot change state.\n" );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -228,7 +228,7 @@ public  void  GS_set_colour_map_entry(
     int             index,
     Colour          colour )
 {
-    WS_set_colour_map_entry( &window->WS_window, index, colour );
+    WS_set_colour_map_entry( window->WS_window, index, colour );
 }
 
 public  BOOLEAN  GS_is_double_buffer_supported( void )
@@ -258,7 +258,19 @@ public  BOOLEAN  GS_is_depth_buffer_supported( void )
 public  void  GS_set_depth_function(
     Depth_functions  func )
 {
-    glDepthFunc( func );
+    int   gl_depth_func;
+
+    switch( func )
+    {
+    case LESS_OR_EQUAL:
+        gl_depth_func = GL_LEQUAL;
+        break;
+    default:
+        gl_depth_func = GL_LEQUAL;
+        break;
+    }
+
+    glDepthFunc( gl_depth_func );
 }
 
 public  void  GS_set_depth_buffer_state(
@@ -288,7 +300,7 @@ public  Status  GS_delete_window(
 {
     Status    status;
 
-    if( window->WS_window.x_window.window_id >= 0 )
+    if( window->WS_window->x_window.window_id >= 0 )
     {
 #ifndef  TWO_D_ONLY
 #ifdef TO_DO
@@ -302,13 +314,13 @@ public  Status  GS_delete_window(
 #endif
 #endif
 
-        WS_delete_window( &window->WS_window );
+        WS_delete_window( window->WS_window );
 
         status = OK;
     }
     else
     {
-        print( "Error:  tried to delete invalid window.\n" );
+        print_error( "Error:  tried to delete invalid window.\n" );
         status = ERROR;
     }
 
@@ -330,13 +342,11 @@ public  Status  GS_delete_window(
 
 public  int  GS_get_monitor_width( void )
 {
-    GLint  width;
+    int  x_size, y_size;
 
-    width = 1000;
+    WS_get_screen_size( &x_size, &y_size );
 
-    print( "GS_get_monitor_width(): not implemented\n" );
-
-    return( width );
+    return( x_size );
 }
 
 public  int  GS_get_monitor_height( void )
@@ -345,7 +355,7 @@ public  int  GS_get_monitor_height( void )
 
     height = 1000;
 
-    print( "GS_get_monitor_height(): not implemented\n" );
+    print_error( "GS_get_monitor_height(): not implemented\n" );
 
     return( height );
 }
@@ -468,7 +478,9 @@ public  void  GS_append_to_last_update(
 
     glMatrixMode( GL_PROJECTION );
     glPushMatrix();
-    glLoadIdentity();
+    GS_ortho( -0.5, (Real) window->x_size - 0.5,
+              -0.5, (Real) window->y_size - 0.5,
+              -1.0, 1.0 );
 
     glMatrixMode( GL_MODELVIEW );
     glPushMatrix();
@@ -555,4 +567,24 @@ public  void  GS_set_overlay_colour_map(
     }
 #endif
 #endif
+}
+
+public  Gwindow   find_window_for_id(
+    Window_id  window_id )
+{
+    int            i;
+    Gwindow        window;
+
+    for_less( i, 0, get_n_graphics_windows() )
+    {
+        if( get_window_id( get_nth_graphics_window(i) ) == window_id )
+            break;
+    }
+
+    if( i >= get_n_graphics_windows() )
+        window = (Gwindow) 0;
+    else
+        window = get_nth_graphics_window(i);
+
+    return( window );
 }
