@@ -155,13 +155,18 @@ private  void  update_the_window(
 }
 
 private  void  global_update_function(
-    Window_id  window_id )
+    Window_id  window_id,
+    int        x_pos,
+    int        y_pos )
 {
     Gwindow     window;
 
     window = get_event_window( window_id );
     if( window == NULL )
         return;
+
+    window->x_origin = x_pos;
+    window->y_origin = y_pos;
 
     update_the_window( window );
 }
