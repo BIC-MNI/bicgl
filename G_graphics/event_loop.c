@@ -134,7 +134,8 @@ private  Gwindow  get_key_or_mouse_event_window(
 }
 
 private  void  update_the_window(
-    Gwindow  window )
+    Gwindow  window,
+    BOOLEAN  full_redraw_required )
 {
     --n_windows_to_update_on_idle;
     if( n_windows_to_update_on_idle == 0 )
@@ -144,7 +145,8 @@ private  void  update_the_window(
 
     if( window->update_callback != NULL )
     {
-        (*window->update_callback)( window, window->update_data );
+        (*window->update_callback)( window, full_redraw_required,
+                                    window->update_data );
     }
 
     window->last_update_time = current_realtime_seconds();;
@@ -168,7 +170,7 @@ private  void  global_update_function(
     window->x_origin = x_pos;
     window->y_origin = y_pos;
 
-    update_the_window( window );
+    update_the_window( window, TRUE );
 }
 
 private  void  update_the_overlay_window(
@@ -476,7 +478,7 @@ private  void  initialize_callbacks( void )
 
 public  void  G_set_update_function(
     Gwindow                 window,
-    void                    (*func) ( Gwindow, void * ),
+    void                    (*func) ( Gwindow, BOOLEAN, void * ),
     void                    *func_data )
 {
     window->update_callback = func;
@@ -677,7 +679,7 @@ private  void  timer_update_window(
 
     if( window->update_required_flag )
     {
-        update_the_window( window );
+        update_the_window( window, FALSE );
     }
 }
 
@@ -707,7 +709,7 @@ private  void  check_update_windows(
 
         if( window->update_required_flag )
         {
-            update_the_window( window );
+            update_the_window( window, FALSE );
         }
     }
 
@@ -737,16 +739,12 @@ public  void  G_set_update_flag(
     time_remaining = window->min_update_time -
                      (current_time - window->last_update_time);
 
-    if( time_remaining <= 0.0 )
-    {
-        GS_set_update_flag( window->GS_window );
-    }
-    else
-    {
-        G_add_timer_function( time_remaining, timer_update_window,
-                              (void *) window );
-        ++window->n_update_timers;
-    }
+    if( time_remaining < 0.0 )
+        time_remaining = 0.0;
+
+    G_add_timer_function( time_remaining, timer_update_window,
+                          (void *) window );
+    ++window->n_update_timers;
 }
 
 public  void  G_add_timer_function(
