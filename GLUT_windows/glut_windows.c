@@ -19,6 +19,126 @@ private  void  set_colour_map_entry(
     int               ind,
     Colour            colour );
 
+#ifdef DEBUG
+
+private  int  my_glutCreateWindow(
+    STRING  title )
+{
+    (void) printf( "(void) glutCreateWindow( \"%s\" );\n", title );
+
+    return( glutCreateWindow( title ) );
+}
+#define  glutCreateWindow my_glutCreateWindow
+
+private  void  my_glutInit(
+    int   *argc,
+    char  *argv[] )
+{
+    (void) printf( "glutInit( &argc, argv );\n" );
+
+    glutInit( argc, argv );
+}
+#define  glutInit my_glutInit
+
+private  void  my_glutInitWindowPosition(
+    int   x,
+    int   y )
+{
+    (void) printf( "glutInitWindowPosition( %d, %d );\n", x, y );
+
+    glutInitWindowPosition( x, y );
+}
+#define  glutInitWindowPosition my_glutInitWindowPosition
+
+private  void  my_glutInitWindowSize(
+    int   x,
+    int   y )
+{
+    (void) printf( "glutInitWindowSize( %d, %d );\n", x, y );
+
+    glutInitWindowSize( x, y );
+}
+#define  glutInitWindowSize my_glutInitWindowSize
+
+private  void  my_glutInitDisplayMode(
+    int   x )
+{
+    (void) printf( "glutInitDisplayMode( %d );\n", x );
+
+    glutInitDisplayMode( x );
+}
+#define  glutInitDisplayMode my_glutInitDisplayMode
+
+private  void  my_glutUseLayer(
+    GLenum   x )
+{
+    (void) printf( "glutUseLayer( %d );\n", x );
+
+    glutUseLayer( x );
+}
+#define  glutUseLayer my_glutUseLayer
+
+private  void  my_glutPopWindow(
+    void )
+{
+    (void) printf( "glutPopWindow();\n" );
+
+    glutPopWindow();
+}
+#define  glutPopWindow my_glutPopWindow
+
+private  void  my_glutDestroyWindow(
+    int   x )
+{
+    (void) printf( "glutDestroyWindow( %d );\n", x );
+
+    glutDestroyWindow( x );
+}
+#define  glutDestroyWindow my_glutDestroyWindow
+
+private  void  my_glutSetWindow(
+    int   x )
+{
+    (void) printf( "glutSetWindow( %d );\n", x );
+
+    glutSetWindow( x );
+}
+#define  glutSetWindow my_glutSetWindow
+
+private  void  my_glutMainLoop(
+    void )
+{
+    (void) printf( "/* glutMainLoop(); */\n" );
+
+    glutMainLoop();
+}
+#define  glutMainLoop my_glutMainLoop
+
+private  void  my_glutSetColor(
+    int  index,
+    float r,
+    float g,
+    float b )
+{
+    (void) printf( "glutSetColor( %d, %g, %g, %g );\n", index, r, g, b );
+
+    glutSetColor( index, r, g, b );
+}
+#define  glutSetColor my_glutSetColor
+
+private  void  my_glutDisplayFunc(
+    void  (*func)( void ) )
+{
+    (void) printf( "glutDisplayFunc( &display_it );\n" );
+
+    glutDisplayFunc( func );
+}
+#define  glutDisplayFunc my_glutDisplayFunc
+
+#endif  /* DEBUG */
+
+/*----------------------------------------------------- */
+
 public  void  WS_initialize( void )
 {
     static  BOOLEAN  initialized = FALSE;
@@ -135,6 +255,7 @@ private  Window_id  create_GLUT_window(
         print_error( "Could not get requested colour_map_mode(%d,%d)\n",
                      colour_map_mode,
                      glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE ) );
+
 /*
         glutDestroyWindow( window_id );
         window_id = -1;
