@@ -179,3 +179,111 @@ public  void  WS_swap_buffers(
 {
     glXSwapBuffers( X_get_display(), window->x_window.window_id );
 }
+
+typedef  struct
+{
+    Font_types   font_type;
+    int          size;
+    WS_font      listBase;
+    XFontStruct  *x_font_info;
+} font_struct;
+
+private  int  n_fonts = 0;
+private  font_struct    *fonts;
+
+private  BOOLEAN  lookup_font(
+    Font_types       type,
+    Real             size,
+    font_struct      **font_info )
+{
+    int   i, int_size;
+    Font  x_font;
+
+    int_size = (int) size;
+
+    for_less( i, 0, n_fonts )
+    {
+        if( fonts[i].size == size )
+        {
+            *font_info = &fonts[i];
+            return( TRUE );
+        }
+    }
+
+    if( X_get_font( type, int_size, &x_font ) )
+    {
+        SET_ARRAY_SIZE( fonts, n_fonts, n_fonts+1, DEFAULT_CHUNK_SIZE );
+        fonts[n_fonts].size = int_size;
+        fonts[n_fonts].font_type = type;
+        fonts[n_fonts].listBase = n_fonts * 256;
+        fonts[n_fonts].x_font_info = XQueryFont( X_get_display(), x_font );
+        *font_info = &fonts[n_fonts];
+        glXUseXfont( x_font, 0, 256, fonts[n_fonts].listBase );
+        ++n_fonts;
+        return( TRUE );
+    }
+
+    return( FALSE );
+}
+
+public  void  WS_delete_fonts()
+{
+    int   i;
+
+    for_less( i, 0, n_fonts )
+    {
+        XUnloadFont( X_get_display(), fonts[n_fonts].x_font_info->fid );
+        XFreeFont( X_get_display(), fonts[n_fonts].x_font_info );
+    }
+
+    if( n_fonts > 0 )
+    {
+        FREE( fonts );
+        n_fonts = 0;
+    }
+}
+
+public  BOOLEAN  WS_get_font(
+    Font_types       type,
+    Real             size,
+    WS_font          *font )
+{
+    font_struct  *font_info;
+    BOOLEAN      found;
+
+    found = lookup_font( type, size, &font_info );
+
+    if( found )
+        *font = font_info->listBase;
+
+    return( found );
+}
+
+public  Real  WS_get_character_height(
+    Font_types       type,
+    Real             size )
+{
+    font_struct  *font_info;
+
+    if( !lookup_font( type, size, &font_info ) )
+        return( 1.0 );
+
+    return( font_info->x_font_info->ascent );
+}
+
+public  Real  WS_get_character_width(
+    Font_types       type,
+    Real             size,
+    int              character )
+{
+    font_struct  *font_info;
+
+    if( !lookup_font( type, size, &font_info ) ||
+        character < font_info->x_font_info->min_char_or_byte2 ||
+        character > font_info->x_font_info->max_char_or_byte2 )
+        return( 1.0 );
+
+    return( font_info->x_font_info->
+                 per_char[character-
+                          font_info->x_font_info->min_char_or_byte2].width );
+}
