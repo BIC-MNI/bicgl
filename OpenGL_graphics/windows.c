@@ -1,14 +1,25 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 
 private  void  initialize_window(
-    Gwindow   window );
+    GSwindow   window );
 
 public  Window_id  GS_get_window_id(
-    Gwindow  window )
+    GSwindow  window )
 {
-    return( window->WS_window->window_id );
+    return( WS_get_window_id(&window->WS_window) );
+}
+
+public  Window_id  GS_get_current_window_id( void )
+{
+    return( WS_get_current_window_id() );
+}
+
+public  void  GS_set_current_window(
+    GSwindow        window )
+{
+    WS_set_current_window( &window->WS_window );
 }
 
 public  void  GS_initialize( void )
@@ -22,11 +33,11 @@ public  void  GS_initialize( void )
                                           };
 #endif
 
-#ifndef  TWO_D_ONLY
+    WS_initialize();
+
 #ifdef TO_DO
     defbasis( CATMULL_ROM_ID, catmull_rom_matrix );
     curvebasis( CATMULL_ROM_ID );
-#endif
 #endif
 }
 
@@ -77,7 +88,7 @@ public  BOOLEAN  GS_can_switch_colour_map_mode( void )
 /* ARGSUSED */
 
 public  Status  GS_create_window(
-    Gwindow        window,
+    GSwindow       window,
     STRING         title,
     int            x_pos,
     int            y_pos,
@@ -96,11 +107,11 @@ public  Status  GS_create_window(
 
     status = WS_create_window( title, x_pos, y_pos, width, height,
                                colour_map_desired, double_buffer_desired,
-                               depth_buffer_desired, 0,
-                               actual_colour_map_flag,
+                               depth_buffer_desired,
+                               0, actual_colour_map_flag,
                                actual_double_buffer_flag,
                                actual_depth_buffer_flag,
-                               actual_n_overlay_planes, window->WS_window);
+                               actual_n_overlay_planes, &window->WS_window);
 
 
     if( status == OK )
@@ -155,15 +166,15 @@ public  void  print_info( void )
 /* ARGSUSED */
 
 private  void  initialize_window(
-    Gwindow   window )
+    GSwindow   window )
 {
 }
 
 /* ARGSUSED */
 
 public  void  GS_set_window_title(
-    Gwindow   window,
-    STRING    title )
+    GSwindow   window,
+    STRING     title )
 {
 }
 
@@ -246,7 +257,8 @@ public  void  GS_set_colour_map_state(
 /* ARGSUSED */
 
 public  int  GS_get_n_colour_map_entries(
-    Gwindow  window )
+    GSwindow  window,
+    BOOLEAN   double_buffer_state )
 {
     GLint  n_bits;
     int    n_colours;
@@ -277,11 +289,12 @@ public  int  GS_get_n_colour_map_entries(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_set_colour_map_entry(
-    Gwindow         window,
+    GSwindow        window,
+    Bitplane_types  bitplanes,
     int             ind,
     Colour          colour )
 {
-    WS_set_colour_map_entry( window->WS_window, ind, colour );
+    WS_set_colour_map_entry( &window->WS_window, bitplanes, ind, colour );
 }
 
 public  BOOLEAN  GS_is_double_buffer_supported( void )
@@ -298,9 +311,6 @@ public  BOOLEAN  GS_is_double_buffer_supported( void )
 
 public  BOOLEAN  GS_is_depth_buffer_supported( void )
 {
-#ifdef  TWO_D_ONLY
-    return( FALSE );
-#else
 /*
     BOOLEAN   available;
 */
@@ -313,7 +323,6 @@ public  BOOLEAN  GS_is_depth_buffer_supported( void )
     available = (n_bits > 0);
     return( available );
 */
-#endif
 }
 
 public  void  GS_set_depth_function(
@@ -357,9 +366,9 @@ public  void  GS_set_depth_buffer_state(
 ---------------------------------------------------------------------------- */
 
 public  Status  GS_delete_window(
-    Gwindow   window )
+    GSwindow   window )
 {
-    WS_delete_window( window->WS_window );
+    WS_delete_window( &window->WS_window );
 
     return( OK );
 }
@@ -388,13 +397,27 @@ public  int  GS_get_monitor_width( void )
 
 public  int  GS_get_monitor_height( void )
 {
-    GLint  height;
+    int  x_size, y_size;
 
-    height = 1000;
+    WS_get_screen_size( &x_size, &y_size );
 
-    print_error( "GS_get_monitor_height(): not implemented\n" );
+    return( y_size );
+}
 
-    return( height );
+public  void  GS_get_window_size(
+    GSwindow   window,
+    int        *x_size,
+    int        *y_size )
+{
+    WS_get_window_size( &window->WS_window, x_size, y_size );
+}
+
+public  void  GS_get_window_position(
+    GSwindow   window,
+    int        *x_position,
+    int        *y_position )
+{
+    WS_get_window_position( &window->WS_window, x_position, y_position );
 }
 
 public  void  GS_clear_depth_buffer( void )
@@ -403,12 +426,15 @@ public  void  GS_clear_depth_buffer( void )
 }
 
 private  void  clear_viewport(
-     Gwindow       window,
-     Colour        colour )
+     GSwindow        window,
+     Bitplane_types  current_bitplanes,
+     BOOLEAN         colour_map_state,
+     BOOLEAN         zbuffer_state,
+     Colour          colour )
 {
-    if( window->current_bitplanes == NORMAL_PLANES )
+    if( current_bitplanes == NORMAL_PLANES )
     {
-        if( window->colour_map_state )
+        if( colour_map_state )
         {
             glClearIndex( (GLfloat) colour );
         }
@@ -422,23 +448,17 @@ private  void  clear_viewport(
 
         glClear( GL_COLOR_BUFFER_BIT );
 
-#ifndef  TWO_D_ONLY
-        if( window->zbuffer_state )
+        if( zbuffer_state )
             glClear( GL_DEPTH_BUFFER_BIT );
-#endif
     }
-#ifndef  TWO_D_ONLY
     else
          GS_clear_overlay();
-#endif
 }
 
 public  void  GS_clear_overlay( void )
 {
-#ifndef  TWO_D_ONLY
     glClearIndex( 0.0f );
     glClear( GL_COLOR_BUFFER_BIT );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -455,10 +475,16 @@ public  void  GS_clear_overlay( void )
 ---------------------------------------------------------------------------- */
 
 public  void  GS_clear_window(
-    Gwindow    window,
-    Colour     colour )
+    GSwindow        window,
+    int             x_size,
+    int             y_size,
+    Bitplane_types  current_bitplanes,
+    BOOLEAN         colour_map_state,
+    BOOLEAN         zbuffer_state,
+    Colour          colour )
 {
-    clear_viewport( window, colour );
+    clear_viewport( window, current_bitplanes, colour_map_state,
+                    zbuffer_state, colour );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -476,26 +502,36 @@ public  void  GS_clear_window(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_clear_viewport(
-    Gwindow      window,
-    Colour       colour )
+    GSwindow        window,
+    int             x_viewport_min,
+    int             x_viewport_max,
+    int             y_viewport_min,
+    int             y_viewport_max,
+    int             x_size,
+    int             y_size,
+    Bitplane_types  current_bitplanes,
+    BOOLEAN         colour_map_state,
+    BOOLEAN         zbuffer_state,
+    Colour          colour )
 {
     BOOLEAN  scissoring;
 
-    if( window->x_viewport_min != 0 ||
-        window->x_viewport_max != window->x_size-1 ||
-        window->y_viewport_min != 0 ||
-        window->y_viewport_max != window->y_size-1 )
+    if( x_viewport_min != 0 ||
+        x_viewport_max != x_size-1 ||
+        y_viewport_min != 0 ||
+        y_viewport_max != y_size-1 )
     {
-        glScissor( window->x_viewport_min, window->y_viewport_min,
-                   window->x_viewport_max - window->x_viewport_min + 1,
-                   window->y_viewport_max - window->y_viewport_min + 1 );
+        glScissor( x_viewport_min, y_viewport_min,
+                   x_viewport_max - x_viewport_min + 1,
+                   y_viewport_max - y_viewport_min + 1 );
         glEnable( GL_SCISSOR_TEST );
         scissoring = TRUE;
     }
     else
         scissoring = FALSE;
 
-    clear_viewport( window, colour );
+    clear_viewport( window, current_bitplanes, colour_map_state,
+                    zbuffer_state, colour );
 
     if( scissoring )
         glDisable( GL_SCISSOR_TEST );
@@ -507,90 +543,63 @@ public  void  GS_flush( void )
 }
 
 public  void  GS_append_to_last_update(
-    Gwindow   window )
+    GSwindow   window,
+    BOOLEAN    zbuffer_state,
+    int        x_size,
+    int        y_size )
 {
-#ifndef  TWO_D_ONLY
     glReadBuffer( GL_FRONT );
 
     glMatrixMode( GL_PROJECTION );
     glPushMatrix();
-    GS_ortho_2d( 0, window->x_size - 1, 0, window->y_size - 1 );
+    GS_ortho_2d( 0, x_size - 1, 0, y_size - 1 );
 
     glMatrixMode( GL_MODELVIEW );
     glPushMatrix();
     glLoadIdentity();
 
     glRasterPos2i( 0, 0 );
-    glCopyPixels( 0, 0, window->x_size, window->y_size, GL_COLOR );
+    glCopyPixels( 0, 0, x_size, y_size, GL_COLOR );
 
     glMatrixMode( GL_PROJECTION );
     glPopMatrix();
     glMatrixMode( GL_MODELVIEW );
     glPopMatrix();
-#endif
 }
 
 public  int  GS_get_num_overlay_planes( void )
 {
-#ifdef  TWO_D_ONLY
-    return( 0 );
-#else
     return( WS_get_n_overlay_planes() );
-#endif
 }
 
-public  void  set_bitplanes( 
-    Gwindow          window,
+public  void  GS_set_bitplanes( 
+    GSwindow         window,
     Bitplane_types   bitplanes )
 {
-#ifndef  TWO_D_ONLY
-    if( window->n_overlay_planes > 0 )
+    WS_set_bitplanes( &window->WS_window, bitplanes );
+
+    switch( bitplanes )
     {
-        WS_set_current_window( window->WS_window, bitplanes );
+    case NORMAL_PLANES:
+        glDepthMask( (GLboolean) TRUE );
+        break;
 
-        switch( bitplanes )
-        {
-        case NORMAL_PLANES:
-            glDepthMask( (GLboolean) TRUE );
-            update_blend_function( window, bitplanes );
-            break;
-
-        case OVERLAY_PLANES:
-            glDepthMask( (GLboolean) FALSE );
-            update_blend_function( window, bitplanes );
-            break;
-        }
+    case OVERLAY_PLANES:
+        glDepthMask( (GLboolean) FALSE );
+        break;
     }
-#endif
 }
 
 public  void  GS_set_overlay_colour_map(
-    Gwindow         window,
-    int             ind,
-    Colour          colour )
+    GSwindow         window,
+    int              ind,
+    Colour           colour )
 {
-#ifndef  TWO_D_ONLY
-    if( window->n_overlay_planes > 0 )
-        WS_set_overlay_colour_map_entry( window->WS_window, ind, colour );
-#endif
+    WS_set_overlay_colour_map_entry( &window->WS_window, ind, colour );
 }
 
-public  Gwindow   find_window_for_id(
-    Window_id  window_id )
+public  void  GS_swap_buffers(
+    GSwindow        window )
 {
-    int            i;
-    Gwindow        window;
-
-    for_less( i, 0, get_n_graphics_windows() )
-    {
-        if( GS_get_window_id( get_nth_graphics_window(i) ) == window_id )
-            break;
-    }
-
-    if( i >= get_n_graphics_windows() )
-        window = (Gwindow) 0;
-    else
-        window = get_nth_graphics_window(i);
-
-    return( window );
+    WS_swap_buffers( &window->WS_window );
 }
