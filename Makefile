@@ -20,14 +20,21 @@ LIB_MESA = $(ARCH_DIR)/lib$(MESA_LIBNAME).a
 LIB_MESA-O3 = $(ARCH_DIR)/lib$(MESA_LIBNAME)-O3.a
 LINT_MESA = $(ARCH_DIR)/llib-l$(MESA_LIBNAME).ln
 
-IRISGL_INCLUDES = -IInclude -IGL_graphics/Include $(X11_INCLUDES)
+PRINT_X_COLOURS = $(ARCH_DIR)/print_X_colours
+
+IRISGL_INCLUDES = -IIrisGL_graphics/Include -IInclude $(X11_INCLUDES)
 IRISGL_TARGETS = $(LIB_IRISGL)
 IRISGL_-O3_TARGETS = $(LIB_IRISGL-O3)
 
+GLUT_INCLUDES = -I$(SRC_DIRECTORY)/GLUT/include
+
 OPENGL_INCLUDES = -IInclude \
                   -IOpenGL_graphics/Include \
-                  -IGLX_windows/Include \
+                  -IGLUT_windows/Include \
                   -IX_windows/Include $(X11_INCLUDES)
+OPENGL_INCLUDES = -IOpenGL_graphics/Include \
+                  -IInclude \
+                  -IGLUT_windows/Include $(GLUT_INCLUDES) $(X11_INCLUDES)
 OPENGL_TARGETS = $(LIB_OPENGL_X)
 OPENGL_-O3_TARGETS = $(LIB_OPENGL_X-O3)
 
@@ -55,19 +62,19 @@ irisgl-O3: $(ARCH_DIR)
 	make library "TARGETS=$(IRISGL_-O3_TARGETS)" "G_INCLUDE=$(IRISGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-opengl: $(ARCH_DIR)
+opengl: $(ARCH_DIR) $(PRINT_X_COLOURS)
 	make library "TARGETS=$(OPENGL_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-opengl-O3: $(ARCH_DIR)
+opengl-O3: $(ARCH_DIR) $(PRINT_X_COLOURS)
 	make library "TARGETS=$(OPENGL_-O3_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
                      "OPT=$(OPT)"
 
-mesa: $(ARCH_DIR)
+mesa: $(ARCH_DIR) $(PRINT_X_COLOURS)
 	make library "TARGETS=$(MESA_TARGETS)" "G_INCLUDE=$(MESA_INCLUDES)"\
                      "OPT=$(OPT)"
 
-mesa-O3: $(ARCH_DIR)
+mesa-O3: $(ARCH_DIR) $(PRINT_X_COLOURS)
 	make library "TARGETS=$(MESA_-O3_TARGETS)" "G_INCLUDE=$(MESA_INCLUDES)"\
                      "OPT=$(OPT)"
 
@@ -90,21 +97,24 @@ INCLUDE = $(G_INCLUDE) $(BIC_PL_INCLUDE)
 GLX_SRC = GLX_windows/$(ARCH_DIR)/glx_windows.c \
           GLX_windows/$(ARCH_DIR)/stored_font.c
 
+GLUT_SRC = GLUT_windows/$(ARCH_DIR)/glut_windows.c \
+           GLUT_windows/$(ARCH_DIR)/copy_x_colours.c
+
 X_SRC = X_windows/$(ARCH_DIR)/x_windows.c
 
 GL_SRC = \
-         GL_graphics/$(ARCH_DIR)/colour_def.c \
-         GL_graphics/$(ARCH_DIR)/draw.c \
-         GL_graphics/$(ARCH_DIR)/events.c \
-         GL_graphics/$(ARCH_DIR)/lights.c \
-         GL_graphics/$(ARCH_DIR)/render.c \
-         GL_graphics/$(ARCH_DIR)/view.c \
-         GL_graphics/$(ARCH_DIR)/windows.c
+         IrisGL_graphics/$(ARCH_DIR)/colour_def.c \
+         IrisGL_graphics/$(ARCH_DIR)/draw.c \
+         IrisGL_graphics/$(ARCH_DIR)/event_loop.c \
+         IrisGL_graphics/$(ARCH_DIR)/lights.c \
+         IrisGL_graphics/$(ARCH_DIR)/render.c \
+         IrisGL_graphics/$(ARCH_DIR)/view.c \
+         IrisGL_graphics/$(ARCH_DIR)/windows.c
 
 OPENGL_SRC = \
              OpenGL_graphics/$(ARCH_DIR)/colour_def.c \
              OpenGL_graphics/$(ARCH_DIR)/draw.c \
-             OpenGL_graphics/$(ARCH_DIR)/events.c \
+             OpenGL_graphics/$(ARCH_DIR)/event_loop.c \
              OpenGL_graphics/$(ARCH_DIR)/lights.c \
              OpenGL_graphics/$(ARCH_DIR)/render.c \
              OpenGL_graphics/$(ARCH_DIR)/view.c \
@@ -112,7 +122,7 @@ OPENGL_SRC = \
 
 G_SRC = G_graphics/$(ARCH_DIR)/draw.c \
         G_graphics/$(ARCH_DIR)/draw_objects.c \
-        G_graphics/$(ARCH_DIR)/events.c \
+        G_graphics/$(ARCH_DIR)/event_loop.c \
         G_graphics/$(ARCH_DIR)/graphics_structs.c \
         G_graphics/$(ARCH_DIR)/lights.c \
         G_graphics/$(ARCH_DIR)/random_order.c \
@@ -122,7 +132,8 @@ G_SRC = G_graphics/$(ARCH_DIR)/draw.c \
 
 IRISGL_SRC = $(G_SRC) $(GL_SRC)
 
-OPENGL_X_SRC = $(G_SRC) $(OPENGL_SRC) $(GLX_SRC) $(X_SRC)
+#OPENGL_X_SRC = $(G_SRC) $(OPENGL_SRC) $(GLX_SRC) $(X_SRC)
+OPENGL_X_SRC = $(G_SRC) $(OPENGL_SRC) $(GLUT_SRC)
 
 OPENGL_X_OBJECTS = $(OPENGL_X_SRC:.c=.o)
 
@@ -151,6 +162,13 @@ $(GLX_PROTOTYPE_FILE): $(GLX_SRC)
 
 #-----
 
+GLUT_PROTOTYPE_FILE = GLUT_windows/Include/glut_window_prototypes.h
+
+$(GLUT_PROTOTYPE_FILE): $(GLUT_SRC)
+	@$(MAKE_PROTOTYPES) $@ $(GLUT_SRC)
+
+#-----
+
 OPENGL_PROTOTYPE_FILE = OpenGL_graphics/Include/opengl_graphics_prototypes.h
 
 $(OPENGL_PROTOTYPE_FILE): $(OPENGL_SRC)
@@ -158,7 +176,7 @@ $(OPENGL_PROTOTYPE_FILE): $(OPENGL_SRC)
 
 #-----
 
-GL_PROTOTYPE_FILE = GL_graphics/Include/irisgl_graphics_prototypes.h
+GL_PROTOTYPE_FILE = IrisGL_graphics/Include/irisgl_graphics_prototypes.h
 
 $(GL_PROTOTYPE_FILE): $(GL_SRC)
 	@$(MAKE_PROTOTYPES) $@ $(GL_SRC)
@@ -204,18 +222,34 @@ $(LIB_IRISGL-O3): $(IRISGL_OBJECTS:.o=.u)
 $(LINT_IRISGL): $(IRISGL_SRC:.c=.ln)
 	$(LINT) -x -u -o $(IRISGL_LIBNAME) $(IRISGL_SRC:.c=.ln)
 
+#library: \
+#         $(PROTOTYPE_FILE) \
+#         $(X_PROTOTYPE_FILE) \
+#         $(GLX_PROTOTYPE_FILE) \
+#         $(OPENGL_PROTOTYPE_FILE) \
+#         $(GL_PROTOTYPE_FILE) \
+#         $(TARGETS)
+
 library: \
          $(PROTOTYPE_FILE) \
          $(X_PROTOTYPE_FILE) \
-         $(GLX_PROTOTYPE_FILE) \
+         $(GLUT_PROTOTYPE_FILE) \
          $(OPENGL_PROTOTYPE_FILE) \
          $(GL_PROTOTYPE_FILE) \
          $(TARGETS)
 
+#lint: \
+#      $(PROTOTYPE_FILE) \
+#      $(X_PROTOTYPE_FILE) \
+#      $(GLX_PROTOTYPE_FILE) \
+#      $(OPENGL_PROTOTYPE_FILE) \
+#      $(GL_PROTOTYPE_FILE) \
+#      $(LINT_LIBRARY)
+
 lint: \
       $(PROTOTYPE_FILE) \
       $(X_PROTOTYPE_FILE) \
-      $(GLX_PROTOTYPE_FILE) \
+      $(GLUT_PROTOTYPE_FILE) \
       $(OPENGL_PROTOTYPE_FILE) \
       $(GL_PROTOTYPE_FILE) \
       $(LINT_LIBRARY)
@@ -228,3 +262,6 @@ G_graphics/$(ARCH_DIR)/draw_quadmesh.include.c :
 G_graphics/$(ARCH_DIR)/draw.u \
 G_graphics/$(ARCH_DIR)/draw.o: G_graphics/$(ARCH_DIR)/draw_polygons.include.c \
                                G_graphics/$(ARCH_DIR)/draw_quadmesh.include.c
+
+$(PRINT_X_COLOURS): GLUT_windows/print_X_colours.c
+	$(CC) $(X11_INCLUDES) GLUT_windows/print_X_colours.c -o $@ $(X11_LIBS)
