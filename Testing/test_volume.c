@@ -6,8 +6,10 @@ int  main(
 {
     Status         status;
     int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
+    int            n_slices_displayed;
     Real           intensity, separations[MAX_DIMENSIONS];
     Real           min_value, max_value;
+    Real           *weights, *slice_positions;
     pixels_struct  pixels;
     Volume         volume;
     window_struct  *window;
@@ -17,7 +19,8 @@ int  main(
     static String  dim_names[] = { MIxspace, MIyspace, MIzspace };
 
     initialize_argument_processing( argc, argv );
-    (void) get_string_argument( "/nil/david/big_data/avg.mnc", &filename );
+    (void) get_string_argument( "/nil/david/big_data/sphere.fre", &filename );
+    (void) get_int_argument( 1, &n_slices_displayed );
 
     status = input_volume( filename, dim_names, &volume );
 
@@ -56,9 +59,21 @@ int  main(
     if( (Real) y_size / ((Real) sizes[Y] * separations[Y]) < scale )
         scale = (Real) y_size / ((Real) sizes[Y] * separations[Y]);
 
-    create_volume_slice( volume, (Real) sizes[Z] / 2.0,
+    ALLOC( weights, n_slices_displayed );
+    ALLOC( slice_positions, n_slices_displayed );
+
+    for_less( i, 0, n_slices_displayed )
+    {
+        slice_positions[i] = (Real) (sizes[Z]-1) / 2.0 -
+                             (Real) (n_slices_displayed / 2) + (Real) i;
+        weights[i] = 1.0 / (Real) n_slices_displayed;
+    }
+
+    create_volume_slice( n_slices_displayed, volume, slice_positions,
+                         weights,
                          0.0, 0.0, scale, scale,
-                         (Volume) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
+                         (Volume) NULL, (Real *) NULL, (Real *) NULL,
+                         0.0, 0.0, 0.0, 0.0,
                          X, Y, x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
                          &rgb_map, &n_alloced, &pixels );
