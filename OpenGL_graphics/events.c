@@ -23,17 +23,17 @@
 
 public  BOOLEAN  GS_get_event(
     Event_types    *type,
-    Gwindow        *window,
+    Window_id      *window_id,
     int            *x_mouse,
     int            *y_mouse,
     int            *key_pressed )
 {
+    Gwindow             event_window;
     BOOLEAN             event_found;
-    Window_id           window_id;
     event_info_struct   info;
 
-    event_found = WS_get_event( type, &window_id, &info );
-    *window = find_window_for_id( window_id );
+    event_found = WS_get_event( type, window_id, &info );
+    event_window = find_window_for_id( *window_id );
 
     switch( *type )
     {
@@ -45,7 +45,10 @@ public  BOOLEAN  GS_get_event(
     case RIGHT_MOUSE_DOWN_EVENT:
     case MOUSE_MOVEMENT_EVENT:
         *x_mouse = info.x_mouse;
-        *y_mouse = (*window)->y_size - 1 - info.y_mouse;
+        if( event_window != NULL )
+            *y_mouse = event_window->y_size - 1 - info.y_mouse;
+        else
+            *y_mouse = info.y_mouse;
         break;
 
     case KEY_UP_EVENT:
@@ -54,12 +57,12 @@ public  BOOLEAN  GS_get_event(
         break;
 
     case WINDOW_RESIZE_EVENT:
-        if( *window != NULL )
+        if( event_window != NULL )
         {
-            (*window)->x_origin = info.x_position;
-            (*window)->y_origin = info.y_position;
-            (*window)->x_size = info.x_size;
-            (*window)->y_size = info.y_size;
+            event_window->x_origin = info.x_position;
+            event_window->y_origin = info.y_position;
+            event_window->x_size = info.x_size;
+            event_window->y_size = info.y_size;
         }
         break;
 

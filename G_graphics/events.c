@@ -3,17 +3,17 @@
 #include  <gs_specific.h>
 #include  <queue.h>
 
-private  BOOLEAN  left_mouse_down = FALSE;
-private  Gwindow  left_mouse_window = NULL;
-private  BOOLEAN  middle_mouse_down = FALSE;
-private  Gwindow  middle_mouse_window = NULL;
-private  BOOLEAN  right_mouse_down = FALSE;
-private  Gwindow  right_mouse_window = NULL;
+private  BOOLEAN    left_mouse_down = FALSE;
+private  Window_id  left_mouse_window = 0;
+private  BOOLEAN    middle_mouse_down = FALSE;
+private  Window_id  middle_mouse_window = 0;
+private  BOOLEAN    right_mouse_down = FALSE;
+private  Window_id  right_mouse_window = 0;
 
 private  struct
 {
-    BOOLEAN  key_is_down;
-    Gwindow  window;
+    BOOLEAN    key_is_down;
+    Window_id  window;
 }
 key_states[256];
 
@@ -30,7 +30,7 @@ private  Gwindow        get_current_input_window( void );
 typedef  struct
 {
     Event_types    type;
-    Gwindow        window;
+    Window_id      window;
     int            x_mouse;
     int            y_mouse;
     int            key_pressed;
@@ -52,7 +52,7 @@ private  void  check_initialize_event_queue( void )
         for_less( i, 0, 256 )
         {
             key_states[i].key_is_down = FALSE;
-            key_states[i].window = NULL;
+            key_states[i].window = 0;
         }
     }
 }
@@ -214,7 +214,7 @@ private  Real         next_check_event_time = 0.0;
 private  BOOLEAN      prev_was_timer = FALSE;
 
 private  Event_types  get_event(
-    Gwindow        *window,
+    Window_id      *window,
     int            *x_mouse,
     int            *y_mouse,
     int            *key_pressed )
@@ -277,9 +277,6 @@ private  Event_types  get_event(
         prev_type = NO_EVENT;
     }
 
-    if( type == WINDOW_RESIZE_EVENT && *window != NULL )
-        window_was_resized( *window );
-
     return( type );
 }
 
@@ -318,77 +315,85 @@ public  Event_types  G_get_event(
 {
     BOOLEAN        found;
     int            x_mouse, y_mouse;
+    Window_id      window_id;
     Event_types    type;
 
     found = FALSE;
 
     while( !found )
     {
-        type = get_event( window, &x_mouse, &y_mouse, key_pressed );
+        type = get_event( &window_id, &x_mouse, &y_mouse, key_pressed );
+        *window = get_current_input_window();
 
         switch( type )
         {
         case MOUSE_MOVEMENT_EVENT:
             if( mouse_movement_events_enabled )
                 found = TRUE;
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             break;
 
         case WINDOW_ENTER_EVENT:
+            *window = find_window_for_id( window_id );
             set_current_input_window( *window );
             found = TRUE;
             break;
 
         case WINDOW_LEAVE_EVENT:
-            *window = get_current_input_window();
             set_current_input_window( (Gwindow) NULL );
             found = TRUE;
             break;
 
         case KEY_DOWN_EVENT:
         case KEY_UP_EVENT:
-            *window = get_current_input_window();
+        case TERMINATE_INTERACTION_EVENT:
             found = TRUE;
             break;
 
         case LEFT_MOUSE_DOWN_EVENT:
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case LEFT_MOUSE_UP_EVENT:
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case MIDDLE_MOUSE_DOWN_EVENT:
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case MIDDLE_MOUSE_UP_EVENT:
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case RIGHT_MOUSE_DOWN_EVENT:
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case RIGHT_MOUSE_UP_EVENT:
-            *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
+        case WINDOW_RESIZE_EVENT:
+            *window = find_window_for_id( window_id );
+            if( *window != NULL )
+                window_was_resized( *window );
+            found = TRUE;
+            break;
+
+        case REDRAW_OVERLAY_EVENT:
+        case WINDOW_REDRAW_EVENT:
+        case WINDOW_ICONIZED_EVENT:
+        case WINDOW_DEICONIZED_EVENT:
+        case WINDOW_QUIT_EVENT:
         default:
+            *window = find_window_for_id( window_id );
             found = TRUE;
             break;
         }

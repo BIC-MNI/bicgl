@@ -148,6 +148,12 @@ private  void  initialize_window(
     G_update_window( window );
 }
 
+public  long  G_get_window_id(
+    Gwindow   window )
+{
+    return( GS_get_window_id( window ) );
+}
+
 public  Status  G_create_window(
     char           title[],
     int            x_pos,

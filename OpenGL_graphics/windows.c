@@ -5,7 +5,7 @@
 private  void  initialize_window(
     Gwindow   window );
 
-private  Window_id  get_window_id(
+public  Window_id  GS_get_window_id(
     Gwindow  window )
 {
     return( window->WS_window->x_window.window_id );
@@ -548,7 +548,7 @@ public  Gwindow   find_window_for_id(
 
     for_less( i, 0, get_n_graphics_windows() )
     {
-        if( get_window_id( get_nth_graphics_window(i) ) == window_id )
+        if( GS_get_window_id( get_nth_graphics_window(i) ) == window_id )
             break;
     }
 

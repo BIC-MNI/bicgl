@@ -3,7 +3,7 @@
 #include  <gs_specific.h>
 #include  <gl/get.h>
 
-private  Window_id  get_window_id( 
+public  long  GS_get_window_id( 
     Gwindow  window )
 {
     return( window->WS_window->window_id );
@@ -149,7 +149,7 @@ public  Status  GS_create_window(
         winconstraints();
     }
 
-    if( get_window_id(window) >= 0 )
+    if( GS_get_window_id(window) >= 0 )
     {
         *actual_colour_map_flag = colour_map_desired;
         *actual_double_buffer_flag = double_buffer_desired;
@@ -460,7 +460,7 @@ public  Status  GS_delete_window(
 {
     Status    status;
 
-    if( get_window_id(window) >= 0 )
+    if( GS_get_window_id(window) >= 0 )
     {
 #ifndef  TWO_D_ONLY
         if( G_has_overlay_planes() )
@@ -472,7 +472,7 @@ public  Status  GS_delete_window(
         }
 #endif
 
-        winclose( get_window_id(window) );
+        winclose( GS_get_window_id(window) );
 
         status = OK;
     }
@@ -752,7 +752,7 @@ public  Gwindow   find_window_for_id(
 
     for_less( i, 0, get_n_graphics_windows() )
     {
-        if( get_window_id( get_nth_graphics_window(i) ) == window_id )
+        if( GS_get_window_id( get_nth_graphics_window(i) ) == window_id )
             break;
     }
 

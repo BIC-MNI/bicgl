@@ -87,12 +87,13 @@ private  int  current_mouse_y = -1;
 
 public  BOOLEAN  GS_get_event(
     Event_types    *type,
-    Gwindow        *window,
+    Window_id      *window_id,
     int            *x_mouse,
     int            *y_mouse,
     int            *key_pressed )
 {
     BOOLEAN       event_found;
+    Gwindow       event_window;
     long          dev;
     short         val;
     long          x_size, y_size, x_pos, y_pos;
@@ -109,67 +110,71 @@ public  BOOLEAN  GS_get_event(
             if( val == 0 )
             {
                 *type = WINDOW_LEAVE_EVENT;
-                *window = (Gwindow) NULL;
+                *window_id = 0;
             }
             else
             {
                 *type = WINDOW_ENTER_EVENT;
-                *window = find_window_for_id( (Window_id) val );
+                *window_id = (Window_id) val;
             }
             event_found = TRUE;
             break;
 
         case WINQUIT:
         case WINSHUT:
-            *window = find_window_for_id( (Window_id) val );
+            *window_id = (Window_id) val;
             *type = WINDOW_QUIT_EVENT;
             event_found = TRUE;
             break;
 
         case DRAWOVERLAY:
-            *window = find_window_for_id( (Window_id) val );
+            *window_id = (Window_id) val;
             *type = REDRAW_OVERLAY_EVENT;
             event_found = TRUE;
             break;
 
         case DEPTHCHANGE:
-            *window = find_window_for_id( (Window_id) val );
-            if( *window != (Gwindow) NULL )
+            *window_id = (Window_id) val;
+            event_window = find_window_for_id( *window_id );
+            if( event_window != (Gwindow) NULL )
                 clear_overlay_planes();
             *type = REDRAW_OVERLAY_EVENT;
             event_found = TRUE;
             break;
 
         case WINTHAW:
-            *window = find_window_for_id( (Window_id) val );
+            *window_id = (Window_id) val;
             *type = WINDOW_DEICONIZED_EVENT;
             event_found = TRUE;
             break;
 
         case WINFREEZE:
-            *window = find_window_for_id( (Window_id) val );
-            if( *window != (Gwindow) NULL )
+            *window_id = (Window_id) val;
+            event_window = find_window_for_id( *window_id );
+            if( event_window != (Gwindow) NULL )
                 clear_overlay_planes();
             *type = WINDOW_ICONIZED_EVENT;
             event_found = TRUE;
             break;
 
         case REDRAW:
-            *window = find_window_for_id( (Window_id) val );
-            if( *window != (Gwindow) NULL )
+            *window_id = (Window_id) val;
+            event_window = find_window_for_id( *window_id );
+            if( event_window != (Gwindow) NULL )
             {
-                set_current_window( *window );
+                set_current_window( event_window );
                 clear_overlay_planes();
                 getorigin( &x_pos, &y_pos );
-                (*window)->x_origin = x_pos;
-                (*window)->y_origin = y_pos;
+                event_window->x_origin = x_pos;
+                event_window->y_origin = y_pos;
 
                 getsize( &x_size, &y_size );
-                if( (*window)->x_size != x_size || (*window)->y_size != y_size )
+                if( event_window->x_size != x_size ||
+                    event_window->y_size != y_size )
                 {
                     *type = WINDOW_RESIZE_EVENT;
-                    (*window)->x_size = x_size;
-                    (*window)->y_size = y_size;
+                    event_window->x_size = x_size;
+                    event_window->y_size = y_size;
                 }
                 else
                     *type = WINDOW_REDRAW_EVENT;

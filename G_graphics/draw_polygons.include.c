@@ -2,7 +2,7 @@
 
 #define  SET_COLOUR( colour ) \
     { \
-        scaled_colour = SCALE_COLOUR( colour, diffuse_coefficient ); \
+        scaled_colour = scale_colour( colour, diffuse_coefficient ); \
         set_colour( window, scaled_colour ); \
     }
 
