@@ -158,7 +158,7 @@ public  Status  GS_create_window(
             depth_buffer_desired = FALSE;
 
         n_overlay_planes_desired = MIN( n_overlay_planes_desired,
-                                        GS_get_n_overlay_planes() );
+                                        G_get_n_overlay_planes() );
 
         *actual_colour_map_flag = colour_map_desired;
         *actual_double_buffer_flag = double_buffer_desired;
