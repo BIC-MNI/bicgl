@@ -7,7 +7,28 @@
 
 typedef  struct
 {
+    int             light_index;
+    Light_types     type;
+    Colour          colour;
+    Vector          direction;
+    Point           position;
+    Real            spot_exponent;
+    Real            spot_angle;
+} light_info_struct;
+
+typedef  struct
+{
     WS_window_struct   WS_window;
+
+    BOOLEAN            ambient_set;
+    Real               ambient[3];
+
+    int                n_lights_defined;
+    light_info_struct  *lights;
+
+    int                n_light_states;
+    BOOLEAN            *light_indices;
+    BOOLEAN            *light_states;
 }
 GS_window_struct;
 

@@ -13,12 +13,25 @@ public  void  GS_initialize_lights(
     glLightModeli( GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE );
     glLightModeli( GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE );
 
+    window->ambient_set = 0;
+    window->n_lights_defined = 0;
+    window->n_light_states = 0;
 }
 
-/* ARGSUSED */
+public  void  delete_lights(
+    GSwindow        window )
+{
+    if( window->n_lights_defined > 0 )
+        FREE( window->lights );
 
-public  void  GS_set_ambient_light(
-    GSwindow       window,
+    if( window->n_light_states > 0 )
+    {
+        FREE( window->light_indices );
+        FREE( window->light_states );
+    }
+}
+
+private  void  set_ambient_light(
     Colour         colour )
 {
     float     ambient_light[4];
@@ -33,8 +46,14 @@ public  void  GS_set_ambient_light(
 
 /* ARGSUSED */
 
-public  void  GS_define_light(
-    GSwindow        window,
+public  void  GS_set_ambient_light(
+    GSwindow       window,
+    Colour         colour )
+{
+    set_ambient_light( colour );
+}
+
+private  void  define_light(
     int             light_index,
     Light_types     type,
     Colour          colour,
@@ -110,8 +129,44 @@ public  void  GS_define_light(
 
 /* ARGSUSED */
 
-public  void  GS_set_light_state(
+public  void  GS_define_light(
     GSwindow        window,
+    int             light_index,
+    Light_types     type,
+    Colour          colour,
+    Vector          *direction,
+    Point           *position,
+    Real            spot_exponent,
+    Real            spot_angle )
+{
+    int    ind;
+
+    define_light( light_index, type, colour, direction, position,
+                  spot_exponent, spot_angle );
+
+    for_less( ind, 0, window->n_lights_defined )
+    {
+        if( window->lights[ind].light_index == light_index )
+            break;
+    }
+
+    if( ind >= window->n_lights_defined )
+    {
+        SET_ARRAY_SIZE( window->lights, window->n_lights_defined,
+                        window->n_lights_defined+1, 1 );
+        ++window->n_lights_defined;
+    }
+
+    window->lights[ind].light_index = light_index;
+    window->lights[ind].type = type;
+    window->lights[ind].colour = colour;
+    window->lights[ind].direction = *direction;
+    window->lights[ind].position = *position;
+    window->lights[ind].spot_exponent = spot_exponent;
+    window->lights[ind].spot_angle = spot_angle;
+}
+
+private  void  set_light_state(
     int             light_index,
     BOOLEAN         state )
 {
@@ -133,4 +188,57 @@ public  void  GS_set_light_state(
         glEnable( (GLenum) gl_light_index );
     else
         glDisable( (GLenum) gl_light_index );
+}
+
+/* ARGSUSED */
+
+public  void  GS_set_light_state(
+    GSwindow        window,
+    int             light_index,
+    BOOLEAN         state )
+{
+    int        ind;
+
+    set_light_state( light_index, state );
+
+    for_less( ind, 0, window->n_light_states )
+    {
+        if( window->light_indices[ind] == light_index )
+            break;
+    }
+
+    if( ind >= window->n_light_states )
+    {
+        SET_ARRAY_SIZE( window->light_indices, window->n_light_states,
+                        window->n_light_states+1, 1 );
+        SET_ARRAY_SIZE( window->light_states, window->n_light_states,
+                        window->n_light_states+1, 1 );
+        ++window->n_light_states;
+
+        window->light_indices[ind] = light_index;
+    }
+
+    window->light_states[ind] = state;
+}
+
+public  void  redefine_lights(
+    GSwindow        window )
+{
+    int                ind;
+    light_info_struct  *l;
+
+    for_less( ind, 0, window->n_light_states )
+    {
+        set_light_state( window->light_indices[ind],
+                         window->light_states[ind] );
+    }
+
+    for_less( ind, 0, window->n_lights_defined )
+    {
+        l = &window->lights[ind];
+
+        define_light( l->light_index, l->type, l->colour,
+                      &l->direction, &l->position,
+                      l->spot_exponent, l->spot_angle );
+    }
 }

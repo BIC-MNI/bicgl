@@ -12,6 +12,9 @@ typedef  struct
     STRING            title;
     BOOLEAN           overlay_present;
     void              *current_font;
+    int               n_colours;
+    Smallest_int      *colour_map_entry_set;
+    Colour            *colour_map;
 }
 WS_window_struct;
 

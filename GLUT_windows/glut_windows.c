@@ -309,6 +309,42 @@ private  void  delete_GLUT_window(
     glutDestroyWindow( window_id );
 }
 
+private  void  reestablish_colour_map_in_new_window(
+    WSwindow               window )
+{
+    int   ind, n_colours, prev_n_colours;
+
+    if( ! glutGet((GLenum) GLUT_WINDOW_RGBA) )
+    {
+        prev_n_colours = window->n_colours;
+
+        n_colours = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
+
+        for_less( ind, 0, MIN(n_colours,prev_n_colours) )
+        {
+            if( window->colour_map_entry_set[ind] )
+                set_colour_map_entry( ind, window->colour_map[ind] );
+        }
+
+        if( prev_n_colours > 0 )
+        {
+            REALLOC( window->colour_map_entry_set, n_colours );
+            REALLOC( window->colour_map, n_colours );
+        }
+        else
+        {
+            ALLOC( window->colour_map_entry_set, n_colours );
+            ALLOC( window->colour_map, n_colours );
+        }
+
+        window->n_colours = n_colours;
+
+        for_less( ind, prev_n_colours, n_colours )
+            window->colour_map_entry_set[ind] = (Smallest_int) FALSE;
+    }
+
+}
+
 public  Status  WS_create_window(
     STRING                 title,
     int                    initial_x_pos,
@@ -325,8 +361,6 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {
-    int   n_colours, ind;
-
     window->window_id = create_GLUT_window( title, 
                                             initial_x_pos,
                                             initial_y_pos,
@@ -348,39 +382,13 @@ public  Status  WS_create_window(
     glutSetWindow( window->window_id );
     window->title = create_string( title );
 
-    if( actual_colour_map_mode )
-    {
-        n_colours = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
-        ALLOC( window->colour_map_entry_set, n_colours );
-        ALLOC( window->colour_map, n_colours );
-        for_less( ind, 0, n_colours )
-            window->colour_map_entry_set[ind] = (Smallest_int) FALSE;
-    }
-    else
-    {
-        window->colour_map_entry_set = NULL;
-        window->colour_map = NULL;
-    }
+    window->n_colours = 0;
+    window->colour_map_entry_set = NULL;
+    window->colour_map = NULL;
+
+    reestablish_colour_map_in_new_window( window );
 
     return( OK );
-}
-
-private  void  reestablish_colour_map_in_new_window(
-    WSwindow               window )
-{
-    int   ind, n_colours;
-
-    if( ! glutGet((GLenum) GLUT_WINDOW_RGBA) )
-    {
-        n_colours = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
-
-        for_less( ind, 0, n_colours )
-        {
-            if( window->colour_map_entry_set[ind] )
-                set_colour_map_entry( ind, window->colour_map[ind] );
-        }
-    }
-
 }
 
 public  BOOLEAN  WS_set_double_buffer_state(
@@ -493,6 +501,14 @@ public  BOOLEAN  WS_set_colour_map_state(
 
     return( actual_colour_map_mode );
 }
+
+public  void  WS_set_window_title(
+    WSwindow   window,
+    STRING     title )
+{
+    glutSetWindowTitle( title );
+}
+
 
 public  void  WS_delete_window(
     WSwindow  window )

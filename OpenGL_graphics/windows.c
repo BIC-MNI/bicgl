@@ -165,12 +165,11 @@ private  void  initialize_window(
 {
 }
 
-/* ARGSUSED */
-
 public  void  GS_set_window_title(
     GSwindow   window,
     STRING     title )
 {
+    WS_set_window_title( &window->WS_window, title );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -218,13 +217,25 @@ public  BOOLEAN  GS_has_rgb_mode( void )
     return( r_bits > 0 && g_bits > 0 && b_bits > 0 );
 }
 
+private  void  reinitialize_after_switching_configuration(
+    GSwindow       window )
+{
+    redefine_lights( window );
+}
+
 /* ARGSUSED */
 
 public  BOOLEAN  GS_set_double_buffer_state(
     GSwindow       window,
     BOOLEAN        flag )
 {
-    return( WS_set_double_buffer_state( &window->WS_window, flag ) );
+    BOOLEAN   state;
+
+    state = WS_set_double_buffer_state( &window->WS_window, flag );
+
+    reinitialize_after_switching_configuration( window );
+
+    return( state );
 }
 
 /* ARGSUSED */
@@ -233,7 +244,13 @@ public  BOOLEAN  GS_set_colour_map_state(
     GSwindow       window,
     BOOLEAN        flag )
 {
-    return( WS_set_colour_map_state( &window->WS_window, flag ) );
+    BOOLEAN  state;
+
+    state = WS_set_colour_map_state( &window->WS_window, flag );
+
+    reinitialize_after_switching_configuration( window );
+
+    return( state );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -364,6 +381,8 @@ public  void  GS_set_depth_buffer_state(
 public  Status  GS_delete_window(
     GSwindow   window )
 {
+    delete_lights( window );
+
     WS_delete_window( &window->WS_window );
 
     return( OK );
