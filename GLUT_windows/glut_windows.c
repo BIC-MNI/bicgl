@@ -15,6 +15,9 @@ private  void  resize_function(
     int   height );
 private  int  flip_screen_y(
     int   screen_y );
+private  void  set_colour_map_entry(
+    int               ind,
+    Colour            colour );
 
 public  void  WS_initialize( void )
 {
@@ -116,7 +119,7 @@ private  Window_id  create_GLUT_window(
     doub = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
     depth = glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE);
 
-    glutUseLayer( GLUT_NORMAL );
+    glutUseLayer( (GLenum) GLUT_NORMAL );
 
     glutPopWindow();
 
@@ -201,6 +204,8 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {
+    int   n_colours, ind;
+
     window->window_id = create_GLUT_window( title, 
                                             initial_x_pos,
                                             initial_y_pos,
@@ -220,10 +225,41 @@ public  Status  WS_create_window(
         return( ERROR );
 
     glutSetWindow( window->window_id );
-
     window->title = create_string( title );
 
+    if( actual_colour_map_mode )
+    {
+        n_colours = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
+        ALLOC( window->colour_map_entry_set, n_colours );
+        ALLOC( window->colour_map, n_colours );
+        for_less( ind, 0, n_colours )
+            window->colour_map_entry_set[ind] = (Smallest_int) FALSE;
+    }
+    else
+    {
+        window->colour_map_entry_set = NULL;
+        window->colour_map = NULL;
+    }
+
     return( OK );
+}
+
+private  void  reestablish_colour_map_in_new_window(
+    WSwindow               window )
+{
+    int   ind, n_colours;
+
+    if( ! glutGet((GLenum) GLUT_WINDOW_RGBA) )
+    {
+        n_colours = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
+
+        for_less( ind, 0, n_colours )
+        {
+            if( window->colour_map_entry_set[ind] )
+                set_colour_map_entry( ind, window->colour_map[ind] );
+        }
+    }
+
 }
 
 public  BOOLEAN  WS_set_double_buffer_state(
@@ -273,6 +309,7 @@ public  BOOLEAN  WS_set_double_buffer_state(
     }
     else
     {
+        reestablish_colour_map_in_new_window( window );
         ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
                               old_window_id, 1 );
     }
@@ -326,6 +363,7 @@ public  BOOLEAN  WS_set_colour_map_state(
     }
     else
     {
+        reestablish_colour_map_in_new_window( window );
         ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
                               old_window_id, 1 );
     }
@@ -419,9 +457,7 @@ public  void  glut_set_colour_entry(
     glutSetColor( ind, (float) r, (float) g, (float) b );
 }
 
-public  void  WS_set_colour_map_entry(
-    WSwindow          window,
-    Bitplane_types    bitplane,
+private  void  set_colour_map_entry(
     int               ind,
     Colour            colour )
 {
@@ -429,6 +465,17 @@ public  void  WS_set_colour_map_entry(
                            get_Colour_r_0_1(colour),
                            get_Colour_g_0_1(colour),
                            get_Colour_b_0_1(colour) );
+}
+
+public  void  WS_set_colour_map_entry(
+    WSwindow          window,
+    Bitplane_types    bitplane,
+    int               ind,
+    Colour            colour )
+{
+    set_colour_map_entry( ind, colour );
+    window->colour_map_entry_set[ind] = TRUE;
+    window->colour_map[ind] = colour;
 }
 
 public  void  WS_set_overlay_colour_map_entry(
