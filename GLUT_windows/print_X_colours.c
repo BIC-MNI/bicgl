@@ -37,7 +37,7 @@ int  main(
 
     for( ind = 0;  ind < n_colours;  ++ind )
     {
-        def.pixel = ind;
+        def.pixel = (unsigned long) ind;
         XQueryColor( display, cmap, &def );
         (void) printf( "%g %g %g\n",
                            (float) def.red / (float) 65535.0,

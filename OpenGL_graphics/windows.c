@@ -401,19 +401,17 @@ public  int  GS_get_monitor_height( void )
 }
 
 public  void  GS_get_window_size(
-    GSwindow   window,
     int        *x_size,
     int        *y_size )
 {
-    WS_get_window_size( &window->WS_window, x_size, y_size );
+    WS_get_window_size( x_size, y_size );
 }
 
 public  void  GS_get_window_position(
-    GSwindow   window,
     int        *x_position,
     int        *y_position )
 {
-    WS_get_window_position( &window->WS_window, x_position, y_position );
+    WS_get_window_position( x_position, y_position );
 }
 
 public  void  GS_clear_depth_buffer( void )

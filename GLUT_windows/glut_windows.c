@@ -39,14 +39,19 @@ private  Window_id  create_GLUT_window(
     BOOLEAN                double_buffer_flag,
     BOOLEAN                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode,
-    BOOLEAN                *actual_double_buffer_flag,
-    BOOLEAN                *actual_depth_buffer_flag,
-    int                    *actual_n_overlay_planes )
+    BOOLEAN                *actual_colour_map_mode_ptr,
+    BOOLEAN                *actual_double_buffer_flag_ptr,
+    BOOLEAN                *actual_depth_buffer_flag_ptr,
+    int                    *actual_n_overlay_planes_ptr )
 {
+    int                rgba, doub, depth;
     unsigned  int      mode;
     int                used_size;
     Window_id          window_id;
+    BOOLEAN            actual_colour_map_mode;
+    BOOLEAN            actual_double_buffer_flag;
+    BOOLEAN            actual_depth_buffer_flag;
+    int                actual_n_overlay_planes;
 
     mode = 0;
 
@@ -86,6 +91,7 @@ private  Window_id  create_GLUT_window(
     if( !glutGet( (GLenum) GLUT_DISPLAY_MODE_POSSIBLE ) &&
         double_buffer_flag )
     {
+        print_error( "Double buffer mode unavailable, trying single buffer\n" );
         mode -= GLUT_DOUBLE;
         mode |= GLUT_SINGLE;
         glutInitDisplayMode( mode );
@@ -103,20 +109,25 @@ private  Window_id  create_GLUT_window(
     if( window_id < 1 )
     {
         print_error( "Could not open GLUT window for OpenGL\n" );
-        return( window_id );
+        return( -1 );
     }
 
-    glutSetWindow( window_id );
+    rgba = glutGet((GLenum) GLUT_WINDOW_RGBA);
+    doub = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
+    depth = glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE);
+
+    glutUseLayer( GLUT_NORMAL );
+
     glutPopWindow();
 
-    *actual_n_overlay_planes = 0;
-    set_event_callbacks_for_current_window( *actual_n_overlay_planes );
+    actual_n_overlay_planes = 0;
+    set_event_callbacks_for_current_window( actual_n_overlay_planes );
 
-    *actual_colour_map_mode = (glutGet((GLenum) GLUT_WINDOW_RGBA) != 1);
-    *actual_double_buffer_flag = glutGet((GLenum) GLUT_WINDOW_DOUBLEBUFFER);
-    *actual_depth_buffer_flag = (glutGet((GLenum) GLUT_WINDOW_DEPTH_SIZE) > 0);
+    actual_colour_map_mode = !rgba;
+    actual_double_buffer_flag = doub;
+    actual_depth_buffer_flag = (depth > 0);
 
-    if( *actual_colour_map_mode != colour_map_mode )
+    if( actual_colour_map_mode != colour_map_mode )
     {
         print_error( "Could not get requested colour_map_mode(%d,%d)\n",
                      colour_map_mode,
@@ -125,17 +136,23 @@ private  Window_id  create_GLUT_window(
         window_id = -1;
     }
 
-    if( *actual_double_buffer_flag && !double_buffer_flag )
+    if( actual_double_buffer_flag && !double_buffer_flag )
     {
-        print_error( "For some reason got double buffer window, when requesting single buffer.\n" );
+
+        /*--- print_error( "For some reason got double buffer window, when requesting single buffer.\n" );*/
+
+        /*--- testing has shown that it actually does get a single
+              buffer mode, but reports double, so there may be a bug
+              in GLUT, and we just assign the double buffering to FALSE */
+        actual_double_buffer_flag = FALSE;
     }
-    else if( !(*actual_double_buffer_flag) && double_buffer_flag )
+    else if( !actual_double_buffer_flag && double_buffer_flag )
     {
         print_error( "Could not get requested double buffer window\n" );
     }
 
 #ifdef  USING_X11
-    if( window_id >= 1 && *actual_colour_map_mode )
+    if( window_id >= 1 && actual_colour_map_mode )
     {
         int   n_colours_to_copy;
 
@@ -144,6 +161,18 @@ private  Window_id  create_GLUT_window(
         copy_X_colours( n_colours_to_copy );
     }
 #endif
+
+    if( actual_colour_map_mode_ptr != NULL )
+        *actual_colour_map_mode_ptr = actual_colour_map_mode;
+
+    if( actual_double_buffer_flag_ptr != NULL )
+        *actual_double_buffer_flag_ptr = actual_double_buffer_flag;
+
+    if( actual_depth_buffer_flag_ptr != NULL )
+        *actual_depth_buffer_flag_ptr = actual_depth_buffer_flag;
+
+    if( actual_n_overlay_planes_ptr != NULL )
+        *actual_n_overlay_planes_ptr = actual_n_overlay_planes;
 
     return( window_id );
 }
@@ -170,7 +199,6 @@ public  Status  WS_create_window(
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {
-
     window->window_id = create_GLUT_window( title, 
                                             initial_x_pos,
                                             initial_y_pos,
@@ -188,6 +216,8 @@ public  Status  WS_create_window(
 
     if( window->window_id < 1 )
         return( ERROR );
+
+    glutSetWindow( window->window_id );
 
     window->title = create_string( title );
 
@@ -245,6 +275,8 @@ public  BOOLEAN  WS_set_double_buffer_state(
                               old_window_id, 1 );
     }
 
+    glutSetWindow( window->window_id );
+
     return( actual_double_buffer_flag );
 }
 
@@ -290,9 +322,13 @@ public  BOOLEAN  WS_set_colour_map_state(
         print_error( "Could not open GLUT window for OpenGL\n" );
         window->window_id = old_window_id;
     }
+    else
+    {
+        ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
+                              old_window_id, 1 );
+    }
 
-    ADD_ELEMENT_TO_ARRAY( windows_to_delete, n_windows_to_delete,
-                          old_window_id, 1 );
+    glutSetWindow( window->window_id );
 
     return( actual_colour_map_mode );
 }
@@ -665,15 +701,27 @@ private  int  flip_screen_y(
 
 private  void  display_function( void )
 {
-    int   i;
+    int   i, save_window_id;
 
     if( n_windows_to_delete > 0 )
     {
+        /*--- glut seems to reset the current window, even if it is not
+              deleted */
+
+        save_window_id = glutGetWindow();
+
         for_less( i, 0, n_windows_to_delete )
+        {
+            if( windows_to_delete[i] == save_window_id )
+                save_window_id = 0;
             delete_GLUT_window( windows_to_delete[i] );
+        }
 
         FREE( windows_to_delete );
         n_windows_to_delete = 0;
+
+        if( save_window_id >= 1 )
+            glutSetWindow( save_window_id );
     }
 
     (*display_callback) ( get_current_event_window() );

@@ -23,7 +23,8 @@ OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR)/$(ARCH_DIR) -lopengl_x_graphics $(BIC_P
 #----------------------- MESA/OpenGl with glX windows ------------------------
 
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics \
-                          $(GLUT_LIB) $(MESA_LIB)  -lMesaGLU $(X11_LIBS) -lXmu $(BIC_PL_LIBS)
+                          $(BIC_PL_LIBS) \
+                          $(GLUT_LIB) $(MESA_LIB)  -lMesaGLU $(X11_LIBS) -lXmu
 MESA_GRAPHICS_LIBS-O3   = -L$(TOP_DIR)/$(ARCH_DIR) -lmesa_x_graphics-O3 \
                           $(GLUT_LIB) $(MESA_LIB-O3)  $(X11_LIBS) -lXmu \
                           $(BIC_PL_LIBS-O3)

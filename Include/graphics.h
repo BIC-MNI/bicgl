@@ -54,16 +54,23 @@ typedef  struct   window_struct
     int                    y_viewport_max;
 
     BOOLEAN                interrupt_allowed;
-    int                    interrupt_size;
     BOOLEAN                continuation_flag;
     BOOLEAN                interrupt_occurred;
     int                    interrupt_interval;
     Real                   interrupt_time;
     Real                   interrupt_time_interval;
-    Real                   interrupt_event_time_interval;
-    Real                   interrupt_event_time;
     int                    next_item;
     int                    n_items_done;
+
+    BOOLEAN                update_required_flag;
+    Real                   last_update_time;
+    BOOLEAN                last_update_was_idle;
+
+    BOOLEAN                overlay_update_required_flag;
+    Real                   last_overlay_update_time;
+    BOOLEAN                last_overlay_update_was_idle;
+
+    Real                   min_update_time;
 
     void    (*update_callback) ( struct window_struct *, void * );
     void    *update_data;

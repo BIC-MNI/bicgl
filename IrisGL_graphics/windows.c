@@ -709,10 +709,7 @@ public  void  GS_set_overlay_colour_map(
                                   (short) get_Colour_b(colour) );
 }
 
-/* ARGSUSED */
-
 public  void  GS_get_window_position(
-    GSwindow  window,
     int       *x_pos,
     int       *y_pos )
 {
@@ -723,10 +720,7 @@ public  void  GS_get_window_position(
     *y_pos = (int) ly_pos;
 }
 
-/* ARGSUSED */
-
 public  void  GS_get_window_size(
-    GSwindow  window,
     int       *x_size,
     int       *y_size )
 {

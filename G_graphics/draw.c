@@ -30,7 +30,6 @@ public  void  initialize_display_interrupts(
     Gwindow        window )
 {
     window->interrupt_allowed = FALSE;
-    window->interrupt_size = 100;
     window->continuation_flag = FALSE;
     window->interrupt_occurred = FALSE;
     window->interrupt_interval = 100;
@@ -50,21 +49,14 @@ public  BOOLEAN  G_get_drawing_interrupt_state(
     return( window->interrupt_allowed );
 }
 
-public  void  G_set_smallest_interrupt_interval(
+public  void  G_set_drawing_interrupt_check_n_objects(
     Gwindow          window,
     int             interval )
 {
     window->interrupt_interval = interval;
 }
 
-public  void  G_set_smallest_interrupt_size(
-    Gwindow          window,
-    int             size )
-{
-    window->interrupt_size = size;
-}
-
-public  void  G_set_interrupt_time(
+public  void  G_set_drawing_interrupt_time(
     Gwindow          window,
     Real             interval )
 {
@@ -122,7 +114,7 @@ public  void  set_continuation_flag(
 \
     interrupt_at = (window)->interrupt_time; \
     _interrupt_allowed = (G_get_drawing_interrupt_state( window ) && \
-                         (_n_objects) > (window)->interrupt_size ); \
+                         (_n_objects) > (window)->interrupt_interval ); \
  \
     if( _interrupt_allowed ) \
     { \

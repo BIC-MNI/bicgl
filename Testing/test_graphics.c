@@ -7,10 +7,13 @@
 #define  PIXELS_X_ZOOM       1.0
 #define  PIXELS_Y_ZOOM       1.0
 
-#define  N_FONTS             10
+#define  N_FONTS             13
 #define  N_FONTS_TO_DRAW      N_FONTS
 
 #define  TIMER_INCREMENT  0.1
+
+#define  X_VELOCITY  10.23
+#define  Y_VELOCITY  7.325
 
 typedef struct
 {
@@ -252,12 +255,47 @@ private  void  leave_window(
     G_set_update_flag( window );
 }
 
+private  void  quit_program(
+    main_struct  *info )
+{
+    int   i;
+
+    print( "Quitting\n" );
+
+    delete_lines( &info->lines );
+    delete_lines( &info->lines_2d );
+    delete_lines( &info->single_point );
+
+    delete_polygons( &info->polygons );
+
+    delete_pixels( &info->pixels );
+
+    delete_text( &info->text );
+
+    for_less( i, 0, N_FONTS )
+        delete_text( &info->font_examples[i] );
+
+    (void) G_delete_window( info->window );
+
+    G_terminate();
+
+    output_alloc_to_file( NULL );
+
+    exit( 0 );
+}
+
+private  void  quit_window(
+    Gwindow    window,
+    void       *update_data )
+{
+    quit_program( (main_struct *) update_data );
+}
+
 private  void  key_down(
     Gwindow    window,
     int        key,
     void       *update_data )
 {
-    int           i;
     main_struct   *info;
 
     info = (main_struct *) update_data;
@@ -265,30 +303,7 @@ private  void  key_down(
     print( "Key pressed down: \"%c\" (%d)\n", key, key );
 
     if( key == '' )
-    {
-        print( "Quitting\n" );
-
-        delete_lines( &info->lines );
-        delete_lines( &info->lines_2d );
-        delete_lines( &info->single_point );
-
-        delete_polygons( &info->polygons );
-
-        delete_pixels( &info->pixels );
-
-        delete_text( &info->text );
-
-        for_less( i, 0, N_FONTS )
-            delete_text( &info->font_examples[i] );
-
-        (void) G_delete_window( info->window );
-
-        G_terminate();
-
-        output_alloc_to_file( NULL );
-
-        exit( 0 );
-    }
+        quit_program( info );
 }
 
 /* ARGSUSED */
@@ -318,37 +333,37 @@ private  void  timer_function(
 
     ball_size = (Real) info->ball.x_size;
 
-    if( info->ball_x - ball_size < 0.0 ||
+    if( info->ball_x < 0.0 ||
         info->ball_x + ball_size >= (Real) window_x_size ||
-        info->ball_y - ball_size < 0.0 ||
+        info->ball_y < 0.0 ||
         info->ball_y + ball_size >= (Real) window_y_size )
     {
-        info->ball_x = (Real) window_x_size / 2.0;
-        info->ball_y = (Real) window_y_size / 2.0;
+        info->ball_x = (Real) window_x_size / 2.0 - ball_size / 2.0;
+        info->ball_y = (Real) window_y_size / 2.0 - ball_size / 2.0;
     }
 
-    info->ball_x += info->ball_x_dir;
-    if( info->ball_x - ball_size < 0.0 )
+    info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
+    if( info->ball_x < 0.0 )
     {
         info->ball_x_dir = FABS( info->ball_x_dir );
-        info->ball_x += info->ball_x_dir;
+        info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
     }
     else if( info->ball_x + ball_size >= (Real) window_x_size )
     {
         info->ball_x_dir = - FABS( info->ball_x_dir );
-        info->ball_x += info->ball_x_dir;
+        info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
     }
 
-    info->ball_y += info->ball_y_dir;
-    if( info->ball_y - ball_size < 0.0 )
+    info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
+    if( info->ball_y < 0.0 )
     {
         info->ball_y_dir = FABS( info->ball_y_dir );
-        info->ball_y += info->ball_y_dir;
+        info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
     }
     else if( info->ball_y + ball_size >= (Real) window_y_size )
     {
         info->ball_y_dir = - FABS( info->ball_y_dir );
-        info->ball_y += info->ball_y_dir;
+        info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
     }
 
     info->ball.x_position = ROUND( info->ball_x );
@@ -394,9 +409,13 @@ int main(
                           SIZED_FONT,
                           SIZED_FONT,
                           SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
                           SIZED_FONT };
     static Real       font_sizes[N_FONTS] = { 10.0,
-                           6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0 };
+                           6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+                           15.0, 18.0, 24.0 };
     static Surfprop   spr = { 0.2f, 0.5f, 0.5f, 20.0f, 1.0f };
     Point             point;
     Vector            normal, light_direction;
@@ -423,6 +442,8 @@ int main(
                               &info.window );
 
     G_set_transparency_state( info.window, ON );
+
+    G_set_window_update_min_interval( info.window, 1.0 / 30.0 );
 
     if( status != OK )
         return( 1 );
@@ -559,10 +580,10 @@ int main(
 
     ball_size = 50;
 
-    info.ball_x = 10.0;
-    info.ball_y = 10.0;
-    info.ball_x_dir = 2.324423;
-    info.ball_y_dir = 1.7123123;
+    info.ball_x = (Real) x_size / 2.0;
+    info.ball_y = (Real) y_size / 2.0;
+    info.ball_x_dir = X_VELOCITY;
+    info.ball_y_dir = Y_VELOCITY;
 
     initialize_pixels( &info.ball, ROUND(info.ball_x), ROUND(info.ball_y),
                        ball_size, ball_size,
@@ -627,6 +648,7 @@ int main(
     G_set_mouse_movement_function( info.window, mouse_movement, (void *) &info );
     G_set_window_enter_function( info.window, enter_window, (void *) &info );
     G_set_window_leave_function( info.window, leave_window, (void *) &info );
+    G_set_window_quit_function( info.window, quit_window, (void *) &info );
     G_set_key_down_function( info.window, key_down, (void *) &info );
     G_set_key_up_function( info.window, key_up, (void *) &info );
 

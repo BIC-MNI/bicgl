@@ -240,7 +240,7 @@ public  void  GS_event_loop( void )
             if( windows[i]->update_required )
             {
                 windows[i]->update_required = FALSE;
-                display_callback( GS_get_window_id(windows[i]) );
+                (*display_callback)( GS_get_window_id(windows[i]) );
                 idle = FALSE;
             }
         }

@@ -8,6 +8,11 @@ static  int        keyboard_modifiers = 0;
 static  int        current_mouse_x = 0;
 static  int        current_mouse_y = 0;
 static  Gwindow    current_window = NULL;
+static  Real       default_min_update_time = 0.0;
+static  int        n_windows_to_update_on_idle = 0;
+
+private  void  check_update_windows(
+    void  *void_ptr );
 
 public  BOOLEAN  G_get_left_mouse_button( void )
 {
@@ -128,6 +133,24 @@ private  Gwindow  get_key_or_mouse_event_window(
     return( window );
 }
 
+private  void  update_the_window(
+    Gwindow  window )
+{
+    if( !window->last_update_was_idle )
+    {
+        --n_windows_to_update_on_idle;
+        if( n_windows_to_update_on_idle == 0 )
+            G_remove_idle_function( check_update_windows, NULL );
+    }
+
+    if( window->update_callback != NULL )
+        (*window->update_callback)( window, window->update_data );
+
+    window->update_required_flag = FALSE;
+    window->last_update_time = current_realtime_seconds();;
+    window->last_update_was_idle = FALSE;
+}
+
 private  void  global_update_function(
     Window_id  window_id )
 {
@@ -137,8 +160,19 @@ private  void  global_update_function(
     if( window == NULL )
         return;
 
-    if( window->update_callback != NULL )
-        (*window->update_callback)( window, window->update_data );
+    update_the_window( window );
+}
+
+private  void  update_the_overlay_window(
+    Gwindow  window )
+{
+    if( window->update_overlay_callback != NULL )
+        (*window->update_overlay_callback)( window,
+                                            window->update_overlay_data );
+
+    window->overlay_update_required_flag = FALSE;
+    window->last_overlay_update_time = current_realtime_seconds();;
+    window->last_overlay_update_was_idle = FALSE;
 }
 
 private  void  global_update_overlay_function(
@@ -150,9 +184,7 @@ private  void  global_update_overlay_function(
     if( window == NULL )
         return;
 
-    if( window->update_overlay_callback != NULL )
-        (*window->update_overlay_callback)( window,
-                                            window->update_overlay_data );
+    update_the_overlay_window( window );
 }
 
 private  void  global_resize_function(
@@ -590,6 +622,16 @@ public  void  G_set_window_quit_function(
 public  void  initialize_callbacks_for_window(
     Gwindow                 window )
 {
+    window->update_required_flag = FALSE;
+    window->last_update_time = -1.0e30;
+    window->last_update_was_idle = FALSE;
+
+    window->overlay_update_required_flag = FALSE;
+    window->last_overlay_update_time = -1.0e30;
+    window->last_overlay_update_was_idle = FALSE;
+
+    window->min_update_time = default_min_update_time;
+
     window->update_callback = NULL;
     window->update_overlay_callback = NULL;
     window->resize_callback = NULL;
@@ -609,10 +651,67 @@ public  void  initialize_callbacks_for_window(
     window->quit_callback = NULL;
 }
 
+private  void  timer_update_window(
+    void   *void_ptr )
+{
+    Gwindow  window;
+
+    window = (Gwindow) void_ptr;
+
+    if( window->update_required_flag )
+        update_the_window( window );
+}
+
+/* ARGSUSED */
+
+private  void  check_update_windows(
+    void  *void_ptr )
+{
+    int       i;
+    Gwindow   window;
+
+    /*--- get_n_graphics_windows() may return different values as callbacks
+          are called */
+
+    for_less( i, 0, get_n_graphics_windows() )
+    {
+        window = get_nth_graphics_window( i );
+
+        if( window->update_required_flag && !window->last_update_was_idle )
+        {
+            update_the_window( window );
+            window->last_update_was_idle = TRUE;
+        }
+    }
+
+}
+
 public  void  G_set_update_flag(
     Gwindow  window )
 {
-    GS_set_update_flag( window->GS_window );
+    Real   time_remaining;
+
+    if( window->update_required_flag )
+        return;
+
+    if( !window->last_update_was_idle )
+    {
+        if( n_windows_to_update_on_idle == 0 )
+            G_add_idle_function( check_update_windows, NULL );
+
+        ++n_windows_to_update_on_idle;
+    }
+
+    window->update_required_flag = TRUE;
+
+    time_remaining = window->min_update_time -
+                     (current_realtime_seconds() - window->last_update_time);
+
+    if( time_remaining <= 0.0 )
+        time_remaining = 0.0;
+
+    G_add_timer_function( time_remaining, timer_update_window,
+                          (void *) window );
 }
 
 public  void  G_add_timer_function(
@@ -710,4 +809,23 @@ public  BOOLEAN  G_get_mouse_position_0_to_1(
     }
     
     return( in_window );
+}
+
+public  void  G_set_default_update_min_interval(
+    Real   seconds )
+{
+    if( seconds <= 0.0 )
+        default_min_update_time = 0.0;
+    else
+        default_min_update_time = seconds;
+}
+
+public  void  G_set_window_update_min_interval(
+    Gwindow   window,
+    Real      seconds )
+{
+    if( seconds <= 0.0 )
+        window->min_update_time = 0.0;
+    else
+        window->min_update_time = seconds;
 }

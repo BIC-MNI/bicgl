@@ -145,6 +145,7 @@ private  void  initialize_window(
 
     default_background_col = make_Colour( 0, 0, 0 );
 
+    window->current_bitplanes = NORMAL_PLANES;
     set_current_window( window );
 
 #ifdef DEBUG
@@ -162,14 +163,17 @@ private  void  initialize_window(
     window->bitplanes_cleared[NORMAL_PLANES] = FALSE;
     window->bitplanes_cleared[OVERLAY_PLANES] = FALSE;
 
-    G_set_shaded_state( window, ON );
-    G_set_render_lines_as_curves_state( window, OFF );
     window->shading_type = GOURAUD_SHADING;
     window->lighting_state = OFF;
     window->transparency_state = ON;
     window->backface_culling_state = OFF;
     window->n_curve_segments = DEFAULT_N_CURVE_SEGMENTS;
     window->marker_labels_visibility = ON;
+
+    window->shaded_mode_state = OFF;
+    G_set_shaded_state( window, ON );
+
+    G_set_render_lines_as_curves_state( window, OFF );
 
     GS_initialize_surface_property( window->GS_window );
 
@@ -224,7 +228,7 @@ public  Status  G_create_window(
     }
     else
     {
-        (*window)->double_buffer_available = actual_double_buffer_flag;
+        (*window)->double_buffer_available = TRUE;
         (*window)->double_buffer_state = actual_double_buffer_flag;
 
         (*window)->colour_map_state = actual_colour_map_flag;

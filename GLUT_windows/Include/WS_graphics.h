@@ -9,7 +9,7 @@ typedef  int  Window_id;
 typedef  struct
 {
     Window_id         window_id;
-    Window_id         top_level_window_id;
+    STRING            title;
     BOOLEAN           overlay_present;
     void              *current_font;
 }
