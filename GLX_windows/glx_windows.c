@@ -128,7 +128,7 @@ public  void  WS_delete_window(
     X_delete_window( &window->x_window );
 }
 
-public  void  WS_make_window_current(
+public  void  WS_set_current_window(
     WS_window_struct  *window )
 {
     glXMakeCurrent( X_get_display(), window->x_window.window_id,
@@ -180,45 +180,19 @@ public  void  WS_swap_buffers(
     glXSwapBuffers( X_get_display(), window->x_window.window_id );
 }
 
-typedef  struct
-{
-    Font_types   font_type;
-    int          size;
-    WS_font      listBase;
-    XFontStruct  *x_font_info;
-} font_struct;
-
-private  int  n_fonts = 0;
-private  font_struct    *fonts;
-
-private  BOOLEAN  lookup_font(
+public  BOOLEAN  WS_get_font(
     Font_types       type,
     Real             size,
-    font_struct      **font_info )
+    WS_font_info     *font_info )
 {
-    int   i, int_size;
-    Font  x_font;
+    Font         x_font;
+    static  int  n_fonts = 0;
 
-    int_size = (int) size;
-
-    for_less( i, 0, n_fonts )
+    if( X_get_font( type, (int) size, &x_font ) )
     {
-        if( fonts[i].size == size )
-        {
-            *font_info = &fonts[i];
-            return( TRUE );
-        }
-    }
-
-    if( X_get_font( type, int_size, &x_font ) )
-    {
-        SET_ARRAY_SIZE( fonts, n_fonts, n_fonts+1, DEFAULT_CHUNK_SIZE );
-        fonts[n_fonts].size = int_size;
-        fonts[n_fonts].font_type = type;
-        fonts[n_fonts].listBase = n_fonts * 256;
-        fonts[n_fonts].x_font_info = XQueryFont( X_get_display(), x_font );
-        *font_info = &fonts[n_fonts];
-        glXUseXfont( x_font, 0, 256, fonts[n_fonts].listBase );
+        font_info->listBase = n_fonts * 256;
+        font_info->x_font_info = XQueryFont( X_get_display(), x_font );
+        glXUseXFont( x_font, 0, 256, font_info->listBase );
         ++n_fonts;
         return( TRUE );
     }
@@ -226,64 +200,36 @@ private  BOOLEAN  lookup_font(
     return( FALSE );
 }
 
-public  void  WS_delete_fonts()
+public  void  WS_delete_font(
+    WS_font_info  *info )
 {
-    int   i;
-
-    for_less( i, 0, n_fonts )
-    {
-        XUnloadFont( X_get_display(), fonts[n_fonts].x_font_info->fid );
-        XFreeFont( X_get_display(), fonts[n_fonts].x_font_info );
-    }
-
-    if( n_fonts > 0 )
-    {
-        FREE( fonts );
-        n_fonts = 0;
-    }
-}
-
-public  BOOLEAN  WS_get_font(
-    Font_types       type,
-    Real             size,
-    WS_font          *font )
-{
-    font_struct  *font_info;
-    BOOLEAN      found;
-
-    found = lookup_font( type, size, &font_info );
-
-    if( found )
-        *font = font_info->listBase;
-
-    return( found );
+    XUnloadFont( X_get_display(), info->x_font_info->fid );
+    XFreeFont( X_get_display(), info->x_font_info );
 }
 
 public  Real  WS_get_character_height(
-    Font_types       type,
-    Real             size )
+    WS_font_info  *font_info )
 {
-    font_struct  *font_info;
-
-    if( !lookup_font( type, size, &font_info ) )
-        return( 1.0 );
-
     return( font_info->x_font_info->ascent );
 }
 
-public  Real  WS_get_character_width(
-    Font_types       type,
-    Real             size,
-    int              character )
+public  Real  WS_get_text_length(
+    WS_font_info     *font_info,
+    char             str[] )
 {
-    font_struct  *font_info;
+    int    i, len, min_char, max_char;
 
-    if( !lookup_font( type, size, &font_info ) ||
-        character < font_info->x_font_info->min_char_or_byte2 ||
-        character > font_info->x_font_info->max_char_or_byte2 )
-        return( 1.0 );
+    len = 0;
+    min_char = font_info->x_font_info->min_char_or_byte2;
+    max_char = font_info->x_font_info->max_char_or_byte2;
+    for_less( i, 0, (int) strlen( str ) )
+    {
+        if( min_char <= (int) str[i] && (int) str[i] <= max_char )
+        {
+            len += font_info->x_font_info->
+                     per_char[(int) str[i] - min_char].width;
+        }
+    }
 
-    return( font_info->x_font_info->
-                 per_char[character-
-                          font_info->x_font_info->min_char_or_byte2].width );
+    return( (Real) len );
 }

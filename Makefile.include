@@ -7,6 +7,8 @@ X_DIRECTORY = $(TOP_DIR)/X_windows
 GLX_DIRECTORY = $(TOP_DIR)/GLX_windows
 G_DIRECTORY = $(TOP_DIR)/G_graphics
 
+MESA_DIR = /scratch2/david/Mesa
+
 #-------------------------- OpenGl with glX windows --------------------------
 
 OPENGL_GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include \
@@ -19,6 +21,21 @@ OPENGL_GRAPHICS_LIBS_2D   = -L$(GRAPHICS_DIRECTORY) \
                             -lopengl_x_graphics-DTWO_D_ONLY \
                             -lGL -lX11 $(BIC_PL_LIBS)
 OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
+
+#----------------------- MESA/OpenGl with glX windows ------------------------
+
+MESA_GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include \
+                          -I$(GLX_DIRECTORY)/Include \
+                          -I$(X_DIRECTORY)/Include \
+                          -I$(OPENGL_DIRECTORY)/Include \
+                          $(BIC_PL_INCLUDE) \
+                          -I$(MESA_DIR)/include
+MESA_GRAPHICS_LIBS      = -L$(TOP_DIR) -lmesa_x_graphics \
+                          -L$(MESA_DIR)/lib -lMesaGL -lX11 -lXext $(BIC_PL_LIBS)
+MESA_GRAPHICS_LIBS_2D   = -L$(GRAPHICS_DIRECTORY) \
+                           -lmesa_x_graphics-DTWO_D_ONLY \
+                           -L$(MESA_DIR)/lib -lMesaGL -lX11 -lXext $(BIC_PL_LIBS)
+MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------
 

@@ -3,8 +3,8 @@
 
 #define  LIGHT_INDEX         0
 
-#define  PIXELS_X_ZOOM       2.0
-#define  PIXELS_Y_ZOOM       2.0
+#define  PIXELS_X_ZOOM       1.0
+#define  PIXELS_Y_ZOOM       1.0
 
 int main(
     int    argc,
@@ -42,15 +42,14 @@ int main(
     if( !stereo_flag || sscanf( argv[1], "%lf", &eye_separation ) != 1 )
         eye_separation = 0.0;
 
-    status = G_create_window( "Test Window", 100, 100, 300, 300, &window );
+    status = G_create_window( "Test Window",
+                              100, 600, 300, 300,
+                              FALSE, TRUE, FALSE, 0, &window );
 
     if( status != OK )
         return( 1 );
 
-/*
     if( stereo_flag )
-*/
-
         G_set_background_colour( window, WHITE );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
@@ -70,7 +69,7 @@ int main(
 
     /* ------------ define line to be drawn  ------------- */
 
-    initialize_lines( &lines, make_Colour(255,255,0) );
+    initialize_lines( &lines, make_Colour(0,255,0) );
 
     lines.n_points = 4;
     ALLOC( lines.points, 4 );
@@ -96,7 +95,7 @@ int main(
 
     /* ------------ define 2d line to be drawn  ------------- */
 
-    initialize_lines( &lines_2d, make_Colour(255,255,0) );
+    initialize_lines( &lines_2d, make_Colour(0,255,150) );
 
     G_get_window_size( window, &x_size, &y_size );
 
@@ -153,6 +152,16 @@ int main(
     fill_Point( point, -0.3, 0.3, 0.0 );
     add_point_to_polygon( &polygons, &point, &normal );
 
+/*
+{
+int  c;
+
+for_less( i, 0, 4 )
+    for_less( c, 0, N_DIMENSIONS )
+        Point_coord(polygons.points[i],c) *= 100.0;
+}
+*/
+
     /* ------------ define lights ----------------- */
 
     fill_Vector( light_direction, 1.0, 1.0, -1.0 );/* from over left shoulder */
@@ -161,8 +170,6 @@ int main(
                     make_Colour(255,255,255),
                     &light_direction, (Point *) 0, 0.0, 0.0 );
     G_set_light_state( window, LIGHT_INDEX, ON );
-
-    G_set_lighting_state( window, ON );
 
     /* --------------------------------------- */
     /* ------------ do main loop ------------- */
@@ -304,12 +311,16 @@ int main(
         {
             G_clear_window( window );
 
+            G_set_lighting_state( window, OFF );
+            G_set_view_type( window, PIXEL_VIEW );
             G_draw_pixels( window, &pixels );
 
+            G_set_lighting_state( window, ON );
             G_set_view_type( window, MODEL_VIEW );
             G_draw_lines( window, &lines );
             G_draw_polygons( window, &polygons );
 
+            G_set_lighting_state( window, OFF );
             G_set_view_type( window, PIXEL_VIEW );
             G_draw_lines( window, &lines_2d );
             G_draw_text( window, &text );
