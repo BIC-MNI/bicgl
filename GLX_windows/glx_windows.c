@@ -5,6 +5,30 @@
 #define  USE_STORED_FONT_ONLY
 #endif
 
+private  BOOLEAN  use_stored_font_only()
+{
+    static  BOOLEAN  first = TRUE;
+#ifdef USE_STORED_FONT_ONLY
+    static  BOOLEAN  use_stored_flag = TRUE;
+#else
+    static  BOOLEAN  use_stored_flag = FALSE;
+#endif
+
+    if( first )
+    {
+        first = FALSE;
+        if( getenv("USE_STORED_FONT_ONLY") != NULL )
+        {
+            if( equal_strings( getenv("USE_STORED_FONT_ONLY"), "no" ) )
+                use_stored_flag = FALSE;
+            else
+                use_stored_flag = TRUE;
+        }
+    }
+
+    return( use_stored_flag );
+}
+
 private  BOOLEAN  GLX_supported()
 {
     static  BOOLEAN  first = TRUE;
@@ -355,28 +379,31 @@ public  BOOLEAN  WS_get_font(
     Real             size,
     WS_font_info     *font_info )
 {
-#ifdef USE_STORED_FONT_ONLY
-    if( type == FIXED_FONT )
+    if( use_stored_font_only() )
     {
-        (void) strcpy( font_info->font_name, "stored_fixed_font" );
-        font_info->x_font_info = 0;
-        return( TRUE );
+        if( type == FIXED_FONT )
+        {
+            (void) strcpy( font_info->font_name, "stored_fixed_font" );
+            font_info->x_font_info = 0;
+            return( TRUE );
+        }
+        else
+            return( FALSE );
     }
     else
-        return( FALSE );
-#else
-    Font         x_font;
-
-    if( X_get_font_name( type, (int) size, &font_info->font_name ) )
     {
-        x_font = XLoadFont( X_get_display(), font_info->font_name );
-        font_info->x_font_info = XQueryFont( X_get_display(), x_font );
+        Font         x_font;
 
-        return( TRUE );
+        if( X_get_font_name( type, (int) size, &font_info->font_name ) )
+        {
+            x_font = XLoadFont( X_get_display(), font_info->font_name );
+            font_info->x_font_info = XQueryFont( X_get_display(), x_font );
+
+            return( TRUE );
+        }
+
+        return( FALSE );
     }
-
-    return( FALSE );
-#endif
 }
 
 /* ARGSUSED */
@@ -387,15 +414,18 @@ public  void  WS_build_font_in_window(
     WS_font_info      *font_info )
 {
     int      i, first, last, listBase;
-#ifdef USE_STORED_FONT_ONLY
-    first = 0;
-    last = get_fixed_font_n_chars() - 1;
-#else
     Font     x_font;
 
-    first = font_info->x_font_info->min_char_or_byte2;
-    last = font_info->x_font_info->max_char_or_byte2;
-#endif
+    if( use_stored_font_only() )
+    {
+        first = 0;
+        last = get_fixed_font_n_chars() - 1;
+    }
+    else
+    {
+        first = font_info->x_font_info->min_char_or_byte2;
+        last = font_info->x_font_info->max_char_or_byte2;
+    }
 
     listBase = glGenLists( last + 1 );
 
@@ -405,13 +435,14 @@ public  void  WS_build_font_in_window(
     }
     else
     {
-#ifdef USE_STORED_FONT_ONLY
-        create_fixed_font( listBase );
-#else
-        x_font = XLoadFont( X_get_display(), font_info->font_name );
+        if( use_stored_font_only() )
+            create_fixed_font( listBase );
+        else
+        {
+            x_font = XLoadFont( X_get_display(), font_info->font_name );
 
-        glXUseXFont( x_font, first, last-first+1, listBase+first );
-#endif
+            glXUseXFont( x_font, first, last-first+1, listBase+first );
+        }
     }
 
     if( font_index >= window->n_fonts )
@@ -435,11 +466,10 @@ public  void  WS_delete_font_in_window(
 {
     int   last, listBase;
 
-#ifdef USE_STORED_FONT_ONLY
-    last = get_fixed_font_n_chars() - 1;
-#else
-    last = font_info->x_font_info->max_char_or_byte2;
-#endif
+    if( use_stored_font_only() )
+        last = get_fixed_font_n_chars() - 1;
+    else
+        last = font_info->x_font_info->max_char_or_byte2;
 
     listBase = window->font_list_bases[font_index];
 
@@ -464,21 +494,20 @@ public  BOOLEAN  WS_set_font(
 public  void  WS_delete_font(
     WS_font_info  *info )
 {
-#ifdef USE_STORED_FONT_ONLY
-#else
-    XFreeFont( X_get_display(), info->x_font_info );
-    delete_string( info->font_name );
-#endif
+    if( !use_stored_font_only() )
+    {
+        XFreeFont( X_get_display(), info->x_font_info );
+        delete_string( info->font_name );
+    }
 }
 
 public  Real  WS_get_character_height(
     WS_font_info  *font_info )
 {
-#ifdef USE_STORED_FONT_ONLY
-    return( get_fixed_font_height() );
-#else
-    return( font_info->x_font_info->ascent );
-#endif
+    if( use_stored_font_only() )
+        return( get_fixed_font_height() );
+    else
+        return( font_info->x_font_info->ascent );
 }
 
 public  Real  WS_get_text_length(
@@ -487,25 +516,29 @@ public  Real  WS_get_text_length(
 {
     int    i, len, min_char, max_char;
 
-#ifdef USE_STORED_FONT_ONLY
-    min_char = 0;
-    max_char = get_fixed_font_n_chars()-1;
-#else
-    min_char = font_info->x_font_info->min_char_or_byte2;
-    max_char = font_info->x_font_info->max_char_or_byte2;
-#endif
+    if( use_stored_font_only() )
+    {
+        min_char = 0;
+        max_char = get_fixed_font_n_chars()-1;
+    }
+    else
+    {
+        min_char = font_info->x_font_info->min_char_or_byte2;
+        max_char = font_info->x_font_info->max_char_or_byte2;
+    }
 
     len = 0;
     for_less( i, 0, (int) strlen( str ) )
     {
         if( min_char <= (int) str[i] && (int) str[i] <= max_char )
         {
-#ifdef USE_STORED_FONT_ONLY
-            len += get_fixed_font_width( str[i] );
-#else
-            len += font_info->x_font_info->
-                     per_char[(int) str[i] - min_char].width;
-#endif
+            if( use_stored_font_only() )
+                len += get_fixed_font_width( str[i] );
+            else
+            {
+                len += font_info->x_font_info->
+                         per_char[(int) str[i] - min_char].width;
+            }
         }
     }
 

@@ -2,6 +2,7 @@
 #include  <graphics.h>
 
 #define  HEIGHT   10
+#define  MULTIPLES   100
 
 int main(
     int    argc,
@@ -14,7 +15,7 @@ int main(
     int               x_pixel, y_pixel;
     int               i, j, pixels_x_size, pixels_y_size;
     int               n_c;
-    Colour            colours[10];
+    Colour            colours_list[7];
 
     status = G_create_window( "Test Window",
                               100, 600, 300, 300,
@@ -33,19 +34,18 @@ int main(
                        1.0, 1.0, COLOUR_INDEX_16BIT_PIXEL );
 
     n_colours = G_get_n_colour_map_entries( window );
+    n_c = SIZEOF_STATIC_ARRAY( colours_list );
+    colours_list[0] = RED;
+    colours_list[1] = GREEN;
+    colours_list[2] = BLUE;
+    colours_list[3] = CYAN;
+    colours_list[4] = MAGENTA;
+    colours_list[5] = YELLOW;
+    colours_list[6] = WHITE;
 
-    n_c = 0;
-    colours[n_c++] = RED;
-    colours[n_c++] = GREEN;
-    colours[n_c++] = BLUE;
-    colours[n_c++] = CYAN;
-    colours[n_c++] = MAGENTA;
-    colours[n_c++] = YELLOW;
-    colours[n_c++] = WHITE;
-
-    for_less( i, 0, n_colours )
+    for_less( i, 1, n_colours )
     {
-        G_set_colour_map_entry( window, i, colours[i%n_c] );
+        G_set_colour_map_entry( window, i, colours_list[i%n_c] );
     }
 
     for_less( i, 0, pixels_x_size )
@@ -53,7 +53,7 @@ int main(
         for_less( j, 0, pixels_y_size )
         {
             PIXEL_COLOUR_INDEX_16(pixels,i,j) = 
-                       IJ(j/HEIGHT,i/HEIGHT,pixels_x_size) % n_c;
+                       IJ(j/HEIGHT,i/HEIGHT,pixels_x_size) % n_colours;
         }
     }
 
