@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 public  void  G_set_shaded_state(
     Gwindow      window,

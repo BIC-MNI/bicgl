@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 public  void   GS_initialize_lights(
     Gwindow  window )
@@ -8,10 +8,10 @@ public  void   GS_initialize_lights(
     static   float    data[] = { AMBIENT, 1.0, 1.0, 1.0,
                                  LOCALVIEWER, 0.0, TWOSIDE, 1.0, LMNULL };
 
-    lmdef( DEFLMODEL, window->GS_window.unique_lmdef_id,
+    lmdef( DEFLMODEL, window->GS_window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(data), data );
 
-    lmbind( LMODEL, window->GS_window.unique_lmdef_id );
+    lmbind( LMODEL, window->GS_window->unique_lmdef_id );
 
     lmbind( LIGHT0, 0 );
     lmbind( LIGHT1, 0 );
@@ -34,7 +34,7 @@ public  void  GS_set_ambient_light(
     data[2] = get_Colour_g_0_1(colour);
     data[3] = get_Colour_b_0_1(colour);
 
-    lmdef( DEFLMODEL, window->GS_window.unique_lmdef_id,
+    lmdef( DEFLMODEL, window->GS_window->unique_lmdef_id,
            SIZEOF_STATIC_ARRAY(data), data );
 #endif
 }
@@ -118,7 +118,7 @@ public  void  GS_define_light(
         break;
     }
 
-    lmdef( DEFLIGHT, window->GS_window.unique_lmdef_id + light_index,
+    lmdef( DEFLIGHT, window->GS_window->unique_lmdef_id + light_index,
            n_data, data );
 #endif
 }
@@ -144,7 +144,8 @@ public  void  GS_set_light_state(
     }
 
     if( state )
-        lmbind( gl_light_index, window->GS_window.unique_lmdef_id+light_index );
+        lmbind( gl_light_index,
+                window->GS_window->unique_lmdef_id+light_index );
     else
         lmbind( gl_light_index, 0 );
 #endif

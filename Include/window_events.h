@@ -52,4 +52,9 @@ typedef  struct
     int           y_size;
 } event_info_struct;
 
+typedef  enum  {
+                 NORMAL_PLANES,
+                 OVERLAY_PLANES,
+                 N_BITPLANE_TYPES } Bitplane_types;
+
 #endif

@@ -350,7 +350,9 @@ public  void  G_transform_point(
     Real   x, y, z;
 
     transform_point( &window->viewing_matrices[view_type],
-                     Point_x(*point), Point_y(*point), Point_z(*point),
+                     (Real) Point_x(*point),
+                     (Real) Point_y(*point),
+                     (Real) Point_z(*point),
                      &x, &y, &z );
     transform_point( &window->projection_matrices[view_type], x, y, z,
                      &x, &y, &z );

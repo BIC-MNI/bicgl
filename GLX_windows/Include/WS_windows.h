@@ -5,8 +5,6 @@
 #include  <x_windows.h>
 #include  <GL/glx.h>
 
-typedef  GLint  WS_font;
-
 typedef  struct
 {
     X_window_struct   x_window;
@@ -14,12 +12,14 @@ typedef  struct
     BOOLEAN           overlay_present;
     X_window_struct   overlay_window;
     GLXContext        overlay_context;
+    int               n_fonts;
+    GLint             *font_list_bases;
 }
 WS_window_struct;
 
 typedef  struct
 {
-    Font          x_font;
+    STRING        font_name;
     XFontStruct   *x_font_info;
 }  WS_font_info;
 

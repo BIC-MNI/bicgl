@@ -26,8 +26,8 @@ public  void  GS_turn_on_blend_function()
 }
 
 public  void  GS_set_lighting_state(
-    Gwindow      window,
-    BOOLEAN      state )   /* ARGSUSED */
+    Gwindow      window,     /* ARGSUSED */
+    BOOLEAN      state )
 {
 #ifndef  TWO_D_ONLY
     if( state )
@@ -52,7 +52,7 @@ public  void  GS_backface_culling_state(
 }
 
 public  void  GS_set_n_curve_segments(
-    int      n_segments )
+    int      n_segments      /* ARGSUSED */ )
 {
 #ifndef  TWO_D_ONLY
 #ifdef  TO_DO

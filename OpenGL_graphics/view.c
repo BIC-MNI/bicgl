@@ -97,7 +97,7 @@ public  void  GS_frustum(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_initialize_window_view(
-    Gwindow   window )
+    Gwindow   window     /* ARGSUSED */ )
 {
 }
 

@@ -4,10 +4,6 @@
 #include  <queue.h>
 #include  <gl/device.h>
 
-private    BOOLEAN    left_mouse_down = FALSE;
-private    BOOLEAN    middle_mouse_down = FALSE;
-private    BOOLEAN    right_mouse_down = FALSE;
-
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : initialize_window_events
 @INPUT      : window
@@ -160,6 +156,7 @@ public  BOOLEAN  GS_get_event(
             *window = find_window_for_id( (Window_id) val );
             if( *window != (Gwindow) NULL )
             {
+                set_current_window( *window );
                 clear_overlay_planes();
                 getorigin( &x_pos, &y_pos );
                 (*window)->x_origin = x_pos;
@@ -181,78 +178,67 @@ public  BOOLEAN  GS_get_event(
         case LEFTARROWKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = LEFT_ARROW_KEY;
+            *key_pressed = LEFT_ARROW_KEY;
             break;
 
         case RIGHTARROWKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = RIGHT_ARROW_KEY;
+            *key_pressed = RIGHT_ARROW_KEY;
             break;
 
         case DOWNARROWKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = DOWN_ARROW_KEY;
+            *key_pressed = DOWN_ARROW_KEY;
             break;
 
         case UPARROWKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = UP_ARROW_KEY;
+            *key_pressed = UP_ARROW_KEY;
             break;
 
         case LEFTSHIFTKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = LEFT_SHIFT_KEY;
+            *key_pressed = LEFT_SHIFT_KEY;
             break;
 
         case RIGHTSHIFTKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = RIGHT_SHIFT_KEY;
+            *key_pressed = RIGHT_SHIFT_KEY;
             break;
 
         case LEFTCTRLKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = LEFT_CTRL_KEY;
+            *key_pressed = LEFT_CTRL_KEY;
             break;
 
         case RIGHTCTRLKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = RIGHT_CTRL_KEY;
+            *key_pressed = RIGHT_CTRL_KEY;
             break;
 
         case LEFTALTKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = LEFT_ALT_KEY;
+            *key_pressed = LEFT_ALT_KEY;
             break;
 
         case RIGHTALTKEY:
             *type = get_key_up_or_down_event( val );
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = RIGHT_ALT_KEY;
+            *key_pressed = RIGHT_ALT_KEY;
             break;
 
         case KEYBD:
             *type = KEY_DOWN_EVENT;
             event_found = TRUE;
-            if( key_pressed != (int *) 0 )
-                *key_pressed = val;
+            *key_pressed = val;
             break;
 
         case MOUSEX:
@@ -269,52 +255,52 @@ public  BOOLEAN  GS_get_event(
             break;
 
         case LEFTMOUSE:
-            if( val && !left_mouse_down )
+            if( val )
             {
                 *type = LEFT_MOUSE_DOWN_EVENT;
-                left_mouse_down = TRUE;
                 event_found = TRUE;
             }
-            else if( !val && left_mouse_down )
+            else
             {
                 *type = LEFT_MOUSE_UP_EVENT;
-                left_mouse_down = FALSE;
                 event_found = TRUE;
             }
+            *x_mouse = current_mouse_x;
+            *y_mouse = current_mouse_y;
             break;
 
         case MIDDLEMOUSE:
-            if( val && !middle_mouse_down )
+            if( val )
             {
                 *type = MIDDLE_MOUSE_DOWN_EVENT;
-                middle_mouse_down = TRUE;
                 event_found = TRUE;
             }
-            else if( !val && middle_mouse_down )
+            else
             {
                 *type = MIDDLE_MOUSE_UP_EVENT;
-                middle_mouse_down = FALSE;
                 event_found = TRUE;
             }
+            *x_mouse = current_mouse_x;
+            *y_mouse = current_mouse_y;
             break;
 
         case RIGHTMOUSE:
-            if( val && !right_mouse_down )
+            if( val )
             {
                 *type = RIGHT_MOUSE_DOWN_EVENT;
-                right_mouse_down = TRUE;
                 event_found = TRUE;
             }
-            else if( !val && right_mouse_down )
+            else
             {
                 *type = RIGHT_MOUSE_UP_EVENT;
-                right_mouse_down = FALSE;
                 event_found = TRUE;
             }
+            *x_mouse = current_mouse_x;
+            *y_mouse = current_mouse_y;
             break;
 
         case QFULL:
-            print( "Error: GL event queue full.\n" );
+            print_error( "Error: GL event queue full.\n" );
             break;
 
         default:

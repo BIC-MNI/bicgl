@@ -5,23 +5,13 @@
 #include <window_events.h>
 #include <fmclient.h>
 
-#define  ACCESS_PIXEL( array, x, y, size_x ) \
-         (array)[(x) + (size_x) * (y)]
-
 typedef  long  Window_id;
-
-typedef  enum { VIEWING_MATRIX = MVIEWING, PROJECTION_MATRIX = MPROJECTION }
-              Matrix_modes;
-
-typedef  enum { LESS_OR_EQUAL = ZF_LEQUAL } Depth_functions;
-
-typedef  fmfonthandle   GS_font;
 
 typedef  struct
 {
-    Font_types  type;
-    Real        size;
-    GS_font     font_handle;
+    Font_types       type;
+    Real             size;
+    fmfonthandle     font_handle;
 }  WS_font_info;
 
 typedef  struct
@@ -36,9 +26,9 @@ typedef  struct
 }
 GS_window_struct;
 
-#define  N_LIGHTS  8
+#define  WS_WINDOW_DEFINED
 
-#include <graphics_info.h>
+#include <graphics.h>
 
 #ifndef  public
 #define       public

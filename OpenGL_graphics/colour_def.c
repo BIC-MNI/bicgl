@@ -1,5 +1,4 @@
 #include  <internal_volume_io.h>
-#include  <objects.h>
 
 public  Colour  make_rgba_Colour(
     int    r,
@@ -7,32 +6,55 @@ public  Colour  make_rgba_Colour(
     int    b,
     int    a )
 {
-    return( (Colour) a |
-            ((Colour) b << (Colour) 8) |
-            ((Colour) g << (Colour) 16) |
-            ((Colour) r << (Colour) 24) );
-}
+    Colour          c;
+    unsigned  char  *byte_ptr;
 
-public  int  get_Colour_a(
-    Colour   colour )
-{
-    return( colour & 255ul );
-}
+    byte_ptr = (void *) &c;
 
-public  int  get_Colour_b(
-    Colour   colour )
-{
-    return( (colour >> 8ul) & 255ul );
-}
+    byte_ptr[3] = (unsigned char) a;
+    byte_ptr[2] = (unsigned char) b;
+    byte_ptr[1] = (unsigned char) g;
+    byte_ptr[0] = (unsigned char) r;
 
-public  int  get_Colour_g(
-    Colour   colour )
-{
-    return( (colour >> 16ul) & 255ul );
+    return( c );
 }
 
 public  int  get_Colour_r(
     Colour   colour )
 {
-    return( colour >> 24ul );
+    unsigned  char  *b;
+
+    b = (void *) &colour;
+
+    return( (int) b[0] );
+}
+
+public  int  get_Colour_g(
+    Colour   colour )
+{
+    unsigned  char  *b;
+
+    b = (void *) &colour;
+
+    return( (int) b[1] );
+}
+
+public  int  get_Colour_b(
+    Colour   colour )
+{
+    unsigned  char  *b;
+
+    b = (void *) &colour;
+
+    return( (int) b[2] );
+}
+
+public  int  get_Colour_a(
+    Colour   colour )
+{
+    unsigned  char  *b;
+
+    b = (void *) &colour;
+
+    return( (int) b[3] );
 }

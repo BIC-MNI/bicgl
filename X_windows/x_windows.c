@@ -470,13 +470,13 @@ private  BOOLEAN  find_font(
     STRING   pattern;
     char     **names;
     int      dpi, family, width, slant, weight;
-/*
+#ifdef NOT_NEEDED
     static   char  *dpis[] = { "100", "75" };
     static   char  *families[] = { "helvetica", "times", "courier" };
     static   char  *widths[] = { "normal", "narrow" };
     static   char  *slants[] = { "r", "o", "i" };
     static   char  *weights[] = { "medium", "bold" };
-*/
+#endif
     static   char  *dpis[] = { "100", "75" };
     static   char  *families[] = { "helvetica" };
     static   char  *widths[] = { "normal" };
@@ -544,14 +544,13 @@ private  BOOLEAN  find_font(
     return( found );
 }
 
-public  BOOLEAN  X_get_font(
+public  BOOLEAN  X_get_font_name(
     Font_types       type,
     int              size,
-    Font             *x_font )
+    STRING           font_name )
 {
     BOOLEAN  found;
     int      offset;
-    STRING   font_name;
 
     offset = 0;
 
@@ -566,16 +565,6 @@ public  BOOLEAN  X_get_font(
     }
     while( !found &&
            (type != FIXED_FONT || offset <= MAX_FONT_SIZE_ERROR) );
-
-    if( found )
-    {
-        *x_font = XLoadFont( X_get_display(), font_name );
-        if( *x_font == 0 )
-        {
-            print_error( "Could not load font: %s\n", font_name );
-            found = FALSE;
-        }
-    }
 
     return( found );
 }

@@ -14,8 +14,8 @@ public  void  GS_initialize_lights(
 }
 
 public  void  GS_set_ambient_light(
-    Gwindow        window,
-    Colour         colour )   /* ARGSUSED */
+    Gwindow        window,     /* ARGSUSED */
+    Colour         colour )
 {
 #ifndef  TWO_D_ONLY
     float     ambient_light[4];
@@ -30,14 +30,14 @@ public  void  GS_set_ambient_light(
 }
 
 public  void  GS_define_light(
-    Gwindow         window,
+    Gwindow         window,       /* ARGSUSED */
     int             light_index,
     Light_types     type,
     Colour          colour,
     Vector          *direction,
     Point           *position,
     Real            spot_exponent,
-    Real            spot_angle )   /* ARGSUSED */
+    Real            spot_angle )
 {
 #ifndef  TWO_D_ONLY
     int     gl_light_index;
@@ -96,18 +96,18 @@ public  void  GS_define_light(
         position_list[3] = 0.0;
         glLightfv( gl_light_index, GL_SPOT_DIRECTION, position_list );
 
-        glLightf( gl_light_index, GL_SPOT_EXPONENT, spot_exponent );
+        glLightf( gl_light_index, GL_SPOT_EXPONENT, (float) spot_exponent );
 
-        glLightf( gl_light_index, GL_SPOT_CUTOFF, spot_angle );
+        glLightf( gl_light_index, GL_SPOT_CUTOFF, (float) spot_angle );
         break;
     }
 #endif
 }
 
 public  void  GS_set_light_state(
-    Gwindow         window,
+    Gwindow         window,   /* ARGSUSED */
     int             light_index,
-    BOOLEAN         state )   /* ARGSUSED */
+    BOOLEAN         state )
 {
 #ifndef  TWO_D_ONLY
     short   gl_light_index;

@@ -40,15 +40,15 @@ private  Random_mask_type  random_order_masks[] = {
 public  Random_mask_type  get_random_order_mask(
     int  size )
 {
-    int  index;
+    int  ind;
 
-    index = 0;
+    ind = 0;
 
     while( size != 0 )
     {
         size >>= 1;
-        ++index;
+        ++ind;
     }
 
-    return( random_order_masks[index] );
+    return( random_order_masks[ind] );
 }

@@ -6,6 +6,8 @@
 #define  PIXELS_X_ZOOM       1.0
 #define  PIXELS_Y_ZOOM       1.0
 
+#define  N_FONTS             10
+
 int main(
     int    argc,
     char   *argv[] )
@@ -14,6 +16,20 @@ int main(
     BOOLEAN           stereo_flag;
     window_struct     *window, *event_window;
     text_struct       text;
+    static Font_types font_types[N_FONTS] = {
+                          FIXED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT,
+                          SIZED_FONT };
+    static Real       font_sizes[N_FONTS] = { 0.0,
+                           6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0 };
+    text_struct       font_examples[N_FONTS];
     lines_struct      lines, lines_2d;
     polygons_struct   polygons;
     pixels_struct     pixels;
@@ -46,8 +62,6 @@ int main(
                               100, 600, 300, 300,
                               FALSE, TRUE, FALSE, 0, &window );
 
-    (void) GS_has_rgb_mode();
-
     if( status != OK )
         return( 1 );
 
@@ -68,6 +82,21 @@ int main(
     fill_Point( point, 10.0, 10.0, 0.0 );
     initialize_text( &text, &point, make_Colour(255,0,255), SIZED_FONT, 14.0 );
     text.string[0] = (char) 0;
+
+    for_less( i, 0, N_FONTS )
+    {
+        fill_Point( point, 10.0, 30.0 + i * 20, 0.0 );
+        initialize_text( &font_examples[i], &point, make_Colour(0,255,255),
+                         font_types[i], font_sizes[i] );
+
+        if( font_types[i] == FIXED_FONT )
+            (void) strcpy( font_examples[i].string, "Fixed font: " );
+        else
+            (void) sprintf( font_examples[i].string, "Sized font %g points: ",
+                            font_sizes[i] );
+
+        (void) strcat( font_examples[i].string, "abcdefghijklmnopqrstuvwxyz" );
+    }
 
     /* ------------ define line to be drawn  ------------- */
 
@@ -121,8 +150,8 @@ int main(
 
     /* ------------ define pixels to be drawn  ------------- */
 
-    pixels_x_size = 256;
-    pixels_y_size = 256;
+    pixels_x_size = 100;
+    pixels_y_size = 100;
 
     x_position = 10;
     y_position = 10;
@@ -154,15 +183,6 @@ int main(
     fill_Point( point, -0.3, 0.3, 0.0 );
     add_point_to_polygon( &polygons, &point, &normal );
 
-/*
-{
-int  c;
-
-for_less( i, 0, 4 )
-    for_less( c, 0, N_DIMENSIONS )
-        Point_coord(polygons.points[i],c) *= 100.0;
-}
-*/
 
     /* ------------ define lights ----------------- */
 
@@ -187,7 +207,7 @@ for_less( i, 0, 4 )
     prev_mouse_in_window = -100;
 
     print( "Hold down left button and move mouse to rotate\n" );
-    print( "Hit middle mouse button to exit\n" );
+    print( "Hit ESC key to exit\n" );
 
     done = FALSE;
 
@@ -203,6 +223,8 @@ for_less( i, 0, 4 )
                 {
                 case KEY_DOWN_EVENT:
                     print( "Key pressed down: \"%c\"\n", key_pressed );
+                    if( key_pressed == '' )
+                        done = TRUE;
                     break;
 
                 case KEY_UP_EVENT:
@@ -228,7 +250,6 @@ for_less( i, 0, 4 )
 
                 case MIDDLE_MOUSE_DOWN_EVENT:
                     print( "Middle mouse DOWN\n" );
-                    done = TRUE;
                     break;
 
                 case MIDDLE_MOUSE_UP_EVENT:
@@ -329,6 +350,9 @@ for_less( i, 0, 4 )
             G_set_view_type( window, PIXEL_VIEW );
             G_draw_lines( window, &lines_2d );
             G_draw_text( window, &text );
+
+            for_less( i, 0, N_FONTS )
+                G_draw_text( window, &font_examples[i] );
 
             G_update_window( window );
             update_required = FALSE;

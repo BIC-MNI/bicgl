@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 public  void  GS_set_shade_model(
     Shading_types  type )
@@ -29,7 +29,7 @@ public  void  GS_set_lighting_state(
 {
 #ifndef  TWO_D_ONLY
     if( state )
-        lmbind( MATERIAL, window->GS_window.unique_lmdef_id );
+        lmbind( MATERIAL, window->GS_window->unique_lmdef_id );
     else
         lmbind( MATERIAL, 0 );
 #endif

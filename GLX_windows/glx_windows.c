@@ -345,9 +345,9 @@ public  BOOLEAN  WS_get_font(
 {
     Font         x_font;
 
-    if( X_get_font( type, (int) size, &x_font ) )
+    if( X_get_font_name( type, (int) size, font_info->font_name ) )
     {
-        font_info->x_font = x_font;
+        x_font = XLoadFont( X_get_display(), font_info->font_name );
         font_info->x_font_info = XQueryFont( X_get_display(), x_font );
 
         return( TRUE );
@@ -362,13 +362,11 @@ public  void  WS_build_font_in_window(
     WS_font_info      *font_info )
 {
     int   i, first, last, listBase;
+    Font  x_font;
 
     first = font_info->x_font_info->min_char_or_byte2;
     last = font_info->x_font_info->max_char_or_byte2;
 
-#ifdef DISABLE_TEXT
-    listBase = 0;
-#else
     listBase = glGenLists( last + 1 );
 
     if( listBase == 0 )
@@ -377,20 +375,10 @@ public  void  WS_build_font_in_window(
     }
     else
     {
-        int  n_used;
+        x_font = XLoadFont( X_get_display(), font_info->font_name );
 
-        glXUseXFont( font_info->x_font, first, last-first+1, listBase+first );
-
-        n_used = 0;
-        for_less( i, listBase, listBase + last )
-            if( glIsList( i ) )
-                ++n_used;
-
-        if( n_used == 0 )
-            print( "Fopnt: %d  No display lists used for font: %d\n",
-                   font_info->x_font );
+        glXUseXFont( x_font, first, last-first+1, listBase+first );
     }
-#endif
 
     if( font_index >= window->n_fonts )
     {
@@ -434,7 +422,6 @@ public  BOOLEAN  WS_set_font(
 public  void  WS_delete_font(
     WS_font_info  *info )
 {
-    XUnloadFont( X_get_display(), info->x_font_info->fid );
     XFreeFont( X_get_display(), info->x_font_info );
 }
 

@@ -3,7 +3,7 @@
 
 /*--------------- maintaining list of known windows ------------------------ */
 
-private  Gwindow        *windows = (Gwindow *) 0;
+private  Gwindow        *windows = NULL;
 private  int            n_windows = 0;
 
 private  Gwindow  create_window_struct( void )
@@ -46,20 +46,20 @@ public  Gwindow  get_nth_graphics_window(
 
 private  void  delete_window_struct( Gwindow   window )
 {
-    int            index;
+    int            ind;
 
-    index = lookup_window_index( window );
+    ind = lookup_window_index( window );
 
-    if( index >= 0 )
+    if( ind >= 0 )
     {
-        DELETE_ELEMENT_FROM_ARRAY( windows, n_windows, index,
+        DELETE_ELEMENT_FROM_ARRAY( windows, n_windows, ind,
                                    DEFAULT_CHUNK_SIZE );
     }
 
     FREE( window );
 }
 
-static  Gwindow   current_window = (Gwindow) 0;
+static  Gwindow   current_window = NULL;
 
 public  void  set_current_window( Gwindow   window )
 {
@@ -402,7 +402,7 @@ public  int  G_get_n_colour_map_entries(
 
 public  void  G_set_colour_map_entry(
     Gwindow         window,
-    int             index,
+    int             ind,
     Colour          colour )
 {
     set_current_window( window );
@@ -410,7 +410,7 @@ public  void  G_set_colour_map_entry(
     if( window->current_bitplanes != NORMAL_PLANES )
         set_bitplanes( window, NORMAL_PLANES );
 
-    GS_set_colour_map_entry( window, index, colour );
+    GS_set_colour_map_entry( window, ind, colour );
 
     if( window->current_bitplanes != NORMAL_PLANES )
         restore_bitplanes( window );
@@ -701,12 +701,12 @@ public  int  G_get_n_overlay_planes()
 
 public  void  G_set_overlay_colour_map(
     Gwindow         window,
-    int             index,
+    int             ind,
     Colour          colour )
 {
     set_current_window( window );
 
-    GS_set_overlay_colour_map( window, index, colour );
+    GS_set_overlay_colour_map( window, ind, colour );
 }
 
 public  void  G_append_to_last_update(

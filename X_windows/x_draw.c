@@ -29,7 +29,7 @@ public  Status  X_create_window(
     if( !XMatchVisualInfo( X_get_display(),  X_get_screen(),
                            depth, class, &visual ) )
     {
-        print( "Unable to get needed visual\n" );
+        print_error( "Unable to get needed visual\n" );
         return( ERROR );
     }
 
@@ -67,7 +67,8 @@ public  void  X_draw_pixels(
 
     if( window->colour_map_mode != (pixels->pixel_type != RGB_PIXEL) )
     {
-        print( "Invalid pixel type in X_draw_pixels for rgb/colourmap mode.\n");
+        print_error(
+          "Invalid pixel type in X_draw_pixels for rgb/colourmap mode.\n");
         return;
     }
 

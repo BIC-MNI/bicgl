@@ -2,8 +2,14 @@
 #define  DEF_X_WINDOWS
 
 #include  <bicpl.h>
+
 #include  <X11/Xlib.h>
 #include  <X11/Xutil.h>
+
+#ifdef  Status
+#undef  Status
+#endif
+
 #include  <window_events.h>
 
 typedef  Window   Window_id;
@@ -15,7 +21,7 @@ typedef  struct
     Colormap         colour_map;
     int              n_colours;
     unsigned long    *colour_indices;
-    XVisualInfo      visual;
+    XVisualInfo      *visual;
     GC               graphics_context;
 }
 X_window_struct;

@@ -397,7 +397,7 @@ public  Event_types  G_get_event(
     return( type );
 }
 
-private  Gwindow  current_input_window = (Gwindow) NULL;
+private  Gwindow  current_input_window = NULL;
 
 private  Gwindow  get_current_input_window( void )
 {

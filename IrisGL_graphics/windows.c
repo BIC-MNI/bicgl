@@ -1,12 +1,12 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 #include  <gl/get.h>
 
-public  Window_id  GS_get_window_id( 
+private  Window_id  get_window_id( 
     Gwindow  window )
 {
-    return( window->WS_window.window_id );
+    return( window->WS_window->window_id );
 }
 
 #define  CALL_GFLUSH_EVERY_NTH_TIME  200
@@ -141,7 +141,7 @@ public  Status  GS_create_window(
 
     foreground();
 
-    window->WS_window.window_id = winopen( title );
+    window->WS_window->window_id = winopen( title );
 
     if( width > 0 && height > 0 )
     {
@@ -149,7 +149,7 @@ public  Status  GS_create_window(
         winconstraints();
     }
 
-    if( GS_get_window_id(window) >= 0 )
+    if( get_window_id(window) >= 0 )
     {
         *actual_colour_map_flag = colour_map_desired;
         *actual_double_buffer_flag = double_buffer_desired;
@@ -415,7 +415,19 @@ public  void  GS_set_depth_function(
     Depth_functions   depth_func )
 {
 #ifndef  TWO_D_ONLY
-    zfunction( depth_func  );
+    int   gl_depth_func;
+
+    switch( depth_func )
+    {
+    case LESS_OR_EQUAL:
+        gl_depth_func = ZF_LEQUAL;
+        break;
+    default:
+        gl_depth_func = ZF_LEQUAL;
+        break;
+    }
+
+    zfunction( gl_depth_func  );
 #endif
 }
 
@@ -437,7 +449,7 @@ public  Status  GS_delete_window(
 {
     Status    status;
 
-    if( GS_get_window_id(window) >= 0 )
+    if( get_window_id(window) >= 0 )
     {
 #ifndef  TWO_D_ONLY
         if( G_has_overlay_planes() )
@@ -449,13 +461,13 @@ public  Status  GS_delete_window(
         }
 #endif
 
-        winclose( GS_get_window_id(window) );
+        winclose( get_window_id(window) );
 
         status = OK;
     }
     else
     {
-        print( "Error:  tried to delete invalid window.\n" );
+        print_error( "Error:  tried to delete invalid window.\n" );
         status = ERROR;
     }
 
@@ -463,7 +475,8 @@ public  Status  GS_delete_window(
 }
 
 public  void  WS_set_current_window(
-    WS_window_struct  *window )
+    WS_window_struct  *window,
+    Bitplane_types    current_bitplanes )  /* ARGSUSED */
 {
     winset( window->window_id );
 }
@@ -710,4 +723,24 @@ public  void  WS_get_window_size(
     getsize( &lx_size, &ly_size );
     *x_size = (int) lx_size;
     *y_size = (int) ly_size;
+}
+
+public  Gwindow   find_window_for_id(
+    Window_id  window_id )
+{
+    int            i;
+    Gwindow        window;
+
+    for_less( i, 0, get_n_graphics_windows() )
+    {
+        if( get_window_id( get_nth_graphics_window(i) ) == window_id )
+            break;
+    }
+
+    if( i >= get_n_graphics_windows() )
+        window = (Gwindow) 0;
+    else
+        window = get_nth_graphics_window(i);
+
+    return( window );
 }

@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 private  void  make_matrix(
     Transform  *trans,
@@ -153,5 +153,17 @@ public  void  clear_overlay_planes()
 public  void  GS_set_matrix_mode(
     Matrix_modes   mode )
 {
-    mmode( mode );
+    int  gl_mode;
+
+    switch( mode )
+    {
+    case VIEWING_MATRIX:
+        gl_mode = MVIEWING;
+        break;
+    case PROJECTION_MATRIX:
+        gl_mode = MPROJECTION;
+        break;
+    }
+
+    mmode( gl_mode );
 }

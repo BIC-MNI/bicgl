@@ -1098,9 +1098,10 @@ private  BOOLEAN  set_font(
     Font_types       type,
     Real             size )
 {
-    int           font_index;
-    WS_font_info  *font_info;
-    BOOLEAN       found;
+    static  BOOLEAN  first = TRUE;
+    int              font_index;
+    WS_font_info     *font_info;
+    BOOLEAN          found;
 
     if( type != FIXED_FONT && type != SIZED_FONT )
     {
@@ -1112,7 +1113,16 @@ private  BOOLEAN  set_font(
         print_error( "Invalid font size: %g\n", size );
     }
 
+    if( first )
+    {
+        first = FALSE;
+        (void) lookup_font( FIXED_FONT, 0.0, &font_info, &font_index );
+    }
+
     found = lookup_font( type, size, &font_info, &font_index );
+
+    if( !found )
+        found = lookup_font( FIXED_FONT, 0.0, &font_info, &font_index );
 
     if( found )
         found = GS_set_font( win, font_index, font_info );

@@ -251,6 +251,25 @@ private  BOOLEAN  fonts_present( void )
     return( base_font_handle != (fmfonthandle) 0 );
 }
 
+public  void  WS_build_font_in_window(
+    WS_window_struct     *window,
+    int                  font_index,
+    WS_font_info         *font_info )   /* ARGSUSED */
+{
+}
+
+public  void  WS_delete_font_in_window(
+    WS_window_struct     *window,
+    int                  font_index,
+    WS_font_info         *font_info )   /* ARGSUSED */
+{
+}
+
+public  void  WS_delete_font(
+    WS_font_info  *info )      /* ARGSUSED */
+{
+}
+
 public  BOOLEAN  WS_get_font(
     Font_types    type,
     Real          size,
@@ -287,18 +306,6 @@ public  BOOLEAN  WS_get_font(
     return( found );
 }
 
-public  void  WS_delete_font(
-    WS_font_info  *font_info )    /* ARGSUSED */
-{
-}
-
-public  void  WS_set_font(
-    WS_font_info  *font_info )
-{
-    if( font_info->type == SIZED_FONT )
-        fmsetfont( font_info->font_handle );
-}
-
 public  Real  WS_get_text_length(
     WS_font_info    *font_info,
     char            str[] )
@@ -326,11 +333,15 @@ public  Real  WS_get_character_height(
     return( height );
 }
 
-public  void  GS_set_font(
-    WS_font_info     *font )
+public  BOOLEAN  GS_set_font(
+    Gwindow            window,
+    int                font_index,  /* ARGSUSED */
+    WS_font_info       *font )
 {
     if( font->type != FIXED_FONT )
         fmsetfont( font->font_handle );
+
+    return( TRUE );
 }
 
 public  void   GS_draw_text(
