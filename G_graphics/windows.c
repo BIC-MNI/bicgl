@@ -135,8 +135,6 @@ private  void  reinitialize_window(
 
     initialize_graphics_lights( window );
 
-    initialize_callbacks_for_window( window );
-
     update_transforms( window );
 }
 
@@ -181,6 +179,8 @@ private  void  initialize_window(
     initialize_window_view( window );
 
     reinitialize_window( window );
+
+    initialize_callbacks_for_window( window );
 }
 
 public  Status  G_create_window(

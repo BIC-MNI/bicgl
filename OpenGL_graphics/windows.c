@@ -11,11 +11,6 @@ public  Window_id  GS_get_window_id(
     return( WS_get_window_id(&window->WS_window) );
 }
 
-public  Window_id  GS_get_current_window_id( void )
-{
-    return( WS_get_current_window_id() );
-}
-
 public  void  GS_set_current_window(
     GSwindow        window )
 {
@@ -290,12 +285,11 @@ public  int  GS_get_n_colour_map_entries(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_set_colour_map_entry(
-    GSwindow        window,
     Bitplane_types  bitplanes,
     int             ind,
     Colour          colour )
 {
-    WS_set_colour_map_entry( &window->WS_window, bitplanes, ind, colour );
+    WS_set_colour_map_entry( bitplanes, ind, colour );
 }
 
 public  BOOLEAN  GS_is_double_buffer_supported( void )
@@ -599,8 +593,7 @@ public  void  GS_set_overlay_colour_map(
     WS_set_overlay_colour_map_entry( &window->WS_window, ind, colour );
 }
 
-public  void  GS_swap_buffers(
-    GSwindow        window )
+public  void  GS_swap_buffers( void )
 {
-    WS_swap_buffers( &window->WS_window );
+    WS_swap_buffers();
 }

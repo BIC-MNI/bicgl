@@ -1,12 +1,24 @@
  
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <GS_graphics.h>
 #include  <gl/get.h>
 
-public  long  GS_get_window_id( 
-    Gwindow  window )
+public  Window_id  GS_get_window_id( 
+    GSwindow  window )
 {
-    return( window->WS_window->window_id );
+    return( window->window_id );
+}
+
+public  Window_id  GS_get_current_window_id( 
+    GSwindow  window )
+{
+    return( winget() );
+}
+
+public  void  GS_set_current_window(
+    GSwindow          window )
+{
+    winset( window->window_id );
 }
 
 #define  CALL_GFLUSH_EVERY_NTH_TIME  200
@@ -17,7 +29,7 @@ public  long  GS_get_window_id(
 #define  CATMULL_ROM_ID            1
 
 private  void  initialize_window(
-    Gwindow        window,
+    GSwindow       window,
     BOOLEAN        colour_map_desired,
     BOOLEAN        double_buffer_desired,
     BOOLEAN        depth_buffer_desired,
@@ -52,14 +64,10 @@ public  void  GS_initialize( void )
     foreground();
     (void) winopen( "" );
 
-#ifndef  TWO_D_ONLY
     zdepth_clear = getgdesc( GD_ZMAX );
-#endif
 
-#ifndef  TWO_D_ONLY
     defbasis( CATMULL_ROM_ID, catmull_rom_matrix );
     curvebasis( CATMULL_ROM_ID );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -109,7 +117,7 @@ public  BOOLEAN  GS_can_switch_colour_map_mode( void )
 ---------------------------------------------------------------------------- */
 
 public  Status  GS_create_window(
-    Gwindow        window,
+    GSwindow       window,
     STRING         title,
     int            x_pos,
     int            y_pos,
@@ -141,7 +149,7 @@ public  Status  GS_create_window(
 
     foreground();
 
-    window->WS_window->window_id = winopen( title );
+    window->window_id = winopen( title );
 
     if( width > 0 && height > 0 )
     {
@@ -156,9 +164,6 @@ public  Status  GS_create_window(
 
         if( !GS_is_depth_buffer_supported() )
             depth_buffer_desired = FALSE;
-
-        n_overlay_planes_desired = MIN( n_overlay_planes_desired,
-                                        G_get_n_overlay_planes() );
 
         *actual_colour_map_flag = colour_map_desired;
         *actual_double_buffer_flag = double_buffer_desired;
@@ -194,21 +199,18 @@ public  Status  GS_create_window(
 /* ARGSUSED */
 
 private  void  initialize_window(
-    Gwindow        window,
+    GSwindow       window,
     BOOLEAN        colour_map_desired,
     BOOLEAN        double_buffer_desired,
     BOOLEAN        depth_buffer_desired,
     int            n_overlay_planes_desired )
 {
-    set_current_window( window );
+    GS_set_current_window( window );
 
-    (void) GS_set_double_buffer_state( double_buffer_desired );
+    (void) GS_set_double_buffer_state( window, double_buffer_desired );
 
-    GS_set_colour_map_state( colour_map_desired );
+    (void) GS_set_colour_map_state( window, colour_map_desired );
 
-    initialize_window_events( window );
-
-#ifndef  TWO_D_ONLY
     subpixel( TRUE );
 
     if( n_overlay_planes_desired > 0 )
@@ -216,18 +218,19 @@ private  void  initialize_window(
         overlay( (long) n_overlay_planes_desired );
         gconfig();
 
-        G_set_overlay_colour_map( window, 1, RED );
-        G_set_overlay_colour_map( window, 2, GREEN );
-        G_set_overlay_colour_map( window, 3, BLUE );
+        GS_set_overlay_colour_map( window, 1, RED );
+        GS_set_overlay_colour_map( window, 2, GREEN );
+        GS_set_overlay_colour_map( window, 3, BLUE );
     }
-#endif
+
+    initialize_window_events( window );
 }
 
 /* ARGSUSED */
 
 public  void  GS_set_window_title(
-    Gwindow   window,
-    STRING    title )
+    GSwindow   window,
+    STRING     title )
 {
     wintitle( title );
 }
@@ -271,6 +274,7 @@ public  BOOLEAN  GS_has_rgb_mode( void )
 }
 
 public  BOOLEAN  GS_set_double_buffer_state(
+    GSwindow       window,
     BOOLEAN        flag )
 {
     long   display_mode;
@@ -293,8 +297,7 @@ public  BOOLEAN  GS_set_double_buffer_state(
 
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : GS_set_colour_map_state
-@INPUT      : window
-              flat
+@INPUT      : flat
 @OUTPUT     : 
 @RETURNS    : 
 @DESCRIPTION: Sets the colour map state of the window.
@@ -305,7 +308,8 @@ public  BOOLEAN  GS_set_double_buffer_state(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  GS_set_colour_map_state(
+public  BOOLEAN  GS_set_colour_map_state(
+    GSwindow       window,
     BOOLEAN        flag )
 {
     if( flag )
@@ -314,6 +318,8 @@ public  void  GS_set_colour_map_state(
         RGBmode();
 
     gconfig();
+
+    return( flag );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -331,11 +337,12 @@ public  void  GS_set_colour_map_state(
 ---------------------------------------------------------------------------- */
 
 public  int  GS_get_n_colour_map_entries(
-    Gwindow  window )
+    GSwindow  window,
+    BOOLEAN   double_buffer_state )
 {
     int   n_bits, n_colours, query;
 
-    if( window->double_buffer_state )
+    if( double_buffer_state )
     {
         query = GD_BITS_NORM_DBL_CMODE;
     }
@@ -370,7 +377,7 @@ public  int  GS_get_n_colour_map_entries(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_set_colour_map_entry(
-    Gwindow         window,
+    Bitplane_types  bitplanes,
     int             index,
     Colour          colour )
 {
@@ -381,7 +388,7 @@ public  void  GS_set_colour_map_entry(
               (short) get_Colour_g(colour),
               (short) get_Colour_b(colour) );
 
-    if( window->current_bitplanes == NORMAL_PLANES )
+    if( bitplanes == NORMAL_PLANES )
     {
         ++count;
         if( count == CALL_GFLUSH_EVERY_NTH_TIME )
@@ -410,31 +417,33 @@ public  BOOLEAN  GS_is_double_buffer_supported( void )
     return( available );
 }
 
+public  BOOLEAN  GS_is_transparency_supported( void )
+{
+    BOOLEAN   available;
+
+    available = (getgdesc( GD_BITS_NORM_DBL_ALPHA ) > 0);
+
+    return( available );
+}
+
 public  BOOLEAN  GS_is_depth_buffer_supported( void )
 {
-#ifdef  TWO_D_ONLY
-    return( FALSE );
-#else
     BOOLEAN   available;
 
     available = (getgdesc( GD_BITS_NORM_ZBUFFER ) > 0);
 
     return( available );
-#endif
 }
 
 public  void  GS_set_depth_buffer_state(
     BOOLEAN         flag )
 {
-#ifndef  TWO_D_ONLY
     zbuffer( (Boolean) flag );
-#endif
 }
 
 public  void  GS_set_depth_function(
     Depth_functions   depth_func )
 {
-#ifndef  TWO_D_ONLY
     int   gl_depth_func;
 
     switch( depth_func )
@@ -448,7 +457,6 @@ public  void  GS_set_depth_function(
     }
 
     zfunction( (long) gl_depth_func  );
-#endif
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -465,23 +473,13 @@ public  void  GS_set_depth_function(
 ---------------------------------------------------------------------------- */
 
 public  Status  GS_delete_window(
-    Gwindow   window )
+    GSwindow   window )
 {
     Status    status;
 
     if( GS_get_window_id(window) >= 0 )
     {
-#ifndef  TWO_D_ONLY
-        if( G_has_overlay_planes() )
-        {
-            viewport( (Screencoord) 0, (Screencoord) (window->x_size-1),
-                      (Screencoord) 0, (Screencoord) (window->y_size-1) );
-            drawmode( OVERDRAW );
-            color( 0 );
-            clear();
-        }
-#endif
-
+        delete_window_events( window );
         winclose( GS_get_window_id(window) );
 
         status = OK;
@@ -493,15 +491,6 @@ public  Status  GS_delete_window(
     }
 
     return( status );
-}
-
-/* ARGSUSED */
-
-public  void  WS_set_current_window(
-    WS_window_struct  *window,
-    Bitplane_types    current_bitplanes )
-{
-    winset( window->window_id );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -541,23 +530,24 @@ public  void  GS_clear_depth_buffer( void )
 }
 
 private   void  clear_viewport(
-    Gwindow       window,
-    Colour        colour )
+    GSwindow        window,
+    Bitplane_types  current_bitplanes,
+    BOOLEAN         colour_map_state,
+    BOOLEAN         zbuffer_state,
+    Colour          colour )
 {
-    if( window->current_bitplanes == NORMAL_PLANES )
+    if( current_bitplanes == NORMAL_PLANES )
     {
-        if( window->colour_map_state )
+        if( colour_map_state )
         {
             GS_set_colour_index( colour );
             clear();
-#ifndef  TWO_D_ONLY
-            if( window->zbuffer_state )
+            if( zbuffer_state )
                 zclear();
-#endif
         }
         else
         {
-            if( window->zbuffer_state )
+            if( zbuffer_state )
                 czclear( colour, zdepth_clear );
             else
             {
@@ -566,10 +556,8 @@ private   void  clear_viewport(
             }
         }
     }
-#ifndef  TWO_D_ONLY
     else
         GS_clear_overlay();
-#endif
 }
 
 public  void  GS_clear_overlay( void )
@@ -592,13 +580,18 @@ public  void  GS_clear_overlay( void )
 ---------------------------------------------------------------------------- */
 
 public  void  GS_clear_window(
-    Gwindow    window,
-    Colour     colour )
+    GSwindow        window,
+    int             x_size,
+    int             y_size,
+    Bitplane_types  bitplane,
+    BOOLEAN         colour_map_state,
+    BOOLEAN         zbuffer_state,
+    Colour          colour )
 {
     pushviewport();
-    viewport( (Screencoord) 0, (Screencoord) (window->x_size-1),
-              (Screencoord) 0, (Screencoord) (window->y_size-1) );
-    clear_viewport( window, colour );
+    viewport( (Screencoord) 0, (Screencoord) (x_size-1),
+              (Screencoord) 0, (Screencoord) (y_size-1) );
+    clear_viewport( window, bitplane, colour_map_state, zbuffer_state, colour );
     popviewport();
 }
 
@@ -617,10 +610,19 @@ public  void  GS_clear_window(
 ---------------------------------------------------------------------------- */
 
 public  void  GS_clear_viewport(
-    Gwindow      window,
-    Colour       colour )
+    GSwindow        window,
+    int             x_viewport_min,
+    int             x_viewport_max,
+    int             y_viewport_min,
+    int             y_viewport_max,
+    int             x_size,
+    int             y_size,
+    Bitplane_types  bitplane,
+    BOOLEAN         colour_map_state,
+    BOOLEAN         zbuffer_state,
+    Colour          colour )
 {
-    clear_viewport( window, colour );
+    clear_viewport( window, bitplane, colour_map_state, zbuffer_state, colour );
 }
 
 public  void  GS_flush( void )
@@ -630,42 +632,39 @@ public  void  GS_flush( void )
 
 /* ARGSUSED */
 
-public  void  WS_swap_buffers(
-    WS_window_struct  *window )
+public  void  GS_swap_buffers( void )
 {
     swapbuffers();
 }
 
 public  void  GS_append_to_last_update(
-    Gwindow   window )
+    GSwindow   window,
+    BOOLEAN    zbuffer_state,
+    int        x_size,
+    int        y_size )
 {
-#ifndef  TWO_D_ONLY
     BOOLEAN   zbuffer_on;
 
-    zbuffer_on = window->zbuffer_state;
+    zbuffer_on = zbuffer_state;
 
     if( zbuffer_on )
-        G_set_zbuffer_state( window, FALSE );
+        GS_set_depth_buffer_state( FALSE );
 
     readsource( SRC_FRONT );
 
     rectcopy( (Screencoord) 0,
               (Screencoord) 0,
-              (Screencoord) (window->x_size-1),
-              (Screencoord) (window->y_size-1),
+              (Screencoord) (x_size-1),
+              (Screencoord) (y_size-1),
               (Screencoord) 0,
               (Screencoord) 0 );
 
     if( zbuffer_on )
-        G_set_zbuffer_state( window, TRUE );
-#endif
+        GS_set_depth_buffer_state( TRUE );
 }
 
 public  int  GS_get_num_overlay_planes( void )
 {
-#ifdef  TWO_D_ONLY
-    return( 0 );
-#else
     static  BOOLEAN  first = TRUE;
     static  int      n_planes;
 
@@ -676,64 +675,45 @@ public  int  GS_get_num_overlay_planes( void )
     }
 
     return( n_planes );
-#endif
 }
 
-public  void  set_bitplanes( 
-    Gwindow          window,
+public  void  GS_set_bitplanes( 
+    GSwindow         window,
     Bitplane_types   bitplanes )
 {
-#ifndef  TWO_D_ONLY
-    set_current_window( window );
+    GS_set_current_window( window );
 
-    if( G_has_overlay_planes() )
+    switch( bitplanes )
     {
-        switch( bitplanes )
-        {
-        case NORMAL_PLANES:
-            drawmode( NORMALDRAW );
-            zwritemask( 0xffffffff );
-            update_blend_function( window, bitplanes );
-            break;
+    case NORMAL_PLANES:
+        drawmode( NORMALDRAW );
+        zwritemask( 0xffffffff );
+        break;
 
-        case OVERLAY_PLANES:
-            drawmode( NORMALDRAW );
-            zwritemask( 0 );
-            drawmode( OVERDRAW );
-            update_blend_function( window, bitplanes );
-            break;
-        }
+    case OVERLAY_PLANES:
+        drawmode( NORMALDRAW );
+        zwritemask( 0 );
+        drawmode( OVERDRAW );
+        break;
     }
-#endif
 }
 
 public  void  GS_set_overlay_colour_map(
-    Gwindow         window,
+    GSwindow        window,
     int             index,
     Colour          colour )
 {
-#ifndef  TWO_D_ONLY
-    if( G_has_overlay_planes() )
-    {
-        if( window->current_bitplanes != OVERLAY_PLANES )
-            set_bitplanes( window, OVERLAY_PLANES );
-
-        mapcolor( (Colorindex) index, (short) get_Colour_r(colour),
-                                      (short) get_Colour_g(colour),
-                                      (short) get_Colour_b(colour) );
-
-        if( window->current_bitplanes != OVERLAY_PLANES )
-            restore_bitplanes( window );
-    }
-#endif
+    mapcolor( (Colorindex) index, (short) get_Colour_r(colour),
+                                  (short) get_Colour_g(colour),
+                                  (short) get_Colour_b(colour) );
 }
 
 /* ARGSUSED */
 
-public  void  WS_get_window_position(
-    WS_window_struct  *window,
-    int               *x_pos,
-    int               *y_pos )
+public  void  GS_get_window_position(
+    GSwindow  window,
+    int       *x_pos,
+    int       *y_pos )
 {
     long    lx_pos, ly_pos;
 
@@ -744,34 +724,14 @@ public  void  WS_get_window_position(
 
 /* ARGSUSED */
 
-public  void  WS_get_window_size(
-    WS_window_struct  *window,
-    int               *x_size,
-    int               *y_size )
+public  void  GS_get_window_size(
+    GSwindow  window,
+    int       *x_size,
+    int       *y_size )
 {
     long    lx_size, ly_size;
 
     getsize( &lx_size, &ly_size );
     *x_size = (int) lx_size;
     *y_size = (int) ly_size;
-}
-
-public  Gwindow   find_window_for_id(
-    Window_id  window_id )
-{
-    int            i;
-    Gwindow        window;
-
-    for_less( i, 0, get_n_graphics_windows() )
-    {
-        if( GS_get_window_id( get_nth_graphics_window(i) ) == window_id )
-            break;
-    }
-
-    if( i >= get_n_graphics_windows() )
-        window = (Gwindow) 0;
-    else
-        window = get_nth_graphics_window(i);
-
-    return( window );
 }
