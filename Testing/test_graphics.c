@@ -52,6 +52,7 @@ int main(
     static Point      origin = { 0.0, 0.0, 2.0 };
     static Vector     up_direction = { 0.0, 1.0, 0.0 };
     static Vector     line_of_sight = { 0.0, 0.0, -1.0 };
+    int               n_iters = 100;
 
     stereo_flag = (argc > 1);
 
@@ -61,6 +62,8 @@ int main(
     status = G_create_window( "Test Window",
                               100, 600, 300, 300,
                               FALSE, TRUE, FALSE, 0, &window );
+
+    G_set_transparency_state( window, OFF );
 
     if( status != OK )
         return( 1 );
@@ -150,8 +153,8 @@ int main(
 
     /* ------------ define pixels to be drawn  ------------- */
 
-    pixels_x_size = 100;
-    pixels_y_size = 100;
+    pixels_x_size = 250;
+    pixels_y_size = 250;
 
     x_position = 10;
     y_position = 10;
@@ -163,7 +166,9 @@ int main(
     {
         for_less( j, 0, pixels_y_size )
         {
-            PIXEL_RGB_COLOUR(pixels,i,j) = make_Colour( i % 256, j % 256, 0 );
+            PIXEL_RGB_COLOUR(pixels,i,j) = make_Colour_0_1(
+                      (Real) i / (Real) (pixels_x_size-1),
+                      (Real) j / (Real) (pixels_y_size-1), 0 );
         }
     }
 
@@ -337,7 +342,8 @@ int main(
             G_set_zbuffer_state( window, OFF );
             G_set_lighting_state( window, OFF );
             G_set_view_type( window, PIXEL_VIEW );
-            G_draw_pixels( window, &pixels );
+            for_less( i, 0, n_iters )
+                G_draw_pixels( window, &pixels );
 
             G_set_zbuffer_state( window, ON );
             G_set_lighting_state( window, ON );

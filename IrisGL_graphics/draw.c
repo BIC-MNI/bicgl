@@ -100,7 +100,7 @@ public  void  GS_set_line_width(
 }
 
 public  void  GS_curve(
-    const  float  geom[4][3] )
+    float  geom[4][3] )
 {
     crv( geom );
 }
@@ -213,6 +213,8 @@ public  void  GS_draw_rgb_pixels(
     lrectwrite( x, y, x + x_size - 1, y + y_size - 1,
                 pixels->data.pixels_rgb );
 }
+
+/* ARGSUSED */
 
 public  void  GS_read_pixels(
     Gwindow         window,

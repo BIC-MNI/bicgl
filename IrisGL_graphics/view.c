@@ -100,6 +100,8 @@ public  void  GS_frustum(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
+/* ARGSUSED */
+
 public  void  GS_initialize_window_view(
     Gwindow   window )
 {

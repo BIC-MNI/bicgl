@@ -81,9 +81,14 @@ public  Status  X_create_window_with_visual(
     cwa.event_mask = StructureNotifyMask | ExposureMask;
     cwa_mask = CWColormap|CWBorderPixel;
 
-    if( initial_x_pos >= 0 && initial_y_pos >= 0 )
+    if( initial_x_pos < 0 || initial_y_pos < 0 )
     {
+        initial_x_pos = 0;
+        initial_y_pos = 0;
+    }
 /*
+    else
+    {
         int    screen_x_size, screen_y_size;
 
         X_get_screen_size( &screen_x_size, &screen_y_size );
@@ -92,13 +97,8 @@ public  Status  X_create_window_with_visual(
 
         cwa.override_redirect = TRUE;
         cwa_mask |= CWOverrideRedirect;
+    }
 */
-    }
-    else
-    {
-        initial_x_pos = 0;
-        initial_y_pos = 0;
-    }
 
     window->window_id = XCreateWindow( X_get_display(),
                                RootWindow( X_get_display(),

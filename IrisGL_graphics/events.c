@@ -17,6 +17,8 @@
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
+/* ARGSUSED */
+
 public  void  initialize_window_events(
      Gwindow        window )
 {

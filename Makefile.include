@@ -11,14 +11,14 @@ GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include $(BIC_PL_INCLUDE)
 
 #-------------------------- OpenGl with glX windows --------------------------
 
-OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR) -lopengl_x_graphics -lGL -lX11 -lXext \
+OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR) -lopengl_x_graphics -lGL -lXext -lX11 \
                             $(BIC_PL_LIBS)
 OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 
 #----------------------- MESA/OpenGl with glX windows ------------------------
 
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR) -lmesa_x_graphics \
-                          $(MESA_LIB) -lMesaGL -lX11 -lXext $(BIC_PL_LIBS)
+                          $(MESA_LIB) -lMesaGL -lXext -lX11 $(BIC_PL_LIBS)
 MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------

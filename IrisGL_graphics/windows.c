@@ -182,6 +182,8 @@ public  Status  GS_create_window(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
+/* ARGSUSED */
+
 private  void  initialize_window(
     Gwindow        window,
     BOOLEAN        colour_map_desired,
@@ -705,6 +707,8 @@ public  void  GS_set_overlay_colour_map(
 #endif
 }
 
+/* ARGSUSED */
+
 public  void  WS_get_window_position(
     WS_window_struct  *window,
     int               *x_pos,
@@ -716,6 +720,8 @@ public  void  WS_get_window_position(
     *x_pos = (int) lx_pos;
     *y_pos = (int) ly_pos;
 }
+
+/* ARGSUSED */
 
 public  void  WS_get_window_size(
     WS_window_struct  *window,

@@ -168,6 +168,8 @@ public  Real  get_fixed_font_height()
     return( 13.0 );
 }
 
+/* ARGSUSED */
+
 public  Real  get_fixed_font_width(
     char   ch )
 {

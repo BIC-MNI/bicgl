@@ -74,6 +74,8 @@ public  BOOLEAN  GS_can_switch_colour_map_mode()
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
+/* ARGSUSED */
+
 public  Status  GS_create_window(
     Gwindow        window,
     char           title[],
@@ -256,7 +258,9 @@ public  BOOLEAN  GS_is_depth_buffer_supported( void )
 #ifdef  TWO_D_ONLY
     return( FALSE );
 #else
+/*
     BOOLEAN   available;
+*/
     int       n_bits;
 
     glGetIntegerv( GL_DEPTH_BITS, &n_bits );

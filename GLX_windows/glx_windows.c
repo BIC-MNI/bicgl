@@ -248,10 +248,11 @@ public  void  WS_set_current_window(
 
 public  int    WS_get_n_overlay_planes()
 {
+    return( 0 );
+#ifdef NOT_YET
     int           n_attrib, attrib[10], min_size, mid, max_size, ind, n_bits;
     XVisualInfo   *visual;
 
-    return( 0 );
 
     n_attrib = 0;
 
@@ -290,6 +291,7 @@ public  int    WS_get_n_overlay_planes()
     }
 
     return( n_bits );
+#endif
 }
 
 public  BOOLEAN  WS_get_event(
