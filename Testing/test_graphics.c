@@ -10,6 +10,7 @@
 #define  N_FONTS_TO_DRAW      2
 
 #define  ROTATE_CONTINUOUSLY
+#undef  ROTATE_CONTINUOUSLY
 
 int main(
     int    argc,

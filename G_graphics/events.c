@@ -25,7 +25,7 @@ private  int  current_mouse_y = -1;
 private  void           set_current_input_window( Gwindow );
 private  Gwindow        get_current_input_window( void );
 
-#define  MIN_TIME_BETWEEN_EVENTS  0.01
+#define  MIN_TIME_BETWEEN_EVENTS  0.040    /* 40 ms */
 
 typedef  struct
 {

@@ -554,13 +554,7 @@ private  void  draw_polygons(
 #ifndef  TWO_D_ONLY
     if( !window->shaded_mode_state )
     {
-        if( polygons->line_thickness < 1.0 || polygons->line_thickness > 20.0 )
-        {
-            print_error( "Line thickness %g\n", polygons->line_thickness );
-            handle_internal_error( "line thickness" );
-        }
-
-        if( polygons->line_thickness != 1.0 )
+        if( polygons->line_thickness > 1.0 && polygons->line_thickness < 1000.0)
             GS_set_line_width( (Real) polygons->line_thickness );
     }
 #endif
@@ -581,7 +575,8 @@ private  void  draw_polygons(
     }
 
 #ifndef TWO_D_ONLY
-    if( !window->shaded_mode_state && polygons->line_thickness != 1.0 )
+    if( !window->shaded_mode_state &&
+        polygons->line_thickness > 1.0 && polygons->line_thickness < 1000.0 )
         GS_set_line_width( 1.0 );
 #endif
 }
@@ -858,7 +853,7 @@ public  void  G_draw_lines(
 
     about_to_draw_graphics( window );
 
-    if( lines->line_thickness != 1.0 )
+    if( lines->line_thickness > 1.0 && lines->line_thickness < 1000.0 )
         GS_set_line_width( (Real) lines->line_thickness );
 
     n_lines = lines->n_items;
@@ -959,7 +954,7 @@ public  void  G_draw_lines(
 
     END_DRAW_OBJECTS
 
-    if( lines->line_thickness != 1.0 )
+    if( lines->line_thickness > 1.0 && lines->line_thickness < 1000.0 )
         GS_set_line_width( 1.0 );
 }
 

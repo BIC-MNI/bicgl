@@ -13,18 +13,24 @@ GRAPHICS_INCLUDE   = -I$(TOP_DIR)/Include $(BIC_PL_INCLUDE)
 
 OPENGL_GRAPHICS_LIBS      = -L$(TOP_DIR) -lopengl_x_graphics -lGL -lXext -lX11 \
                             $(BIC_PL_LIBS)
+OPENGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR) -lopengl_x_graphics-O3 -lGL -lXext \
+                            -lX11 $(BIC_PL_LIBS-O3)
 OPENGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lopengl_x_graphics $(BIC_PL_LINTLIBS)
 
 #----------------------- MESA/OpenGl with glX windows ------------------------
 
 MESA_GRAPHICS_LIBS      = -L$(TOP_DIR) -lmesa_x_graphics \
                           $(MESA_LIB) -lMesaGL -lXext -lX11 $(BIC_PL_LIBS)
+MESA_GRAPHICS_LIBS-O3   = -L$(TOP_DIR) -lmesa_x_graphics-O3 \
+                          $(MESA_LIB) -lMesaGL -lXext -lX11 $(BIC_PL_LIBS-O3)
 MESA_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lmesa_x_graphics $(BIC_PL_LINTLIBS)
 
 #-------------------------- SGI/GL --------------------------
 
 IRISGL_GRAPHICS_LIBS      = -L$(TOP_DIR) -lirisgl_graphics -lfm_s -lgl_s \
                             $(BIC_PL_LIBS)
+IRISGL_GRAPHICS_LIBS-O3   = -L$(TOP_DIR) -lirisgl_graphics-O3 -lfm_s -lgl_s \
+                            $(BIC_PL_LIBS-O3)
 IRISGL_GRAPHICS_LINT_LIBS = -L$(TOP_DIR) -lirisgl_graphics $(BIC_PL_LINTLIBS)
 
 #--------------------------- lint -----------------------------
