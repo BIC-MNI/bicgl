@@ -1,4 +1,4 @@
-#include  <def_graphics.h>
+#include  <graphics.h>
 
 private  void  process_polygons( polygons_struct * );
 private  void  display_polygons( polygons_struct * );

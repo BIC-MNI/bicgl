@@ -1,5 +1,5 @@
 
-#include  <def_graphics.h>
+#include  <graphics.h>
 
 main()
 {

@@ -1,4 +1,4 @@
-#include  <def_graphics.h>
+#include  <graphics.h>
 
 int  main(
     int   argc,
@@ -17,7 +17,7 @@ int  main(
     Real           scale;
     Colour         *rgb_map;
     char           *filename;
-    static String  dim_names[N_DIMENSIONS] = { MIxspace, MIyspace, MIzspace };
+    static STRING  dim_names[N_DIMENSIONS] = { MIxspace, MIyspace, MIzspace };
 
     initialize_argument_processing( argc, argv );
     (void) get_string_argument( "/nil/david/mr_data/indiv_mr.mnc", &filename );
