@@ -279,7 +279,6 @@ private  Window_id  create_GLUT_window(
               buffer mode, but reports double, so there may be a bug
               in GLUT, and we just assign the double buffering to FALSE */
         actual_double_buffer_flag = FALSE;
-        glDrawBuffer( GL_FRONT );
     }
     else if( !actual_double_buffer_flag && double_buffer_flag )
     {
@@ -428,9 +427,12 @@ public  BOOLEAN  WS_set_double_buffer_state(
     depth_buffer_flag = glutGet( (GLenum) GLUT_WINDOW_DEPTH_SIZE ) > 0;
     n_overlay_planes = 0;
 
-    WS_get_window_position( &x_pos, &y_pos );
+    x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
+    y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
     x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
     y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
+
+    y_pos = flip_screen_y( y_pos + y_size - 1 );
 
     window->window_id = create_GLUT_window( window->title,
                                             x_pos,
@@ -481,10 +483,12 @@ public  BOOLEAN  WS_set_colour_map_state(
     depth_buffer_flag = glutGet( (GLenum) GLUT_WINDOW_DEPTH_SIZE ) > 0;
     n_overlay_planes = 0;
 
-    WS_get_window_position( &x_pos, &y_pos );
-
+    x_pos = glutGet( (GLenum) GLUT_WINDOW_X );
+    y_pos = glutGet( (GLenum) GLUT_WINDOW_Y );
     x_size = glutGet( (GLenum) GLUT_WINDOW_WIDTH );
     y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
+
+    y_pos = flip_screen_y( y_pos + y_size - 1 );
 
     window->window_id = create_GLUT_window( window->title,
                                             x_pos, y_pos,
@@ -643,17 +647,16 @@ public  void  WS_swap_buffers( void )
 static  struct
         {
             int     height;
-            int     width;
             void    *font;
         }        known_fonts[] =
               {
-                {7,  10, GLUT_BITMAP_TIMES_ROMAN_10},
-                {9,  10, GLUT_BITMAP_HELVETICA_10},
-                {10, 12, GLUT_BITMAP_HELVETICA_12},
-                {10, 8, GLUT_BITMAP_8_BY_13},
-                {11, 9, GLUT_BITMAP_9_BY_15},
-                {14, 18, GLUT_BITMAP_HELVETICA_18},
-                {17, 24, GLUT_BITMAP_TIMES_ROMAN_24}
+                {10, GLUT_BITMAP_HELVETICA_10},
+                {12, GLUT_BITMAP_HELVETICA_12},
+                {13,  GLUT_BITMAP_8_BY_13},
+                {15 , GLUT_BITMAP_9_BY_15},
+                {18, GLUT_BITMAP_HELVETICA_18},
+                {24, GLUT_BITMAP_TIMES_ROMAN_24},
+                {10, GLUT_BITMAP_TIMES_ROMAN_10}
               };
 
 
@@ -670,7 +673,7 @@ private  void  *lookup_font(
     {
         font = GLUT_BITMAP_8_BY_13;
         if( actual_height != NULL )
-            *actual_height = 9;
+            *actual_height = 13;
     }
     else
     {
@@ -750,7 +753,7 @@ public  void  WS_set_mouse_position(
 {
 }
 
-static  void  (*display_callback) ( Window_id, int, int );
+static  void  (*display_callback) ( Window_id );
 static  void  (*display_overlay_callback) ( Window_id );
 static  void  (*resize_callback) ( Window_id, int, int, int, int );
 static  void  (*key_down_callback) ( Window_id, int, int, int, int );
@@ -769,7 +772,7 @@ static  void  (*leave_callback) ( Window_id );
 static  void  (*quit_callback) ( Window_id );
 
 public  void  WS_set_update_function(
-    void  (*func)( Window_id, int, int ) )
+    void  (*func)( Window_id ) )
 {
     display_callback = func;
 }
@@ -901,7 +904,7 @@ private  int  flip_screen_y(
 
 private  void  display_function( void )
 {
-    int   i, x, y, save_window_id;
+    int   i, save_window_id;
 
     if( n_windows_to_delete > 0 )
     {
@@ -924,9 +927,7 @@ private  void  display_function( void )
             glutSetWindow( save_window_id );
     }
 
-    WS_get_window_position( &x, &y );
-
-    (*display_callback) ( get_current_event_window(), x, y );
+    (*display_callback) ( get_current_event_window() );
 }
 
 private  void  display_overlay_function( void )
@@ -941,9 +942,10 @@ private  void  resize_function(
     Window_id  window_id;
     int        x, y;
 
-    window_id = get_current_event_window();
+    x = glutGet( (GLenum) GLUT_WINDOW_X );
+    y = glutGet( (GLenum) GLUT_WINDOW_Y );
 
-    WS_get_window_position( &x, &y );
+    window_id = get_current_event_window();
 
     (*resize_callback) ( window_id, x, y, width, height );
 }
@@ -1062,8 +1064,7 @@ typedef struct
 {
     void  (*function) ( void * );
     void              *data;
-    BOOLEAN           in_use;
-    BOOLEAN           deleted;
+    BOOLEAN           active;
 } callback_info_struct;
 
 static  callback_info_struct   *timers;
@@ -1078,10 +1079,9 @@ private  void  global_timer_function(
         return;
     }
 
-    timers[index].in_use = FALSE;
+    (*timers[index].function)( timers[index].data );
 
-    if( !timers[index].deleted )
-        (*timers[index].function)( timers[index].data );
+    timers[index].active = FALSE;
 }
 
 public  void  WS_add_timer_function(
@@ -1093,7 +1093,7 @@ public  void  WS_add_timer_function(
 
     for_less( i, 0, n_timers )
     {
-        if( !timers[i].in_use )
+        if( !timers[i].active )
             break;
     }
 
@@ -1105,33 +1105,10 @@ public  void  WS_add_timer_function(
 
     timers[i].function = func;
     timers[i].data = data;
-    timers[i].in_use = TRUE;
-    timers[i].deleted = FALSE;
+    timers[i].active = TRUE;
 
     glutTimerFunc( (unsigned int) (1000.0 * seconds + 0.5),
                    global_timer_function, i );
-}
-
-public  void  WS_delete_timer_function(
-    void          (*func) ( void * ),
-    void          *data )
-{
-    int                   i;
-
-    for_less( i, 0, n_timers )
-    {
-        if( timers[i].in_use && !timers[i].deleted &&
-            timers[i].function == func && timers[i].data == data )
-            break;
-    }
-
-    if( i >= n_timers )
-    {
-        handle_internal_error( "WS_delete_timer_function" );
-        return;
-    }
-
-    timers[i].deleted = TRUE;
 }
 
 static  callback_info_struct   *idles;
@@ -1195,37 +1172,4 @@ public  void  WS_set_update_flag(
     WSwindow   window  )
 {
     glutPostRedisplay();
-}
-
-public  void  WS_terminate( void )
-{
-    if( n_timers > 0 )
-        FREE( timers );
-
-    if( n_idles > 0 )
-        FREE( idles );
-}
-
-public  void  WS_raise_window(
-    WSwindow   window  )
-{
-    glutPopWindow();
-}
-
-public  void  WS_lower_window(
-    WSwindow   window  )
-{
-    glutPushWindow();
-}
-
-public  void  WS_iconify_window(
-    WSwindow   window  )
-{
-    glutIconifyWindow();
-}
-
-public  void  WS_deiconify_window(
-    WSwindow   window  )
-{
-    glutShowWindow();
 }
