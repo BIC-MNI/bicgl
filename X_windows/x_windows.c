@@ -66,9 +66,11 @@ public  Status  X_create_window_with_visual(
     Colormap         cmap,
     X_window_struct  *window )
 {
+    BOOLEAN                  setting_position;
     int                      event_mask, cwa_mask;
     XEvent                   event;
     XSetWindowAttributes     cwa;
+    XSizeHints               normal_hints;
 
     if( initial_x_size <= 0 )
         initial_x_size = 100;
@@ -85,20 +87,26 @@ public  Status  X_create_window_with_visual(
     {
         initial_x_pos = 0;
         initial_y_pos = 0;
+        setting_position = FALSE;
     }
-/*
     else
     {
         int    screen_x_size, screen_y_size;
 
         X_get_screen_size( &screen_x_size, &screen_y_size );
 
-        initial_y_pos = screen_y_size - 1 - initial_y_pos;
+        if( initial_y_size >= 0 )
+            initial_y_pos = screen_y_size-1 - (initial_y_pos+initial_y_size-1);
+        else
+            initial_y_pos = screen_y_size - 1 - initial_y_pos;
 
+        setting_position = TRUE;
+
+/*
         cwa.override_redirect = TRUE;
         cwa_mask |= CWOverrideRedirect;
-    }
 */
+    }
 
     window->window_id = XCreateWindow( X_get_display(),
                                RootWindow( X_get_display(),
@@ -109,6 +117,16 @@ public  Status  X_create_window_with_visual(
                                cwa_mask, &cwa );
 
     XStoreName( X_get_display(), window->window_id, title );
+
+    if( setting_position )
+    {
+        normal_hints.flags = USPosition;
+        normal_hints.x = initial_x_pos;
+        normal_hints.y = initial_y_pos;
+        XSetWMProperties( X_get_display(), window->window_id,
+                          NULL, NULL, NULL, 0,
+                          &normal_hints, NULL, NULL );
+    }
 
     event_mask = KeyPressMask |
                  KeyReleaseMask |
@@ -284,7 +302,7 @@ private  BOOLEAN  translate_key(
 
     char_count = XLookupString( &x_event->xkey, buffer, 10, &keysym, &compose );
 
-    *key = buffer[0];
+    *key = ((unsigned char *) buffer) [0];
 
     return( char_count >= 1 );
 }
