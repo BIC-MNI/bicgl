@@ -59,7 +59,6 @@ public  Status  X_create_window_with_visual(
     X_window_struct  *window )
 {
     int                      event_mask, cwa_mask;
-    int                      screen_x_size, screen_y_size;
     XEvent                   event;
     XSetWindowAttributes     cwa;
 
@@ -77,6 +76,8 @@ public  Status  X_create_window_with_visual(
     if( initial_x_pos >= 0 && initial_y_pos >= 0 )
     {
 /*
+        int    screen_x_size, screen_y_size;
+
         X_get_screen_size( &screen_x_size, &screen_y_size );
 
         initial_y_pos = screen_y_size - 1 - initial_y_pos;
@@ -191,7 +192,7 @@ public  int  X_get_n_colours(
 
 public  void  X_set_colour_map_entry(
     X_window_struct          *window,
-    int                      index,
+    int                      ind,
     int                      r,
     int                      g,
     int                      b )
@@ -207,7 +208,7 @@ public  void  X_set_colour_map_entry(
     def.green = g << 8;
     def.blue = b << 8;
     def.flags = DoRed | DoGreen | DoBlue;
-    def.pixel = index;
+    def.pixel = ind;
 
     XStoreColor( X_get_display(), window->colour_map, &def );
 }
@@ -456,8 +457,6 @@ private  void  bind_special_keys()
         bind_key( table[i].keysym, table[i].character );
 }
 
-private  char  font_named_str[] = "*-helvetica-medium-r-normal--\?\?-%d-*";
-
 #define  MAX_NAMES   10
 #define  MAX_FONT_SIZE_ERROR   5
 
@@ -466,16 +465,23 @@ private  BOOLEAN  find_font(
     int              size,
     STRING           font_name )
 {
-    int      i, n_returned;
+    int      n_returned;
     BOOLEAN  found;
     STRING   pattern;
     char     **names;
     int      dpi, family, width, slant, weight;
+/*
     static   char  *dpis[] = { "100", "75" };
     static   char  *families[] = { "helvetica", "times", "courier" };
     static   char  *widths[] = { "normal", "narrow" };
     static   char  *slants[] = { "r", "o", "i" };
     static   char  *weights[] = { "medium", "bold" };
+*/
+    static   char  *dpis[] = { "100", "75" };
+    static   char  *families[] = { "helvetica" };
+    static   char  *widths[] = { "normal" };
+    static   char  *slants[] = { "r" };
+    static   char  *weights[] = { "medium" };
 
     found = FALSE;
 
@@ -510,21 +516,21 @@ private  BOOLEAN  find_font(
 
                         found = (n_returned > 0 );
 
-                        if( found )
+                        if( found || type == FIXED_FONT )
                             break;
                     }
-                    if( found )
+                    if( found || type == FIXED_FONT )
                         break;
                 }
 
-                if( found )
+                if( found || type == FIXED_FONT )
                     break;
             }
-            if( found )
+            if( found || type == FIXED_FONT )
                 break;
         }
 
-        if( found )
+        if( found || type == FIXED_FONT )
             break;
     }
 
@@ -562,7 +568,14 @@ public  BOOLEAN  X_get_font(
            (type != FIXED_FONT || offset <= MAX_FONT_SIZE_ERROR) );
 
     if( found )
+    {
         *x_font = XLoadFont( X_get_display(), font_name );
+        if( *x_font == 0 )
+        {
+            print_error( "Could not load font: %s\n", font_name );
+            found = FALSE;
+        }
+    }
 
     return( found );
 }

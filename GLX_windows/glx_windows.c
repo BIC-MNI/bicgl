@@ -183,6 +183,7 @@ public  Status  WS_create_window(
         }
     }
 
+    window->n_fonts = 0;
 
     return( status );
 }
@@ -190,6 +191,11 @@ public  Status  WS_create_window(
 public  void  WS_delete_window(
     WS_window_struct  *window )
 {
+    if( window->n_fonts > 0 )
+    {
+        FREE( window->font_list_bases );
+    }
+
     glXDestroyContext( X_get_display(), window->graphics_context );
     X_delete_window( &window->x_window );
     if( window->overlay_present )
@@ -355,14 +361,47 @@ public  void  WS_build_font_in_window(
     int               font_index,
     WS_font_info      *font_info )
 {
-    int   first, last, listBase;
+    int   i, first, last, listBase;
 
     first = font_info->x_font_info->min_char_or_byte2;
     last = font_info->x_font_info->max_char_or_byte2;
 
-    listBase = 1 + font_index * 256;
+#ifdef DISABLE_TEXT
+    listBase = 0;
+#else
+    listBase = glGenLists( last + 1 );
 
-    glXUseXFont( font_info->x_font, first, last-first+1, listBase+first );
+    if( listBase == 0 )
+    {
+        print_error( "WS_build_font_in_window(): out of display lists.\n" );
+    }
+    else
+    {
+        int  n_used;
+
+        glXUseXFont( font_info->x_font, first, last-first+1, listBase+first );
+
+        n_used = 0;
+        for_less( i, listBase, listBase + last )
+            if( glIsList( i ) )
+                ++n_used;
+
+        if( n_used == 0 )
+            print( "Fopnt: %d  No display lists used for font: %d\n",
+                   font_info->x_font );
+    }
+#endif
+
+    if( font_index >= window->n_fonts )
+    {
+        SET_ARRAY_SIZE( window->font_list_bases, window->n_fonts, font_index+1,
+                        DEFAULT_CHUNK_SIZE );
+        for_less( i, window->n_fonts, font_index )
+            window->font_list_bases[i] = -1;
+        window->n_fonts = font_index + 1;
+    }
+
+    window->font_list_bases[font_index] = listBase;
 }
 
 public  void  WS_delete_font_in_window(
@@ -374,9 +413,22 @@ public  void  WS_delete_font_in_window(
 
     last = font_info->x_font_info->max_char_or_byte2;
 
-    listBase = 1 + font_index * 256;
+    listBase = window->font_list_bases[font_index];
 
-    glDeleteLists( listBase, last + 1 );
+    if( listBase > 0 )
+        glDeleteLists( listBase, last + 1 );
+
+    window->font_list_bases[font_index] = -1;
+}
+
+public  BOOLEAN  WS_set_font(
+    WS_window_struct     *window,     /* ARGSUSED */
+    int                  font_index )
+{
+    if( window->font_list_bases[font_index] > 0 )
+        glListBase( window->font_list_bases[font_index] );
+
+    return( window->font_list_bases[font_index] > 0 );
 }
 
 public  void  WS_delete_font(
