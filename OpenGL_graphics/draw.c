@@ -166,7 +166,7 @@ public  BOOLEAN  GS_set_font(
     int             font_index,
     WS_font_info    *font )
 {
-    return( WS_set_font( window->WS_window, font_index ) );
+    return( WS_set_font( window->WS_window, font_index, font ) );
 }
 
 /* ARGSUSED */
