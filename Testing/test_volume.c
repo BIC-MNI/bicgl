@@ -14,11 +14,12 @@ int  main(
     Real           scale;
     Colour         *rgb_map;
     char           *filename;
+    static String  dim_names[] = { MIxspace, MIyspace, MIzspace };
 
     initialize_argument_processing( argc, argv );
     (void) get_string_argument( "/nil/david/big_data/avg.mnc", &filename );
 
-    status = input_volume( filename, &volume );
+    status = input_volume( filename, dim_names, &volume );
 
     get_volume_voxel_range( volume, &min_value, &max_value );
 
@@ -51,9 +52,9 @@ int  main(
         rgb_map[i] = make_Colour_0_1( intensity, intensity, intensity );
     }
 
-    scale = (Real) x_size / (Real) sizes[X];
-    if( (Real) y_size / (Real) sizes[Y] < scale )
-        scale = (Real) y_size / (Real) sizes[Y];
+    scale = (Real) x_size / ((Real) sizes[X] * separations[X]);
+    if( (Real) y_size / ((Real) sizes[Y] * separations[Y]) < scale )
+        scale = (Real) y_size / ((Real) sizes[Y] * separations[Y]);
 
     create_volume_slice( volume, (Real) sizes[Z] / 2.0,
                          0.0, 0.0, scale, scale,
