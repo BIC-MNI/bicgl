@@ -49,6 +49,9 @@ public  Status  WS_create_window(
         print( "WS_create_window(): cannot handle overlay planes yet.\n" );
     }
 
+    ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_LEVEL, DEFAULT_CHUNK_SIZE);
+    ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 0, DEFAULT_CHUNK_SIZE);
+
     if( colour_map_mode )
     {
 /*
@@ -60,6 +63,15 @@ public  Status  WS_create_window(
     else
     {
         ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_RGBA, DEFAULT_CHUNK_SIZE);
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_RED_SIZE,
+                              DEFAULT_CHUNK_SIZE );
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 1, DEFAULT_CHUNK_SIZE );
+        ADD_ELEMENT_TO_ARRAY( attrib,n_attrib, GLX_GREEN_SIZE,
+                              DEFAULT_CHUNK_SIZE );
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 1, DEFAULT_CHUNK_SIZE );
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, GLX_BLUE_SIZE,
+                              DEFAULT_CHUNK_SIZE );
+        ADD_ELEMENT_TO_ARRAY( attrib, n_attrib, 1, DEFAULT_CHUNK_SIZE );
     }
 
     if( double_buffer_flag )
