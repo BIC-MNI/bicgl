@@ -1,0 +1,16 @@
+2000-10-07  Steve Robbins  <steve@nyongwa.montreal.qc.ca>
+
+	* tagged as release-1_3: sources copied from ~david/Source/Graphics, 
+	with several files rolled back to a revision that matches that found 
+	in the `Display+register_src_v1.3' tarball.  In addition, the 
+	following files from the tarball matched *no* revision.
+
+	* GLUT_windows/glut_windows.c:
+	* GLUT_windows/Include/glut_window_prototypes.h:
+	* Include/graphics_prototypes.h:
+	* IrisGL_graphics/Include/irisgl_graphics_prototypes.h:
+	* OpenGL_graphics/Include/opengl_graphics_prototypes.h:
+	copied from the `Display+register_src_v1.3' tarball, as
+	no CVS revision matched them.
+
+	
