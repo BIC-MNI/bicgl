@@ -11,12 +11,15 @@ typedef  struct
 {
     X_window_struct   x_window;
     GLXContext        graphics_context;
+    BOOLEAN           overlay_present;
+    X_window_struct   overlay_window;
+    GLXContext        overlay_context;
 }
 WS_window_struct;
 
 typedef  struct
 {
-    GLint         listBase;
+    Font          x_font;
     XFontStruct   *x_font_info;
 }  WS_font_info;
 

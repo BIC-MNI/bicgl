@@ -120,7 +120,7 @@ public  Status  GS_create_window(
 ---------------------------------------------------------------------------- */
 
 private  void  initialize_window(
-    Gwindow   window )   /* ARGSUSED */
+    Gwindow   window      /* ARGSUSED */ )
 {
 }
 
@@ -166,14 +166,14 @@ public  BOOLEAN  GS_has_rgb_mode()
 }
 
 public  BOOLEAN  GS_set_double_buffer_state(
-    BOOLEAN        flag )
+    BOOLEAN        flag   /* ARGSUSED */ )
 {
     print_error( "GS_set_double_buffer_state(): OpenGL cannot change state.\n");
     return( FALSE );
 }
 
 public  void  GS_set_colour_map_state(
-    BOOLEAN        flag )
+    BOOLEAN        flag /*    ARGSUSED */ )
 {
     print_error( "GS_set_colour_map_state():  OpenGL cannot change state.\n" );
 }
@@ -193,7 +193,7 @@ public  void  GS_set_colour_map_state(
 ---------------------------------------------------------------------------- */
 
 public  int  GS_get_n_colour_map_entries(
-    Gwindow  window  ) /* ARGSUSED */
+    Gwindow  window   /* ARGSUSED */ )
 {
     GLint  n_bits;
     int    n_colours;
@@ -211,7 +211,7 @@ public  int  GS_get_n_colour_map_entries(
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : GS_set_colour_map_entry
 @INPUT      : window
-              index
+              ind
               colour
 @OUTPUT     : 
 @RETURNS    : 
@@ -225,10 +225,10 @@ public  int  GS_get_n_colour_map_entries(
 
 public  void  GS_set_colour_map_entry(
     Gwindow         window,
-    int             index,
+    int             ind,
     Colour          colour )
 {
-    WS_set_colour_map_entry( window->WS_window, index, colour );
+    WS_set_colour_map_entry( window->WS_window, ind, colour );
 }
 
 public  BOOLEAN  GS_is_double_buffer_supported( void )
@@ -237,7 +237,10 @@ public  BOOLEAN  GS_is_double_buffer_supported( void )
 
     glGetIntegerv( GL_DOUBLEBUFFER, &available );
 
-    return( TRUE || available );
+    return( TRUE );
+/*
+    return( available );
+*/
 }
 
 public  BOOLEAN  GS_is_depth_buffer_supported( void )
@@ -249,9 +252,12 @@ public  BOOLEAN  GS_is_depth_buffer_supported( void )
     int       n_bits;
 
     glGetIntegerv( GL_DEPTH_BITS, &n_bits );
-    available = (n_bits > 0);
 
-    return( TRUE || available );
+    return( TRUE );
+/*
+    available = (n_bits > 0);
+    return( available );
+*/
 #endif
 }
 
@@ -298,21 +304,9 @@ public  void  GS_set_depth_buffer_state(
 public  Status  GS_delete_window(
     Gwindow   window )
 {
-    Status    status;
+    WS_delete_window( window->WS_window );
 
-    if( window->WS_window->x_window.window_id >= 0 )
-    {
-        WS_delete_window( window->WS_window );
-
-        status = OK;
-    }
-    else
-    {
-        print_error( "Error:  tried to delete invalid window.\n" );
-        status = ERROR;
-    }
-
-    return( status );
+    return( OK );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -361,13 +355,14 @@ private  void  clear_viewport(
     {
         if( window->colour_map_state )
         {
-            glClearIndex( colour );
+            glClearIndex( (GLfloat) colour );
         }
         else
         {
-            glClearColor( get_Colour_r_0_1(colour),
-                          get_Colour_g_0_1(colour),
-                          get_Colour_b_0_1(colour), 1.0 );
+            glClearColor( (GLclampf) get_Colour_r_0_1(colour),
+                          (GLclampf) get_Colour_g_0_1(colour),
+                          (GLclampf) get_Colour_b_0_1(colour),
+                          1.0 );
         }
 
         glClear( GL_COLOR_BUFFER_BIT );
@@ -386,7 +381,7 @@ private  void  clear_viewport(
 public  void  GS_clear_overlay()
 {
 #ifndef  TWO_D_ONLY
-    glClearIndex( 0 );
+    glClearIndex( 0.0 );
     glClear( GL_COLOR_BUFFER_BIT );
 #endif
 }
@@ -503,12 +498,12 @@ public  void  set_bitplanes(
         switch( bitplanes )
         {
         case NORMAL_PLANES:
-            glDepthMask( TRUE );
+            glDepthMask( (GLboolean) TRUE );
             update_blend_function( window, bitplanes );
             break;
 
         case OVERLAY_PLANES:
-            glDepthMask( FALSE );
+            glDepthMask( (GLboolean) FALSE );
             update_blend_function( window, bitplanes );
             break;
         }
@@ -518,12 +513,12 @@ public  void  set_bitplanes(
 
 public  void  GS_set_overlay_colour_map(
     Gwindow         window,
-    int             index,
+    int             ind,
     Colour          colour )
 {
 #ifndef  TWO_D_ONLY
     if( window->n_overlay_planes > 0 )
-        WS_set_overlay_colour_map_entry( window->WS_window, index, colour );
+        WS_set_overlay_colour_map_entry( window->WS_window, ind, colour );
 #endif
 }
 

@@ -306,10 +306,10 @@ public  void  WS_get_window_size(
 
 public  void  WS_set_colour_map_entry(
     WS_window_struct  *window,
-    int               index,
+    int               ind,
     Colour            colour )
 {
-    X_set_colour_map_entry( &window->x_window, index,
+    X_set_colour_map_entry( &window->x_window, ind,
                             get_Colour_r(colour),
                             get_Colour_g(colour),
                             get_Colour_b(colour) );
@@ -317,10 +317,10 @@ public  void  WS_set_colour_map_entry(
 
 public  void  WS_set_overlay_colour_map_entry(
     WS_window_struct  *window,
-    int               index,
+    int               ind,
     Colour            colour )
 {
-    X_set_colour_map_entry( &window->overlay_window, index,
+    X_set_colour_map_entry( &window->overlay_window, ind,
                             get_Colour_r(colour),
                             get_Colour_g(colour),
                             get_Colour_b(colour) );
@@ -351,7 +351,7 @@ public  BOOLEAN  WS_get_font(
 }
 
 public  void  WS_build_font_in_window(
-    WS_window_struct  *window,
+    WS_window_struct  *window,     /* ARGSUSED */
     int               font_index,
     WS_font_info      *font_info )
 {
@@ -366,13 +366,12 @@ public  void  WS_build_font_in_window(
 }
 
 public  void  WS_delete_font_in_window(
-    WS_window_struct     *window,
+    WS_window_struct     *window,     /* ARGSUSED */
     int                  font_index,
     WS_font_info         *font_info )
 {
-    int   first, last, listBase;
+    int   last, listBase;
 
-    first = font_info->x_font_info->min_char_or_byte2;
     last = font_info->x_font_info->max_char_or_byte2;
 
     listBase = 1 + font_index * 256;
@@ -383,10 +382,6 @@ public  void  WS_delete_font_in_window(
 public  void  WS_delete_font(
     WS_font_info  *info )
 {
-    int  last;
-
-    last = info->x_font_info->max_char_or_byte2;
-    glDeleteLists( info->listBase, last+1 );
     XUnloadFont( X_get_display(), info->x_font_info->fid );
     XFreeFont( X_get_display(), info->x_font_info );
 }
