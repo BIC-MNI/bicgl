@@ -28,10 +28,6 @@ IRISGL_-O3_TARGETS = $(LIB_IRISGL-O3)
 
 GLUT_INCLUDES = -I$(SRC_DIRECTORY)/GLUT/include
 
-OPENGL_INCLUDES = -IInclude \
-                  -IOpenGL_graphics/Include \
-                  -IGLUT_windows/Include \
-                  -IX_windows/Include $(X11_INCLUDES)
 OPENGL_INCLUDES = -IOpenGL_graphics/Include \
                   -IInclude \
                   -IGLUT_windows/Include $(GLUT_INCLUDES) $(X11_INCLUDES)
@@ -56,27 +52,27 @@ $(ARCH_DIR):
 
 irisgl: $(ARCH_DIR)
 	make library "TARGETS=$(IRISGL_TARGETS)" "G_INCLUDE=$(IRISGL_INCLUDES)"\
-                     "OPT=$(OPT)"
+                     "OPT=$(OPT)" "CC=$(CC)"
 
 irisgl-O3: $(ARCH_DIR)
 	make library "TARGETS=$(IRISGL_-O3_TARGETS)" "G_INCLUDE=$(IRISGL_INCLUDES)"\
-                     "OPT=$(OPT)"
+                     "OPT=$(OPT)" "CC=$(CC)"
 
-opengl: $(ARCH_DIR) $(PRINT_X_COLOURS)
+opengl: $(ARCH_DIR)
 	make library "TARGETS=$(OPENGL_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
-                     "OPT=$(OPT)"
+                     "OPT=$(OPT)" "CC=$(CC)"
 
-opengl-O3: $(ARCH_DIR) $(PRINT_X_COLOURS)
+opengl-O3: $(ARCH_DIR)
 	make library "TARGETS=$(OPENGL_-O3_TARGETS)" "G_INCLUDE=$(OPENGL_INCLUDES)"\
-                     "OPT=$(OPT)"
+                     "OPT=$(OPT)" "CC=$(CC)"
 
-mesa: $(ARCH_DIR) $(PRINT_X_COLOURS)
+mesa: $(ARCH_DIR)
 	make library "TARGETS=$(MESA_TARGETS)" "G_INCLUDE=$(MESA_INCLUDES)"\
-                     "OPT=$(OPT)"
+                     "OPT=$(OPT)" "CC=$(CC)"
 
-mesa-O3: $(ARCH_DIR) $(PRINT_X_COLOURS)
+mesa-O3: $(ARCH_DIR)
 	make library "TARGETS=$(MESA_-O3_TARGETS)" "G_INCLUDE=$(MESA_INCLUDES)"\
-                     "OPT=$(OPT)"
+                     "OPT=$(OPT)" "CC=$(CC)"
 
 #------  three lint targets
 
@@ -222,33 +218,15 @@ $(LIB_IRISGL-O3): $(IRISGL_OBJECTS:.o=.u)
 $(LINT_IRISGL): $(IRISGL_SRC:.c=.ln)
 	$(LINT) -x -u -o $(IRISGL_LIBNAME) $(IRISGL_SRC:.c=.ln)
 
-#library: \
-#         $(PROTOTYPE_FILE) \
-#         $(X_PROTOTYPE_FILE) \
-#         $(GLX_PROTOTYPE_FILE) \
-#         $(OPENGL_PROTOTYPE_FILE) \
-#         $(GL_PROTOTYPE_FILE) \
-#         $(TARGETS)
-
 library: \
          $(PROTOTYPE_FILE) \
-         $(X_PROTOTYPE_FILE) \
          $(GLUT_PROTOTYPE_FILE) \
          $(OPENGL_PROTOTYPE_FILE) \
          $(GL_PROTOTYPE_FILE) \
          $(TARGETS)
 
-#lint: \
-#      $(PROTOTYPE_FILE) \
-#      $(X_PROTOTYPE_FILE) \
-#      $(GLX_PROTOTYPE_FILE) \
-#      $(OPENGL_PROTOTYPE_FILE) \
-#      $(GL_PROTOTYPE_FILE) \
-#      $(LINT_LIBRARY)
-
 lint: \
       $(PROTOTYPE_FILE) \
-      $(X_PROTOTYPE_FILE) \
       $(GLUT_PROTOTYPE_FILE) \
       $(OPENGL_PROTOTYPE_FILE) \
       $(GL_PROTOTYPE_FILE) \

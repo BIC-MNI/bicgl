@@ -93,3 +93,23 @@ public  void  G_set_markers_labels_visibility(
 {
     window->marker_labels_visibility = state;
 }
+
+public  void  G_set_dither_state(
+    Gwindow      window,
+    BOOLEAN      state )
+{
+    if( state != window->dither_state )
+    {
+        set_current_window( window );
+
+        GS_set_dither_state( state );
+
+        window->dither_state = state;
+    }
+}
+
+public  BOOLEAN  G_get_dither_state(
+    Gwindow      window )
+{
+    return( window->dither_state );
+}

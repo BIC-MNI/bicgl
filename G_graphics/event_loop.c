@@ -113,7 +113,6 @@ private  void  assign_mouse_position(
     }
 }
 
-
 private  Gwindow  get_key_or_mouse_event_window(
     Window_id   window_id,
     int         x,
@@ -127,7 +126,8 @@ private  Gwindow  get_key_or_mouse_event_window(
     if( window != NULL )
     {
         assign_mouse_position( window, x, y );
-        keyboard_modifiers = modifier;
+        if( modifier >= 0 )
+            keyboard_modifiers = modifier;
     }
 
     return( window );
@@ -264,14 +264,13 @@ private  void  global_mouse_movement_function(
 {
     Gwindow     window;
 
-    window = get_event_window( window_id );
+    window = get_key_or_mouse_event_window( window_id, x, y, -1 );
     if( window == NULL )
         return;
 
-    assign_mouse_position( window, x, y );
-
     if( window->mouse_movement_callback != NULL )
-        (*window->mouse_movement_callback)( window, x, y,
+        (*window->mouse_movement_callback)( window,
+                                            current_mouse_x, current_mouse_y,
                                             window->mouse_movement_data );
 }
 
@@ -291,7 +290,8 @@ private  void  global_left_mouse_down_function(
     left_button_state = TRUE;
 
     if( window->left_mouse_down_callback != NULL )
-        (*window->left_mouse_down_callback)( window, x, y,
+        (*window->left_mouse_down_callback)( window,
+                                             current_mouse_x, current_mouse_y,
                                              window->left_mouse_down_data );
 }
 
@@ -310,7 +310,8 @@ private  void  global_left_mouse_up_function(
     left_button_state = FALSE;
 
     if( window->left_mouse_up_callback != NULL )
-        (*window->left_mouse_up_callback)( window, x, y,
+        (*window->left_mouse_up_callback)( window,
+                                           current_mouse_x, current_mouse_y,
                                            window->left_mouse_up_data );
 }
 
@@ -329,7 +330,8 @@ private  void  global_middle_mouse_down_function(
     middle_button_state = TRUE;
 
     if( window->middle_mouse_down_callback != NULL )
-        (*window->middle_mouse_down_callback)( window, x, y,
+        (*window->middle_mouse_down_callback)( window,
+                                               current_mouse_x, current_mouse_y,
                                                window->middle_mouse_down_data );
 }
 
@@ -348,7 +350,8 @@ private  void  global_middle_mouse_up_function(
     middle_button_state = FALSE;
 
     if( window->middle_mouse_up_callback != NULL )
-        (*window->middle_mouse_up_callback)( window, x, y,
+        (*window->middle_mouse_up_callback)( window,
+                                             current_mouse_x, current_mouse_y,
                                              window->middle_mouse_up_data );
 }
 
@@ -367,7 +370,8 @@ private  void  global_right_mouse_down_function(
     right_button_state = TRUE;
 
     if( window->right_mouse_down_callback != NULL )
-        (*window->right_mouse_down_callback)( window, x, y,
+        (*window->right_mouse_down_callback)( window,
+                                              current_mouse_x, current_mouse_y,
                                               window->right_mouse_down_data );
 }
 
@@ -386,7 +390,8 @@ private  void  global_right_mouse_up_function(
     right_button_state = FALSE;
 
     if( window->right_mouse_up_callback != NULL )
-        (*window->right_mouse_up_callback)( window, x, y,
+        (*window->right_mouse_up_callback)( window,
+                                            current_mouse_x, current_mouse_y,
                                             window->right_mouse_up_data );
 }
 

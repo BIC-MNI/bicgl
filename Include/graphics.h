@@ -47,6 +47,7 @@ typedef  struct   window_struct
     BOOLEAN                render_lines_as_curves_state;
     int                    n_curve_segments;
     BOOLEAN                marker_labels_visibility;
+    BOOLEAN                dither_state;
 
     int                    x_viewport_min;
     int                    x_viewport_max;

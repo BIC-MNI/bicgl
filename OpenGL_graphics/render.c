@@ -56,3 +56,12 @@ public  void  GS_set_n_curve_segments(
     curveprecision( n_segments );
 #endif
 }
+
+public  void  GS_set_dither_state(
+    BOOLEAN     state )
+{
+    if( state )
+        glEnable( GL_DITHER );
+    else
+        glDisable( GL_DITHER );
+}

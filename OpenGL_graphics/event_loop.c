@@ -3,7 +3,7 @@
 #include  <GS_graphics.h>
 
 public  void  GS_set_update_function(
-    void  (*func)( Window_id ) )
+    void  (*func)( Window_id, int, int ) )
 {
     WS_set_update_function( func );
 }

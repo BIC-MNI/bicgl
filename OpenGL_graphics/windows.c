@@ -51,6 +51,7 @@ public  void  GS_initialize( void )
 
 public  void  GS_terminate( void )
 {
+    WS_terminate();
 }
 
 public  BOOLEAN  GS_can_switch_double_buffering( void )
@@ -614,4 +615,28 @@ public  void  GS_set_overlay_colour_map(
 public  void  GS_swap_buffers( void )
 {
     WS_swap_buffers();
+}
+
+public  void  GS_raise_window(
+    GSwindow        window )
+{
+    WS_raise_window( &window->WS_window );
+}
+
+public  void  GS_lower_window(
+    GSwindow        window )
+{
+    WS_lower_window( &window->WS_window );
+}
+
+public  void  GS_iconify_window(
+    GSwindow        window )
+{
+    WS_iconify_window( &window->WS_window );
+}
+
+public  void  GS_deiconify_window(
+    GSwindow        window )
+{
+    WS_deiconify_window( &window->WS_window );
 }

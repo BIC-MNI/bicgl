@@ -120,6 +120,9 @@ private  void  reinitialize_window(
     window->backface_culling_state = !window->backface_culling_state;
     G_backface_culling_state( window, !window->backface_culling_state );
 
+    window->dither_state = !window->dither_state;
+    G_set_dither_state( window, !window->dither_state );
+
     n_segments = window->n_curve_segments;
     ++window->n_curve_segments;
     G_set_n_curve_segments( window, n_segments );
@@ -170,6 +173,9 @@ private  void  initialize_window(
 
     window->shaded_mode_state = OFF;
     G_set_shaded_state( window, ON );
+
+    window->dither_state = OFF;
+    G_set_dither_state( window, ON );
 
     G_set_render_lines_as_curves_state( window, OFF );
 

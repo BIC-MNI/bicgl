@@ -2,20 +2,20 @@
 #include  <internal_volume_io.h>
 #include  <graphics.h>
 
+#define  COLOUR_INDEX1       200
+#define  COLOUR_INDEX2       201
+#define  COLOUR1             CYAN
+#define  COLOUR2             MAGENTA
+
 #define  LIGHT_INDEX         0
 
 #define  PIXELS_X_ZOOM       1.0
 #define  PIXELS_Y_ZOOM       1.0
 
-#define  N_FONTS             13
+#define  N_FONTS             10
 #define  N_FONTS_TO_DRAW      N_FONTS
 
-#define  TIMER_INCREMENT  0.01
-
-#define  X_VELOCITY  10.23
-#define  Y_VELOCITY  7.325
-
-#define  MAX_FRAMES_PER_SECOND  60
+#define  TIMER_INCREMENT  0.1
 
 typedef struct
 {
@@ -42,14 +42,8 @@ typedef struct
 
 private  void  update(
     Gwindow    window,
-    BOOLEAN    full_update_required,
     void       *update_data )
 {
-static  BOOLEAN   first = TRUE;
-static  int   count = 0;
-static  Real  start_time = 0;
-Real  end_time;
-
     int           i;
     main_struct   *info;
 
@@ -60,42 +54,14 @@ Real  end_time;
     G_set_zbuffer_state( window, OFF );
     G_set_lighting_state( window, OFF );
     G_set_view_type( window, PIXEL_VIEW );
+
+    G_set_colour_map_entry( window, COLOUR_INDEX1, COLOUR1 );
+    G_set_colour_map_entry( window, COLOUR_INDEX2, COLOUR2 );
+
     G_draw_pixels( window, &info->pixels ); 
-    G_draw_pixels( window, &info->ball ); 
-
-    G_set_zbuffer_state( window, ON );
-    G_set_lighting_state( window, ON );
-    G_set_view_type( window, MODEL_VIEW );
-    G_draw_polygons( window, &info->polygons );
-    G_set_lighting_state( window, OFF );
-    G_draw_lines( window, &info->lines );
-
-    G_set_lighting_state( window, OFF );
-    G_set_view_type( window, PIXEL_VIEW );
-    G_draw_lines( window, &info->lines_2d );
-    G_draw_lines( window, &info->single_point );
     G_draw_text( window, &info->text );
 
-    for_less( i, 0, N_FONTS_TO_DRAW )
-        G_draw_text( window, &info->font_examples[i] );
-
     G_update_window( window );
-
-    if( first )
-    {
-        first = FALSE;
-        start_time = current_realtime_seconds();
-    }
-    ++count;
-
-    if( count >= 100 )
-    {
-        end_time = current_realtime_seconds();
-        (void) printf( "%6.2f frames per second\n",
-                    (Real) count / (end_time - start_time) );
-        count = 0;
-        start_time = end_time;
-    }
 }
 
 private  void  resize_window(
@@ -182,29 +148,10 @@ private  void  middle_mouse_down(
     void       *update_data )
 {
     main_struct   *info;
-    static  Gwindow       second;
-    static  BOOLEAN  first = TRUE;
 
     info = (main_struct *) update_data;
 
     print( "MIDDLE mouse down\n" );
-
-    if( first )
-    {
-        first = FALSE;
-        (void) G_create_window( "Second Window",
-                            500, 600, 200, 200,
-                            FALSE, TRUE, TRUE, 0, &second );
-    }
-
-    G_clear_window( second );
-
-    G_set_zbuffer_state( second, OFF );
-    G_set_lighting_state( second, OFF );
-    G_set_view_type( second, PIXEL_VIEW );
-    G_draw_pixels( second, &info->ball ); 
-    G_update_window( second );
-
 }
 
 private  void  middle_mouse_up(
@@ -238,7 +185,6 @@ private  void  right_mouse_down(
         print( "Double buffering: Off\n" );
 
     G_set_double_buffer_state( window, info->double_buffer_flag );
-
     G_set_update_flag( window );
 }
 
@@ -299,47 +245,12 @@ private  void  leave_window(
     G_set_update_flag( window );
 }
 
-private  void  quit_program(
-    main_struct  *info )
-{
-    int   i;
-
-    print( "Quitting\n" );
-
-    delete_lines( &info->lines );
-    delete_lines( &info->lines_2d );
-    delete_lines( &info->single_point );
-
-    delete_polygons( &info->polygons );
-
-    delete_pixels( &info->pixels );
-
-    delete_text( &info->text );
-
-    for_less( i, 0, N_FONTS )
-        delete_text( &info->font_examples[i] );
-
-    (void) G_delete_window( info->window );
-
-    G_terminate();
-
-    output_alloc_to_file( NULL );
-
-    exit( 0 );
-}
-
-private  void  quit_window(
-    Gwindow    window,
-    void       *update_data )
-{
-    quit_program( (main_struct *) update_data );
-}
-
 private  void  key_down(
     Gwindow    window,
     int        key,
     void       *update_data )
 {
+    int           i;
     main_struct   *info;
 
     info = (main_struct *) update_data;
@@ -347,7 +258,30 @@ private  void  key_down(
     print( "Key pressed down: \"%c\" (%d)\n", key, key );
 
     if( key == '' )
-        quit_program( info );
+    {
+        print( "Quitting\n" );
+
+        delete_lines( &info->lines );
+        delete_lines( &info->lines_2d );
+        delete_lines( &info->single_point );
+
+        delete_polygons( &info->polygons );
+
+        delete_pixels( &info->pixels );
+
+        delete_text( &info->text );
+
+        for_less( i, 0, N_FONTS )
+            delete_text( &info->font_examples[i] );
+
+        (void) G_delete_window( info->window );
+
+        G_terminate();
+
+        output_alloc_to_file( NULL );
+
+        exit( 0 );
+    }
 }
 
 /* ARGSUSED */
@@ -377,37 +311,37 @@ private  void  timer_function(
 
     ball_size = (Real) info->ball.x_size;
 
-    if( info->ball_x < 0.0 ||
+    if( info->ball_x - ball_size < 0.0 ||
         info->ball_x + ball_size >= (Real) window_x_size ||
-        info->ball_y < 0.0 ||
+        info->ball_y - ball_size < 0.0 ||
         info->ball_y + ball_size >= (Real) window_y_size )
     {
-        info->ball_x = (Real) window_x_size / 2.0 - ball_size / 2.0;
-        info->ball_y = (Real) window_y_size / 2.0 - ball_size / 2.0;
+        info->ball_x = (Real) window_x_size / 2.0;
+        info->ball_y = (Real) window_y_size / 2.0;
     }
 
-    info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
-    if( info->ball_x < 0.0 )
+    info->ball_x += info->ball_x_dir;
+    if( info->ball_x - ball_size < 0.0 )
     {
         info->ball_x_dir = FABS( info->ball_x_dir );
-        info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
+        info->ball_x += info->ball_x_dir;
     }
     else if( info->ball_x + ball_size >= (Real) window_x_size )
     {
         info->ball_x_dir = - FABS( info->ball_x_dir );
-        info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
+        info->ball_x += info->ball_x_dir;
     }
 
-    info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
-    if( info->ball_y < 0.0 )
+    info->ball_y += info->ball_y_dir;
+    if( info->ball_y - ball_size < 0.0 )
     {
         info->ball_y_dir = FABS( info->ball_y_dir );
-        info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
+        info->ball_y += info->ball_y_dir;
     }
     else if( info->ball_y + ball_size >= (Real) window_y_size )
     {
         info->ball_y_dir = - FABS( info->ball_y_dir );
-        info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
+        info->ball_y += info->ball_y_dir;
     }
 
     info->ball.x_position = ROUND( info->ball_x );
@@ -453,13 +387,9 @@ int main(
                           SIZED_FONT,
                           SIZED_FONT,
                           SIZED_FONT,
-                          SIZED_FONT,
-                          SIZED_FONT,
-                          SIZED_FONT,
                           SIZED_FONT };
     static Real       font_sizes[N_FONTS] = { 10.0,
-                           6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
-                           15.0, 18.0, 24.0 };
+                           6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0 };
     static Surfprop   spr = { 0.2f, 0.5f, 0.5f, 20.0f, 1.0f };
     Point             point;
     Vector            normal, light_direction;
@@ -482,12 +412,10 @@ int main(
 
     status = G_create_window( "Test Window",
                               100, 600, 300, 300,
-                              FALSE, info.double_buffer_flag, TRUE, 0,
+                              TRUE, info.double_buffer_flag, TRUE, 0,
                               &info.window );
 
     G_set_transparency_state( info.window, ON );
-
-    G_set_window_update_min_interval( info.window, 1.0 / (Real) MAX_FRAMES_PER_SECOND );
 
     if( status != OK )
         return( 1 );
@@ -507,8 +435,7 @@ int main(
     /* ------- define text to be drawn (text.string filled in later ----- */
 
     fill_Point( point, 10.0, 10.0, 0.0 );
-    initialize_text( &info.text, &point,
-                     make_Colour(0,255,0), SIZED_FONT, 14.0 );
+    initialize_text( &info.text, &point, 1, SIZED_FONT, 14.0 );
     info.text.string = alloc_string( 2000 );
     (void) sprintf( info.text.string,
                                 "Mouse: %4d,%4d pixels   %4.2f,%4.2f window",
@@ -608,26 +535,24 @@ int main(
     y_position = 10;
     initialize_pixels( &info.pixels, x_position, y_position,
                        pixels_x_size, pixels_y_size,
-                       PIXELS_X_ZOOM, PIXELS_Y_ZOOM, RGB_PIXEL );
+                       PIXELS_X_ZOOM, PIXELS_Y_ZOOM, COLOUR_INDEX_8BIT_PIXEL );
 
     for_less( i, 0, pixels_x_size )
     {
         for_less( j, 0, pixels_y_size )
         {
-            PIXEL_RGB_COLOUR(info.pixels,i,j) = make_Colour_0_1(
-                      (Real) i / (Real) (pixels_x_size-1),
-                      (Real) j / (Real) (pixels_y_size-1), 0.0 );
+            PIXEL_COLOUR_INDEX_8(info.pixels,i,j) = COLOUR_INDEX1 + (i/10 + j/10) % 2;
         }
     }
 
     /* ------------ define bouncing ball ------------- */
 
-    ball_size = 5;
+    ball_size = 50;
 
-    info.ball_x = (Real) x_size / 2.0;
-    info.ball_y = (Real) y_size / 2.0;
-    info.ball_x_dir = X_VELOCITY;
-    info.ball_y_dir = Y_VELOCITY;
+    info.ball_x = 10.0;
+    info.ball_y = 10.0;
+    info.ball_x_dir = 2.324423;
+    info.ball_y_dir = 1.7123123;
 
     initialize_pixels( &info.ball, ROUND(info.ball_x), ROUND(info.ball_y),
                        ball_size, ball_size,
@@ -692,16 +617,13 @@ int main(
     G_set_mouse_movement_function( info.window, mouse_movement, (void *) &info );
     G_set_window_enter_function( info.window, enter_window, (void *) &info );
     G_set_window_leave_function( info.window, leave_window, (void *) &info );
-    G_set_window_quit_function( info.window, quit_window, (void *) &info );
     G_set_key_down_function( info.window, key_down, (void *) &info );
     G_set_key_up_function( info.window, key_up, (void *) &info );
 
     G_add_timer_function( TIMER_INCREMENT, timer_function, (void *) &info );
 
     info.last_message = current_realtime_seconds();
-/*
     G_add_idle_function( idle_function, (void *) &info );
-*/
 
     G_main_loop();
 
