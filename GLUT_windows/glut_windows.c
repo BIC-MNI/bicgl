@@ -145,10 +145,14 @@ public  Status  WS_create_window(
 
     mode = 0;
 
+/*
     if( colour_map_mode )
         mode |= GLUT_INDEX;
     else
         mode |= GLUT_RGB;
+*/
+
+    mode |= GLUT_INDEX;
 
     if( double_buffer_flag )
         mode |= GLUT_DOUBLE;
@@ -362,13 +366,22 @@ public  void  WS_get_window_size(
 }
 
 public  void  WS_set_colour_map_entry(
+    WSwindow          window,
     Bitplane_types    bitplane,
     int               ind,
     Colour            colour )
 {
+/*
+    glutSetWindow( window->top_level_window_id );
+*/
+
     glutSetColor( ind, (float) get_Colour_r_0_1(colour),
                        (float) get_Colour_g_0_1(colour),
                        (float) get_Colour_b_0_1(colour) );
+
+/*
+    glutSetWindow( window->window_id );
+*/
 }
 
 public  void  WS_set_overlay_colour_map_entry(
