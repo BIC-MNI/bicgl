@@ -139,7 +139,11 @@ public  void  GS_set_viewport(
     int            y_min,
     int            y_max )
 {
+#ifdef MESA_OPENGL
+    glViewport( x_min, y_min, x_max - x_min + 0, y_max - y_min + 0 );
+#else
     glViewport( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1 );
+#endif
 }
 
 public  void  clear_overlay_planes()

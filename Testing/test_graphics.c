@@ -7,6 +7,9 @@
 #define  PIXELS_Y_ZOOM       1.0
 
 #define  N_FONTS             10
+#define  N_FONTS_TO_DRAW      2
+
+#define  ROTATE_CONTINUOUSLY
 
 int main(
     int    argc,
@@ -52,7 +55,7 @@ int main(
     static Point      origin = { 0.0, 0.0, 2.0 };
     static Vector     up_direction = { 0.0, 1.0, 0.0 };
     static Vector     line_of_sight = { 0.0, 0.0, -1.0 };
-    int               n_iters = 100;
+    int               n_iters = 1;
 
     stereo_flag = (argc > 1);
 
@@ -63,7 +66,7 @@ int main(
                               100, 600, 300, 300,
                               FALSE, TRUE, FALSE, 0, &window );
 
-    G_set_transparency_state( window, OFF );
+    G_set_transparency_state( window, ON );
 
     if( status != OK )
         return( 1 );
@@ -286,11 +289,16 @@ int main(
 
         /* check if in rotation mode and moved mouse horizontally */
 
+#ifdef  ROTATE_CONTINUOUSLY
+        {
+            angle_in_degrees = 10.0;
+#else
         if( in_rotation_mode &&
             G_get_mouse_position( window, &mouse_x, &mouse_y ) &&
             mouse_x != prev_rotation_mouse_x )
         {
             angle_in_degrees = (prev_rotation_mouse_x - mouse_x);
+#endif
 
             make_rotation_transform( angle_in_degrees * DEG_TO_RAD, Y,
                                      &rotation_transform );
@@ -357,7 +365,7 @@ int main(
             G_draw_lines( window, &lines_2d );
             G_draw_text( window, &text );
 
-            for_less( i, 0, N_FONTS )
+            for_less( i, 0, N_FONTS_TO_DRAW )
                 G_draw_text( window, &font_examples[i] );
 
             G_update_window( window );
