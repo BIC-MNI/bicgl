@@ -6,9 +6,12 @@
 #define  PIXELS_X_ZOOM       2.0
 #define  PIXELS_Y_ZOOM       2.0
 
-main()
+int main(
+    int    argc,
+    char   *argv[] )
 {
     Status            status;
+    BOOLEAN           stereo_flag;
     window_struct     *window, *event_window;
     text_struct       text;
     lines_struct      lines;
@@ -28,16 +31,21 @@ main()
     int               prev_rotation_mouse_x;
     Real              angle_in_degrees;
     int               i, j, pixels_x_size, pixels_y_size;
-    Real              x, y;
+    Real              x, y, eye_separation;
     Transform         modeling_transform, rotation_transform;
     static Point      origin = { 0.0, 0.0, 2.0 };
     static Vector     up_direction = { 0.0, 1.0, 0.0 };
     static Vector     line_of_sight = { 0.0, 0.0, -1.0 };
 
+    stereo_flag = (argc > 1);
+
+    if( !stereo_flag || sscanf( argv[1], "%lf", &eye_separation ) != 1 )
+        eye_separation = 0.0;
+
     status = G_create_window( "Test Window", -1, -1, -1, -1, &window );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
-                   0.01, 4.0, ON, 2.0, 2.0, 2.0 );
+                   0.01, 4.0, ON, 2.0, stereo_flag, eye_separation, 2.0, 2.0 );
 
     fill_Point( point, -0.3, 0.3, 0.0 );
     G_transform_point( window, &point, MODEL_VIEW, &x_pixel, &y_pixel );
@@ -256,11 +264,15 @@ main()
 
         if( update_required )
         {
+/*
             G_draw_pixels( window, &pixels );
+*/
 
             G_set_view_type( window, MODEL_VIEW );
-            G_draw_polygons( window, &polygons );
             G_draw_lines( window, &lines );
+/*
+            G_draw_polygons( window, &polygons );
+*/
 
             G_set_view_type( window, PIXEL_VIEW );
             G_draw_text( window, &text );
