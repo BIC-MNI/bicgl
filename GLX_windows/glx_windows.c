@@ -218,15 +218,21 @@ public  BOOLEAN  WS_window_has_overlay_planes(
 private  void  set_window_normal_planes(
     WS_window_struct  *window )
 {
-    glXMakeCurrent( X_get_display(), window->x_window.window_id,
-                    window->graphics_context );
+    if( !glXMakeCurrent( X_get_display(), window->x_window.window_id,
+                         window->graphics_context ) )
+    {
+        print_error( "set_window_normal_planes():  could not make current.\n" );
+    }
 }
 
 private  void  set_window_overlay_planes(
     WS_window_struct  *window )
 {
-    glXMakeCurrent( X_get_display(), window->overlay_window.window_id,
-                    window->overlay_context );
+    if( !glXMakeCurrent( X_get_display(), window->overlay_window.window_id,
+                         window->overlay_context ) )
+    {
+        print_error( "set_window_overlay_planes():  could not make current.\n");
+    }
 }
 
 public  void  WS_set_current_window(
