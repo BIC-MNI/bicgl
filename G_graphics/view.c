@@ -1,6 +1,6 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 #define  CLOSEST_FRONT_PLANE    1.0e-5
 
@@ -242,6 +242,8 @@ private  void  define_3D_projection(
     {
         if( back_clip_distance <= front_clip_distance )
             back_clip_distance = front_clip_distance + CLOSEST_FRONT_PLANE;
+
+        GS_set_matrix_mode( PROJECTION_MATRIX );
 
         GS_ortho( -window_width / 2.0, window_width / 2.0,
                -window_height / 2.0, window_height / 2.0,

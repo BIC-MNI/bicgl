@@ -1,11 +1,22 @@
  
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 #include  <queue.h>
 
 private  BOOLEAN  left_mouse_down = FALSE;
+private  Gwindow  left_mouse_window = NULL;
 private  BOOLEAN  middle_mouse_down = FALSE;
+private  Gwindow  middle_mouse_window = NULL;
 private  BOOLEAN  right_mouse_down = FALSE;
+private  Gwindow  right_mouse_window = NULL;
+
+private  struct
+{
+    BOOLEAN  key_is_down;
+    Gwindow  window;
+}
+key_states[256];
+
 
 private  int  current_mouse_x = -1;
 private  int  current_mouse_y = -1;
@@ -31,10 +42,18 @@ private  BOOLEAN  initialized = FALSE;
 
 private  void  check_initialize_event_queue( void )
 {
+    int   i;
+
     if( !initialized )
     {
         initialized = TRUE;
         INITIALIZE_QUEUE( event_queue );
+
+        for_less( i, 0, 256 )
+        {
+            key_states[i].key_is_down = FALSE;
+            key_states[i].window = NULL;
+        }
     }
 }
 
@@ -48,13 +67,135 @@ public  void  delete_event_queue()
 
 private  void  check_event_queue( void )
 {
-    event_struct   event;
+    event_struct   event, pre_event;
 
     check_initialize_event_queue();
 
     while( GS_get_event( &event.type, &event.window,
                          &event.x_mouse, &event.y_mouse, &event.key_pressed ) )
     {
+        switch( event.type )
+        {
+        case KEY_UP_EVENT:
+            if( event.key_pressed >= 0 && event.key_pressed < 256 )
+            {
+                if( key_states[event.key_pressed].key_is_down )
+                {
+                    key_states[event.key_pressed].key_is_down = FALSE;
+                }
+                else
+                {
+                    pre_event.type = KEY_DOWN_EVENT;
+                    pre_event.window = event.window;
+                    pre_event.key_pressed = event.key_pressed;
+                    INSERT_IN_QUEUE( event_queue, pre_event );
+                }
+            }
+            break;
+
+        case KEY_DOWN_EVENT:
+            if( event.key_pressed >= 0 && event.key_pressed < 256 )
+            {
+                if( !key_states[event.key_pressed].key_is_down )
+                {
+                    key_states[event.key_pressed].key_is_down = TRUE;
+                    key_states[event.key_pressed].window = event.window;
+                }
+                else
+                {
+                    pre_event.type = KEY_UP_EVENT;
+                    pre_event.window = key_states[event.key_pressed].window;
+                    pre_event.key_pressed = event.key_pressed;
+                    INSERT_IN_QUEUE( event_queue, pre_event );
+                }
+            }
+            break;
+
+        case LEFT_MOUSE_UP_EVENT:
+            if( left_mouse_down )
+            {
+                left_mouse_down = FALSE;
+            }
+            else
+            {
+                pre_event = event;
+                pre_event.type = LEFT_MOUSE_DOWN_EVENT;
+                INSERT_IN_QUEUE( event_queue, pre_event );
+            }
+            break;
+
+        case LEFT_MOUSE_DOWN_EVENT:
+            if( !left_mouse_down )
+            {
+                left_mouse_down = TRUE;
+                left_mouse_window = event.window;
+            }
+            else
+            {
+                pre_event = event;
+                pre_event.type = LEFT_MOUSE_UP_EVENT;
+                pre_event.window = left_mouse_window;
+                INSERT_IN_QUEUE( event_queue, pre_event );
+            }
+            break;
+
+        case MIDDLE_MOUSE_UP_EVENT:
+            if( middle_mouse_down )
+            {
+                middle_mouse_down = FALSE;
+            }
+            else
+            {
+                pre_event = event;
+                pre_event.type = MIDDLE_MOUSE_DOWN_EVENT;
+                INSERT_IN_QUEUE( event_queue, pre_event );
+            }
+            break;
+
+        case MIDDLE_MOUSE_DOWN_EVENT:
+            if( !middle_mouse_down )
+            {
+                middle_mouse_down = TRUE;
+                middle_mouse_window = event.window;
+            }
+            else
+            {
+                pre_event = event;
+                pre_event.type = MIDDLE_MOUSE_UP_EVENT;
+                pre_event.window = middle_mouse_window;
+                INSERT_IN_QUEUE( event_queue, pre_event );
+            }
+            break;
+
+        case RIGHT_MOUSE_UP_EVENT:
+            if( right_mouse_down )
+            {
+                right_mouse_down = FALSE;
+            }
+            else
+            {
+                pre_event = event;
+                pre_event.type = RIGHT_MOUSE_DOWN_EVENT;
+                INSERT_IN_QUEUE( event_queue, pre_event );
+            }
+            break;
+
+        case RIGHT_MOUSE_DOWN_EVENT:
+            if( !right_mouse_down )
+            {
+                right_mouse_down = TRUE;
+                right_mouse_window = event.window;
+            }
+            else
+            {
+                pre_event = event;
+                pre_event.type = RIGHT_MOUSE_UP_EVENT;
+                pre_event.window = right_mouse_window;
+                INSERT_IN_QUEUE( event_queue, pre_event );
+            }
+            break;
+        }
+
         INSERT_IN_QUEUE( event_queue, event );
     }
 }
@@ -136,7 +277,7 @@ private  Event_types  get_event(
         prev_type = NO_EVENT;
     }
 
-    if( type == WINDOW_RESIZE_EVENT )
+    if( type == WINDOW_RESIZE_EVENT && *window != NULL )
         window_was_resized( *window );
 
     return( type );
@@ -212,54 +353,36 @@ public  Event_types  G_get_event(
             break;
 
         case LEFT_MOUSE_DOWN_EVENT:
-            if( !left_mouse_down )
-                found = TRUE;
-            left_mouse_down = TRUE;
             *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case LEFT_MOUSE_UP_EVENT:
-            if( left_mouse_down )
-                found = TRUE;
-            left_mouse_down = FALSE;
             *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case MIDDLE_MOUSE_DOWN_EVENT:
-            if( !middle_mouse_down )
-                found = TRUE;
-            middle_mouse_down = TRUE;
             *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case MIDDLE_MOUSE_UP_EVENT:
-            if( middle_mouse_down )
-                found = TRUE;
-            middle_mouse_down = FALSE;
             *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case RIGHT_MOUSE_DOWN_EVENT:
-            if( !right_mouse_down )
-                found = TRUE;
-            right_mouse_down = TRUE;
             *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;
             break;
 
         case RIGHT_MOUSE_UP_EVENT:
-            if( right_mouse_down )
-                found = TRUE;
-            right_mouse_down = FALSE;
             *window = get_current_input_window();
             record_current_mouse_pos( x_mouse, y_mouse );
             found = TRUE;

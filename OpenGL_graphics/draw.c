@@ -149,9 +149,11 @@ public  void  GS_set_raster_position(
 }
 
 public  void  GS_set_font(
+    WS_window_struct     *window,     /* ARGSUSED */
+    int                  font_index,
     WS_font_info         *font_info )
 {
-    glListBase( font_info->listBase );
+    glListBase( 1 + font_index * 256 );
 }
 
 public  void  GS_draw_text(

@@ -1,5 +1,5 @@
 #include  <internal_volume_io.h>
-#include  <graphics.h>
+#include  <gs_specific.h>
 
 /*--------------- maintaining list of known windows ------------------------ */
 
@@ -33,23 +33,15 @@ private  int  lookup_window_index( Gwindow  window )
     return( i );
 }
 
-public  Gwindow   find_window_for_id( Window_id  window_id )
+public  int  get_n_graphics_windows()
 {
-    int            i;
-    Gwindow        window;
+    return( n_windows );
+}
 
-    for_less( i, 0, n_windows )
-    {
-        if( GS_get_window_id( windows[i] ) == window_id )
-            break;
-    }
-
-    if( i >= n_windows )
-        window = (Gwindow) 0;
-    else
-        window = windows[i];
-
-    return( window );
+public  Gwindow  get_nth_graphics_window(
+    int   i )
+{
+    return( windows[i] );
 }
 
 private  void  delete_window_struct( Gwindow   window )
@@ -74,9 +66,15 @@ public  void  set_current_window( Gwindow   window )
     if( window != current_window )
     {
         if( window != (Gwindow) 0 )
-            WS_set_current_window( &window->WS_window );
+            WS_set_current_window( window->WS_window,
+                                   window->current_bitplanes );
         current_window = window;
     }
+}
+
+public  Gwindow  get_current_window()
+{
+    return( current_window );
 }
 
 /*---------------------- window configurations ------------------------ */
@@ -103,9 +101,9 @@ private  void  initialize_window(
 
     set_current_window( window );
 
-    WS_get_window_size( &window->WS_window, &window->x_size, &window->y_size );
-    WS_get_window_position( &window->WS_window, &window->x_origin,
-                                                &window->y_origin );
+    WS_get_window_size( window->WS_window, &window->x_size, &window->y_size );
+    WS_get_window_position( window->WS_window, &window->x_origin,
+                                               &window->y_origin );
 
     G_set_automatic_clear_state( window, TRUE );
 
@@ -141,6 +139,8 @@ private  void  initialize_window(
 
     initialize_window_view( window );
 
+    add_fonts_for_window( window );
+
     G_clear_window( window );
     G_update_window( window );
 
@@ -170,6 +170,9 @@ public  Status  G_create_window(
 
     *window = create_window_struct();
 
+    ALLOC( (*window)->GS_window, 1 );
+    ALLOC( (*window)->WS_window, 1 );
+
     if( !G_is_double_buffer_supported() )
         double_buffer_desired = FALSE;
 
@@ -191,7 +194,7 @@ public  Status  G_create_window(
 
     if( status != OK )
     {
-        print( "G_create_window():  cannot open a graphics window.\n" );
+        print_error( "G_create_window():  cannot open a graphics window.\n" );
     }
     else
     {
@@ -215,9 +218,14 @@ public  Status  G_delete_window(
 
     set_current_window( window );
 
+    delete_fonts_for_window( window );
+
     status = GS_delete_window( window );
 
     set_current_window( (Gwindow) 0 );
+
+    FREE( window->GS_window );
+    FREE( window->WS_window );
 
     delete_window_struct( window );
 
@@ -609,7 +617,7 @@ public  void  G_update_window( Gwindow   window )
     if( window->current_bitplanes == NORMAL_PLANES )
     {
         if( window->double_buffer_state )
-            WS_swap_buffers( &window->WS_window );
+            WS_swap_buffers( window->WS_window );
         GS_flush();
     }
 #ifndef  TWO_D_ONLY
