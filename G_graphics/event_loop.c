@@ -676,6 +676,15 @@ private  void  timer_update_window(
     }
 }
 
+public  void  terminate_callbacks_for_window(
+    Gwindow                 window )
+{
+    int   i;
+
+    for_less( i, 0, window->n_update_timers )
+        G_delete_timer_function( timer_update_window, (void *) window );
+}
+
 /* ARGSUSED */
 
 private  void  check_update_windows(
@@ -706,6 +715,8 @@ public  void  G_set_update_flag(
 
     if( window->update_required_flag )
         return;
+
+    set_current_window( window );
 
     window->update_required_flag = TRUE;
 
@@ -739,6 +750,13 @@ public  void  G_add_timer_function(
     void          *data )
 {
     GS_add_timer_function( seconds, func, data );
+}
+
+public  void  G_delete_timer_function(
+    void          (*func) ( void * ),
+    void          *data )
+{
+    GS_delete_timer_function( func, data );
 }
 
 public  void  G_add_idle_function(
