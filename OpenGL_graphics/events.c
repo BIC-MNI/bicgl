@@ -91,7 +91,9 @@ public  void  GS_set_mouse_position(
     int   x_screen,
     int   y_screen )
 {
+/*
     X_set_mouse_position( x_screen, y_screen );
+*/
 }
 
 public  BOOLEAN  WS_mouse_events_in_screen_coordinates( void )

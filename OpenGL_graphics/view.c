@@ -171,9 +171,7 @@ public  void  GS_set_viewport(
 
 public  void  clear_overlay_planes( void )
 {
-#ifndef  TWO_D_ONLY
 #ifdef TO_DO
-#endif
 #endif
 }
 

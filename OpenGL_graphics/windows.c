@@ -8,7 +8,7 @@ private  void  initialize_window(
 public  Window_id  GS_get_window_id(
     Gwindow  window )
 {
-    return( window->WS_window->x_window.window_id );
+    return( window->WS_window->window_id );
 }
 
 public  void  GS_initialize( void )

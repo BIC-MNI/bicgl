@@ -1,6 +1,6 @@
 
 #include  <internal_volume_io.h>
-#include  <gs_specific.h>
+#include  <graphics.h>
 #include  <random_order.h>
 
 public  void  GS_set_point(
@@ -57,7 +57,6 @@ public  void  GS_set_surface_property(
     Colour         col,
     Surfprop       *surfprop )
 {
-#ifndef  TWO_D_ONLY
     float  props[4];
     Real   a, d, s;
 
@@ -85,7 +84,6 @@ public  void  GS_set_surface_property(
 
     props[0] = Surfprop_se( *surfprop );
     glMaterialfv( GL_FRONT_AND_BACK, GL_SHININESS, props );
-#endif
 }
 
 public  void  GS_set_line_width(
@@ -172,11 +170,14 @@ public  BOOLEAN  GS_set_font(
 /* ARGSUSED */
 
 public  void  GS_draw_text(
+    Gwindow      window,
     Font_types   type,
     STRING       string )
 {
-    glCallLists( (GLsizei) strlen( string ), GL_UNSIGNED_BYTE,
-                 (GLubyte *) string );
+    int  i;
+
+    for_less( i, 0, (int) strlen(string) )
+        GS_draw_character( window, string[i] );
 }
 
 public  void  GS_set_pixel_zoom(
@@ -250,14 +251,6 @@ public  void  GS_read_pixels(
     int             y_max,
     Colour          pixels[] )
 {
-#ifdef  TWO_D_ONLY
-    int   i, n_pixels;
-
-    n_pixels = (x_max - x_min + 1) * (y_max - y_min + 1);
-
-    for_less( i, 0, n_pixels )
-        pixels[i] = BLACK;
-#else
     glReadBuffer( GL_FRONT );
 
     if( window->colour_map_state )
@@ -270,5 +263,4 @@ public  void  GS_read_pixels(
         glReadPixels( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1,
                       GL_RGBA, GL_UNSIGNED_BYTE, pixels );
     }
-#endif
 }

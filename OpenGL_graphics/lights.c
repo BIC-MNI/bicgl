@@ -21,7 +21,6 @@ public  void  GS_set_ambient_light(
     Gwindow        window,
     Colour         colour )
 {
-#ifndef  TWO_D_ONLY
     float     ambient_light[4];
 
     ambient_light[0] = (float) get_Colour_r_0_1(colour);
@@ -30,7 +29,6 @@ public  void  GS_set_ambient_light(
     ambient_light[3] = (float) get_Colour_a_0_1(colour);
 
     glLightModelfv( GL_LIGHT_MODEL_AMBIENT, ambient_light );
-#endif
 }
 
 /* ARGSUSED */
@@ -45,7 +43,6 @@ public  void  GS_define_light(
     Real            spot_exponent,
     Real            spot_angle )
 {
-#ifndef  TWO_D_ONLY
     int     gl_light_index;
     Vector  unit_direction;
     float   colour_list[4];
@@ -109,7 +106,6 @@ public  void  GS_define_light(
                   (GLfloat) spot_angle );
         break;
     }
-#endif
 }
 
 /* ARGSUSED */
@@ -119,7 +115,6 @@ public  void  GS_set_light_state(
     int             light_index,
     BOOLEAN         state )
 {
-#ifndef  TWO_D_ONLY
     short   gl_light_index;
 
     switch( light_index )
@@ -138,5 +133,4 @@ public  void  GS_set_light_state(
         glEnable( (GLenum) gl_light_index );
     else
         glDisable( (GLenum) gl_light_index );
-#endif
 }
