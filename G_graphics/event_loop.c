@@ -56,7 +56,7 @@ private  Gwindow  lookup_event_window_for_window_id(
         window = get_nth_graphics_window( i );
 
         if( GS_get_event_window_id( window->GS_window ) == event_window_id ||
-        if( GS_get_window_id( window->GS_window ) == event_window_id )
+            GS_get_window_id( window->GS_window ) == event_window_id )
             break;
     }
 
