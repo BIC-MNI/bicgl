@@ -336,6 +336,17 @@ private  void  global_leave_function(
         (*window->leave_callback)( window, window->leave_data );
 }
 
+private  void  global_quit_function(
+    Window_id  window_id )
+{
+    Gwindow     window;
+
+    window = get_event_window( window_id );
+
+    if( window->quit_callback != NULL )
+        (*window->quit_callback)( window, window->quit_data );
+}
+
 private  void  initialize_callbacks( void )
 {
     GS_set_update_function( global_update_function );
@@ -354,6 +365,7 @@ private  void  initialize_callbacks( void )
     GS_set_deiconify_function( global_deiconify_function );
     GS_set_enter_function( global_enter_function );
     GS_set_leave_function( global_leave_function );
+    GS_set_quit_function( global_quit_function );
 }
 
 public  void  G_set_update_function(
@@ -500,6 +512,15 @@ public  void  G_set_window_leave_function(
     window->leave_data = func_data;
 }
 
+public  void  G_set_window_quit_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, void * ),
+    void                    *func_data )
+{
+    window->quit_callback = func;
+    window->quit_data = func_data;
+}
+
 public  void  initialize_callbacks_for_window(
     Gwindow                 window )
 {
@@ -519,6 +540,7 @@ public  void  initialize_callbacks_for_window(
     window->deiconify_callback = NULL;
     window->enter_callback = NULL;
     window->leave_callback = NULL;
+    window->quit_callback = NULL;
 }
 
 public  void  G_set_update_flag(
