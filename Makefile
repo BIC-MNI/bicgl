@@ -26,7 +26,7 @@ IRISGL_INCLUDES = -IIrisGL_graphics/Include -IInclude $(X11_INCLUDES)
 IRISGL_TARGETS = $(LIB_IRISGL)
 IRISGL_-O3_TARGETS = $(LIB_IRISGL-O3)
 
-GLUT_INCLUDES = -I$(SRC_DIRECTORY)/GLUT/include
+GLUT_INCLUDES = -I/usr/include/GL
 
 OPENGL_INCLUDES = -IOpenGL_graphics/Include \
                   -IInclude \
