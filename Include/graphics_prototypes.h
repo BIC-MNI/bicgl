@@ -97,7 +97,7 @@ public  BOOLEAN  G_get_alt_key_state( void );
 
 public  void  G_set_update_function(
     Gwindow                 window,
-    void                    (*func) ( Gwindow, BOOLEAN, void * ),
+    void                    (*func) ( Gwindow, void * ),
     void                    *func_data );
 
 public  void  G_set_update_overlay_function(
@@ -183,18 +183,11 @@ public  void  G_set_window_quit_function(
 public  void  initialize_callbacks_for_window(
     Gwindow                 window );
 
-public  void  terminate_callbacks_for_window(
-    Gwindow                 window );
-
 public  void  G_set_update_flag(
     Gwindow  window );
 
 public  void  G_add_timer_function(
     Real          seconds,
-    void          (*func) ( void * ),
-    void          *data );
-
-public  void  G_delete_timer_function(
     void          (*func) ( void * ),
     void          *data );
 
@@ -362,13 +355,6 @@ public  void  G_set_n_curve_segments(
 public  void  G_set_markers_labels_visibility(
     Gwindow    window,
     BOOLEAN    state );
-
-public  void  G_set_dither_state(
-    Gwindow      window,
-    BOOLEAN      state );
-
-public  BOOLEAN  G_get_dither_state(
-    Gwindow      window );
 
 public  void  initialize_window_view(
     Gwindow   window );
@@ -568,16 +554,4 @@ public  void  G_continue_last_update(
 public  void  G_set_transparency_state(
     Gwindow        window,
     BOOLEAN        state );
-
-public  void  G_raise_window(
-    Gwindow        window );
-
-public  void  G_lower_window(
-    Gwindow        window );
-
-public  void  G_iconify_window(
-    Gwindow        window );
-
-public  void  G_deiconify_window(
-    Gwindow        window );
 #endif
