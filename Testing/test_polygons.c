@@ -1,3 +1,4 @@
+#include  <internal_volume_io.h>
 #include  <graphics.h>
 
 private  void  process_polygons( polygons_struct * );

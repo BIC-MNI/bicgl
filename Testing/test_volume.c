@@ -6,14 +6,14 @@ int  main(
 {
     Status         status;
     int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
-    int            n_slices_displayed;
+    Real           alpha;
     Real           intensity, separations[MAX_DIMENSIONS];
     Real           min_value, max_value;
     Real           x_axis[N_DIMENSIONS];
     Real           y_axis[N_DIMENSIONS];
     Real           origin[N_DIMENSIONS];
     int            used_x_viewport_size, used_y_viewport_size;
-    pixels_struct  pixels;
+    pixels_struct  pixels1, pixels2;
     Volume         volume;
     window_struct  *window;
     Real           x_scale, y_scale, x_translation, y_translation;
@@ -24,7 +24,7 @@ int  main(
 
     initialize_argument_processing( argc, argv );
     (void) get_string_argument( "/nil/david/big_data/sphere.fre", &filename );
-    (void) get_int_argument( 1, &n_slices_displayed );
+    (void) get_real_argument( 1.0, &alpha );
 
     status = input_volume( filename, 3, dim_names, NC_UNSPECIFIED, FALSE,
                            0.0, 0.0, TRUE, &volume,
@@ -47,6 +47,8 @@ int  main(
             separations[X], separations[Y], separations[Z] );
 
     status = G_create_window( "Volume Browser", -1, -1, -1, -1, &window );
+    G_set_double_buffer_state( window, OFF );
+    G_set_transparency_state( window, ON );
 
     G_get_window_size( window, &x_size, &y_size );
 
@@ -58,7 +60,7 @@ int  main(
     for_less( i, 0, (int) max_value+1 )
     {
         intensity = (Real) i / max_value;
-        rgb_map[i] = make_Colour_0_1( intensity, intensity, intensity );
+        rgb_map[i] = make_rgba_Colour_0_1( intensity, intensity, intensity, 1.0);
     }
 
     origin[X] = 0.0;
@@ -76,19 +78,50 @@ int  main(
                                   &x_scale, &y_scale,
                                   &used_x_viewport_size, &used_y_viewport_size);
 
-    create_volume_slice( volume, BOX_FILTER, 0.0,
+    create_volume_slice( volume, NEAREST_NEIGHBOUR, 0.0,
                          origin, x_axis, y_axis,
                          x_translation, y_translation,
                          x_scale, y_scale,
-                         (Volume) NULL, BOX_FILTER, 0.0,
+                         (Volume) NULL, NEAREST_NEIGHBOUR, 0.0,
                          (Real *) NULL, (Real *) NULL, (Real *) NULL,
                          0.0, 0.0, 0.0, 0.0,
                          x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,
-                         &rgb_map, BLACK, NULL, &n_alloced, &pixels );
+                         &rgb_map, BLACK, NULL, &n_alloced, &pixels1 );
+
+    if( alpha != 1.0 )
+    {
+        origin[X] = 0.0;
+        origin[Y] = 0.0;
+        origin[Z] = (Real) (sizes[Z] - 1) / 3.0;
+
+        for_less( i, 0, (int) max_value+1 )
+        {
+            intensity = (Real) i / max_value;
+            if( i < max_value / 2 )
+                rgb_map[i] = make_rgba_Colour_0_1( 0.5, 0.5, 0.5, 0.0 );
+            else
+                rgb_map[i] = make_rgba_Colour_0_1( 0.0, 0.5, 0.0, 1.0 - alpha );
+        }
+
+        create_volume_slice( volume, NEAREST_NEIGHBOUR, 0.0,
+                             origin, x_axis, y_axis,
+                             x_translation, y_translation,
+                             x_scale, y_scale,
+                             (Volume) NULL, NEAREST_NEIGHBOUR, 0.0,
+                             (Real *) NULL, (Real *) NULL, (Real *) NULL,
+                             0.0, 0.0, 0.0, 0.0,
+                             x_size, y_size, RGB_PIXEL, FALSE,
+                             (unsigned short **) NULL,
+                             &rgb_map, BLACK, NULL, &n_alloced, &pixels2 );
+    }
 
     G_set_view_type( window, PIXEL_VIEW );
-    G_draw_pixels( window, &pixels );
+    G_draw_pixels( window, &pixels1 );
+
+    if( alpha != 1.0 )
+        G_draw_pixels( window, &pixels2 );
+
     G_update_window( window );
 
     print( "Hit return: " );
