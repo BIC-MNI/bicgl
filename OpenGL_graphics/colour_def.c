@@ -1,4 +1,8 @@
-#include  <volume_io/internal_volume_io.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif //HAVE_CONFIG_H  
+
+#include  <volume_io.h>
 
 public  Colour  make_rgba_Colour(
     int    r,

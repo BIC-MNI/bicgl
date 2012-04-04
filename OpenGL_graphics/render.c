@@ -1,5 +1,8 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif //HAVE_CONFIG_H  
  
-#include  <volume_io/internal_volume_io.h>
+#include  <volume_io.h>
 #include  <GS_graphics.h>
 
 public  void  GS_set_shade_model(

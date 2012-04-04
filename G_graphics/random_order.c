@@ -1,9 +1,9 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif //HAVE_CONFIG_H 
 
-#include  <volume_io/internal_volume_io.h>
+#include  <volume_io.h>
 #include  <graphics.h>
-/* Modified: October 29, 2010  JGS
-
-These numbers appear to be used to seed a linear feedback shift register type random number generator.  The 22bit case originally had poor run length.  The new value of 0x420000 is attributed to Wayne Stahnke while he was at Fairchild Semiconductor in 1970.  See http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf */
 
 private  Random_mask_type  random_order_masks[] = {
                                                  0x00000000,
@@ -28,7 +28,7 @@ private  Random_mask_type  random_order_masks[] = {
                                                  0x00090000,
                                                  0x00140000,
                                                  0x00300000,
-                                                 0x00420000,
+                                                 0x00400000,
                                                  0x00d80000,
                                                  0x01200000,
                                                  0x03880000,
