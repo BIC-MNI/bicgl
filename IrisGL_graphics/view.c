@@ -1,5 +1,5 @@
  
-#include  <volume_io/internal_volume_io.h>
+#include  <volume_io.h>
 #include  <GS_graphics.h>
 
 private  void  make_matrix(

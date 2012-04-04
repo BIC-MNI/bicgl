@@ -82,15 +82,8 @@
 /*
  * Always include OpenGL and GLU headers
  */
-
-#ifdef HAVE_APPLE_OPENGL_FRAMEWORK
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#else
 #include <GL/gl.h>
 #include <GL/glu.h>
-#endif
-
 
 /*
  * GLUT API macro definitions -- the special key codes:
