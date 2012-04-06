@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif //HAVE_CONFIG_H  
+
 #include  <volume_io.h>
 #include  <WS_graphics.h>
 
@@ -736,7 +740,8 @@ public  void  WS_set_overlay_colour_map_entry(
 
 public  void  WS_swap_buffers( void )
 {
-    glutSwapBuffers();
+    if(glutGetWindow()) //VF:a hack
+      glutSwapBuffers();
 }
 
 static  struct
