@@ -137,8 +137,34 @@ SET(G_SRC
     G_graphics/windows.c
   )
 
+SET(bicgl_HEADERS 
+  GLUT_windows/Include/WS_graphics.h
+  GLUT_windows/Include/glut_window_prototypes.h
+  Include/graphics_base.h
+  Include/GS_graphics.h
+  Include/graphics.h
+  Include/GL/glut.h
+  Include/GL/freeglut_std.h
+  Include/save.h
+  Include/graphics_prototypes.h
+  Include/random_order.h
+  Include/graphics_struct.h
+  IrisGL_graphics/Include/GS_graphics.h
+  IrisGL_graphics/Include/def_gl.h
+  IrisGL_graphics/Include/irisgl_graphics_prototypes.h
+  GLX_windows/Include/glx_window_prototypes.h
+  GLX_windows/Include/WS_windows.h
+  OpenGL_graphics/Include/opengl_graphics_prototypes.h
+  OpenGL_graphics/Include/GS_graphics.h
+  X_windows/Include/x_windows.h
+  X_windows/Include/x_window_prototypes.h
+ )
 
-SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLUT_SRC})
+
+SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLUT_SRC} ${bicgl_HEADERS})
+
+
+
 
 IF(BICGL_BUILD_SHARED_LIBS)
   SET(LIBRARY_TYPE    SHARED)
@@ -159,6 +185,18 @@ TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES})
 # should we really install the library if it's static?
 INSTALL(TARGETS bicgl 
   ${LIBRARY_INSTALL} DESTINATION lib)
+
+
+INSTALL(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BICGLConfig.cmake
+  DESTINATION lib
+  COMPONENT Development)
+
+
+INSTALL(FILES ${bicgl_HEADERS}
+   DESTINATION include/bicgl)
+
+
 
 set(BICGL_INCLUDE_DIRS_CONFIG   
     ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include 
