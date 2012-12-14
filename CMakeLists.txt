@@ -184,12 +184,12 @@ TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES})
 
 # should we really install the library if it's static?
 INSTALL(TARGETS bicgl 
-  ${LIBRARY_INSTALL} DESTINATION lib)
+  ${LIBRARY_INSTALL} DESTINATION lib${LIB_SUFFIX})
 
 
 INSTALL(FILES 
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BICGLConfig.cmake
-  DESTINATION lib
+  DESTINATION lib${LIB_SUFFIX}
   COMPONENT Development)
 
 
@@ -215,7 +215,7 @@ set(BICGL_INCLUDE_DIRS_CONFIG
     ${CMAKE_INSTALL_PREFIX}/include/bicgl/Include 
     ${CMAKE_INSTALL_PREFIX}/include/bicgl/GLUT_windows/Include )
 
-set(BICGL_LIBRARY_DIRS_CONFIG  ${CMAKE_INSTALL_PREFIX}/lib )
+set(BICGL_LIBRARY_DIRS_CONFIG  ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX} )
 set(BICGL_LIBRARIES_CONFIG     bicgl )
 
 configure_file(BICGLConfig.cmake.in
@@ -223,5 +223,5 @@ configure_file(BICGLConfig.cmake.in
 
 INSTALL(FILES 
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BICGLConfig.cmake
-  DESTINATION lib
+  DESTINATION lib${LIB_SUFFIX}
   COMPONENT Development)
