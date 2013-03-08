@@ -24,9 +24,10 @@ IF(NOT MINC_TOOLKIT_BUILD)
   FIND_PACKAGE( Threads )
   FIND_PACKAGE( OpenGL REQUIRED )
   FIND_PACKAGE( GLUT REQUIRED )
-  
+  FIND_PACKAGE( X11 QUIET )
+
   OPTION(BICGL_BUILD_SHARED_LIBS "Build shared libraries." OFF)
-  
+
 ENDIF(NOT MINC_TOOLKIT_BUILD)
 
 IF(APPLE)
@@ -90,55 +91,59 @@ INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIR} )
 INCLUDE_DIRECTORIES( OpenGL_graphics/Include Include GLUT_windows/Include )
 INCLUDE_DIRECTORIES( User_interface/Include Functionality/Include UI_calls_F/Include  )
 
+IF(X11_FOUND)
+  INCLUDE_DIRECTORIES( ${X11_X11_INCLUDE_PATH} )
+ENDIF(X11_FOUND)
+
 SET(PRINT_X_COLOURS print_X_colours)
 
-SET(GLX_SRC 
-    GLX_windows/glx_windows.c 
-    GLX_windows/stored_font.c 
+SET(GLX_SRC
+    GLX_windows/glx_windows.c
+    GLX_windows/stored_font.c
   )
 
-SET(GLUT_SRC 
-    GLUT_windows/glut_windows.c 
+SET(GLUT_SRC
+    GLUT_windows/glut_windows.c
     GLUT_windows/copy_x_colours.c
   )
 
-SET(X_SRC   
-    X_windows/x_windows.c 
+SET(X_SRC
+    X_windows/x_windows.c
    )
 
-SET(GL_SRC 
-    IrisGL_graphics/colour_def.c 
-    IrisGL_graphics/draw.c 
-    IrisGL_graphics/event_loop.c 
-    IrisGL_graphics/lights.c 
-    IrisGL_graphics/render.c 
-    IrisGL_graphics/view.c 
-    IrisGL_graphics/windows.c 
+SET(GL_SRC
+    IrisGL_graphics/colour_def.c
+    IrisGL_graphics/draw.c
+    IrisGL_graphics/event_loop.c
+    IrisGL_graphics/lights.c
+    IrisGL_graphics/render.c
+    IrisGL_graphics/view.c
+    IrisGL_graphics/windows.c
    )
 
-SET(OPENGL_SRC 
-    OpenGL_graphics/colour_def.c 
-    OpenGL_graphics/draw.c 
-    OpenGL_graphics/event_loop.c 
-    OpenGL_graphics/lights.c 
-    OpenGL_graphics/render.c 
-    OpenGL_graphics/view.c 
+SET(OPENGL_SRC
+    OpenGL_graphics/colour_def.c
+    OpenGL_graphics/draw.c
+    OpenGL_graphics/event_loop.c
+    OpenGL_graphics/lights.c
+    OpenGL_graphics/render.c
+    OpenGL_graphics/view.c
     OpenGL_graphics/windows.c
   )
 
-SET(G_SRC 
-    G_graphics/draw.c 
-    G_graphics/draw_objects.c 
-    G_graphics/event_loop.c 
-    G_graphics/graphics_structs.c 
-    G_graphics/lights.c 
-    G_graphics/random_order.c 
-    G_graphics/render.c 
-    G_graphics/view.c 
+SET(G_SRC
+    G_graphics/draw.c
+    G_graphics/draw_objects.c
+    G_graphics/event_loop.c
+    G_graphics/graphics_structs.c
+    G_graphics/lights.c
+    G_graphics/random_order.c
+    G_graphics/render.c
+    G_graphics/view.c
     G_graphics/windows.c
   )
 
-SET(bicgl_HEADERS 
+SET(bicgl_HEADERS
   GLUT_windows/Include/WS_graphics.h
   GLUT_windows/Include/glut_window_prototypes.h
   Include/graphics_base.h
@@ -165,8 +170,6 @@ SET(bicgl_HEADERS
 SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLUT_SRC} ${bicgl_HEADERS})
 
 
-
-
 IF(BICGL_BUILD_SHARED_LIBS)
   SET(LIBRARY_TYPE    SHARED)
   SET(LIBRARY_INSTALL LIBRARY)
@@ -176,20 +179,20 @@ ELSE(BICGL_BUILD_SHARED_LIBS)
 ENDIF(BICGL_BUILD_SHARED_LIBS)
 
 
-SET(BICGL_SRC 
+SET(BICGL_SRC
   ${OPENGL_X_SRC}
 )
 
-ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC}) 
+ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC})
 TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
       ${BICPL_LIBRARIES} ${VOLUME_IO_LIBRARIES} ${LIBMINC_LIBRARIES} )
 
 # should we really install the library if it's static?
-INSTALL(TARGETS bicgl 
+INSTALL(TARGETS bicgl
   ${LIBRARY_INSTALL} DESTINATION lib${LIB_SUFFIX})
 
 
-INSTALL(FILES 
+INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BICGLConfig.cmake
   DESTINATION lib${LIB_SUFFIX}
   COMPONENT Development)
@@ -200,9 +203,9 @@ INSTALL(FILES ${bicgl_HEADERS}
 
 
 
-set(BICGL_INCLUDE_DIRS_CONFIG   
-    ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include 
-    ${CMAKE_CURRENT_SOURCE_DIR}/Include 
+set(BICGL_INCLUDE_DIRS_CONFIG
+    ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/GLUT_windows/Include )
 
 set(BICGL_LIBRARY_DIRS_CONFIG   ${CMAKE_CURRENT_BINARY_DIR} )
@@ -212,9 +215,9 @@ configure_file(BICGLConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/BICGLConfig.cmake @ONLY )
 
 # config for install dir
-set(BICGL_INCLUDE_DIRS_CONFIG  
-    ${CMAKE_INSTALL_PREFIX}/include/bicgl/OpenGL_graphics/Include 
-    ${CMAKE_INSTALL_PREFIX}/include/bicgl/Include 
+set(BICGL_INCLUDE_DIRS_CONFIG
+    ${CMAKE_INSTALL_PREFIX}/include/bicgl/OpenGL_graphics/Include
+    ${CMAKE_INSTALL_PREFIX}/include/bicgl/Include
     ${CMAKE_INSTALL_PREFIX}/include/bicgl/GLUT_windows/Include )
 
 set(BICGL_LIBRARY_DIRS_CONFIG  ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX} )
@@ -223,7 +226,7 @@ set(BICGL_LIBRARIES_CONFIG     bicgl )
 configure_file(BICGLConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BICGLConfig.cmake @ONLY )
 
-INSTALL(FILES 
+INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BICGLConfig.cmake
   DESTINATION lib${LIB_SUFFIX}
   COMPONENT Development)
