@@ -20,6 +20,7 @@
 
 #include "freeglut_std.h"
 
+/*#include <glut.h>*/
 /*** END OF FILE ***/
 
 #endif /* __GLUT_H__ */
