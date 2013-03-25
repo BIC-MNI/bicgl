@@ -15,7 +15,7 @@ typedef  struct
 {
     Window_id         window_id;
     STRING            title;
-    BOOLEAN           overlay_present;
+    VIO_BOOL           overlay_present;
     void              *current_font;
     int               n_colours;
     Smallest_int      *colour_map_entry_set;

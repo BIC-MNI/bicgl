@@ -15,22 +15,22 @@ private  Window_id  create_GLUT_window(
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                colour_map_mode,
-    BOOLEAN                double_buffer_flag,
-    BOOLEAN                depth_buffer_flag,
+    VIO_BOOL                colour_map_mode,
+    VIO_BOOL                double_buffer_flag,
+    VIO_BOOL                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode_ptr,
-    BOOLEAN                *actual_double_buffer_flag_ptr,
-    BOOLEAN                *actual_depth_buffer_flag_ptr,
+    VIO_BOOL                *actual_colour_map_mode_ptr,
+    VIO_BOOL                *actual_double_buffer_flag_ptr,
+    VIO_BOOL                *actual_depth_buffer_flag_ptr,
     int                    *actual_n_overlay_planes_ptr )
 {
     int                rgba, doub, depth;
     unsigned  int      mode;
     int                used_size;
     Window_id          window_id;
-    BOOLEAN            actual_colour_map_mode;
-    BOOLEAN            actual_double_buffer_flag;
-    BOOLEAN            actual_depth_buffer_flag;
+    VIO_BOOL            actual_colour_map_mode;
+    VIO_BOOL            actual_double_buffer_flag;
+    VIO_BOOL            actual_depth_buffer_flag;
     int                actual_n_overlay_planes;
 
     mode = 0;
@@ -168,13 +168,13 @@ public  Status  WS_create_window(
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                colour_map_mode,
-    BOOLEAN                double_buffer_flag,
-    BOOLEAN                depth_buffer_flag,
+    VIO_BOOL                colour_map_mode,
+    VIO_BOOL                double_buffer_flag,
+    VIO_BOOL                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode,
-    BOOLEAN                *actual_double_buffer_flag,
-    BOOLEAN                *actual_depth_buffer_flag,
+    VIO_BOOL                *actual_colour_map_mode,
+    VIO_BOOL                *actual_double_buffer_flag,
+    VIO_BOOL                *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {

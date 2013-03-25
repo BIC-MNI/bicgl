@@ -25,15 +25,15 @@ typedef  struct
 {
     WS_window_struct   WS_window;
 
-    BOOLEAN            ambient_set;
+    VIO_BOOL            ambient_set;
     Real               ambient[3];
 
     int                n_lights_defined;
     light_info_struct  *lights;
 
     int                n_light_states;
-    BOOLEAN            *light_indices;
-    BOOLEAN            *light_states;
+    VIO_BOOL            *light_indices;
+    VIO_BOOL            *light_states;
 }
 GS_window_struct;
 

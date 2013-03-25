@@ -41,12 +41,12 @@ public  void  initialize_display_interrupts(
 
 public  void  G_set_drawing_interrupt_state(
     Gwindow          window,
-    BOOLEAN         state )
+    VIO_BOOL         state )
 {
     window->interrupt_allowed = state;
 }
 
-public  BOOLEAN  G_get_drawing_interrupt_state(
+public  VIO_BOOL  G_get_drawing_interrupt_state(
     Gwindow          window )
 {
     return( window->interrupt_allowed );
@@ -75,7 +75,7 @@ public  void  G_start_interrupt_test(
     window->interrupt_time = current_time + window->interrupt_time_interval;
 }
 
-public  BOOLEAN  G_get_interrupt_occurred(
+public  VIO_BOOL  G_get_interrupt_occurred(
     Gwindow          window )
 {
     return( window->interrupt_occurred );
@@ -89,7 +89,7 @@ public  void  G_clear_drawing_interrupt_flag(
 
 public  void  set_continuation_flag(
     Gwindow         window,
-    BOOLEAN         state )
+    VIO_BOOL         state )
 {
     window->continuation_flag = state;
 }
@@ -103,12 +103,12 @@ public  void  set_continuation_flag(
     Random_mask_type            OBJECT_INDEX; \
     int                         _i, _iter, _n_iters, _n_done, _n_before_check; \
     int                         _check_every, _n_objects_to_do; \
-    BOOLEAN                     _random_order, _interrupt_allowed; \
+    VIO_BOOL                     _random_order, _interrupt_allowed; \
     Random_mask_type            _random_order_mask; \
     Real                        interrupt_at, current_time; \
     int                         _n_objects, _first_object, _second_object; \
-    BOOLEAN                     _wireframe_flag; \
-    static   BOOLEAN            const_true = TRUE; \
+    VIO_BOOL                     _wireframe_flag; \
+    static   VIO_BOOL            const_true = TRUE; \
  \
     _n_objects = (n_objects); \
     _wireframe_flag = (wireframe_flag); \
@@ -274,7 +274,7 @@ public  void  initialize_surface_property(
     set_surface_property( window, col, &surfprop );
 }
 
-public  BOOLEAN  view_is_stereo(
+public  VIO_BOOL  view_is_stereo(
     Gwindow        window )
 {
     return( window->stereo_flag &&
@@ -744,8 +744,8 @@ public  void  G_draw_lines(
 {
     int      n_lines, i, pt_index, start_index, end_index;
     float    geom[4][3];
-    BOOLEAN  wrap_around;
-    BOOLEAN  lines_as_curves, save_lights;
+    VIO_BOOL  wrap_around;
+    VIO_BOOL  lines_as_curves, save_lights;
 
     about_to_draw_graphics( window );
 
@@ -923,7 +923,7 @@ public  void  G_draw_marker(
     Gwindow         window,
     marker_struct   *marker )
 {
-    BOOLEAN     save_lights;
+    VIO_BOOL     save_lights;
     Transform   transform;
 
     about_to_draw_graphics( window );

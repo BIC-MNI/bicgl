@@ -147,7 +147,7 @@ public  void  GS_set_mouse_position(
     WS_set_mouse_position( x_screen, y_screen );
 }
 
-public  BOOLEAN  GS_are_mouse_coordinates_in_screen_space( void )
+public  VIO_BOOL  GS_are_mouse_coordinates_in_screen_space( void )
 {
     return( FALSE );
 }

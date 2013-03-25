@@ -41,7 +41,7 @@ public  void  G_define_light(
 public  void  G_set_light_state(
     Gwindow         window,
     int             light_index,
-    BOOLEAN         state )
+    VIO_BOOL         state )
 {
     set_current_window( window );
 

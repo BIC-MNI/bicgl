@@ -9,13 +9,13 @@
 #define  USE_STORED_FONT_ONLY
 #endif
 
-private  BOOLEAN  use_stored_font_only( void )
+private  VIO_BOOL  use_stored_font_only( void )
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
 #ifdef USE_STORED_FONT_ONLY
-    static  BOOLEAN  use_stored_flag = TRUE;
+    static  VIO_BOOL  use_stored_flag = TRUE;
 #else
-    static  BOOLEAN  use_stored_flag = FALSE;
+    static  VIO_BOOL  use_stored_flag = FALSE;
 #endif
 
     if( first )
@@ -33,10 +33,10 @@ private  BOOLEAN  use_stored_font_only( void )
     return( use_stored_flag );
 }
 
-private  BOOLEAN  GLX_supported( void )
+private  VIO_BOOL  GLX_supported( void )
 {
-    static  BOOLEAN  first = TRUE;
-    static  BOOLEAN  supported = FALSE;
+    static  VIO_BOOL  first = TRUE;
+    static  VIO_BOOL  supported = FALSE;
     int              error, event;
 
     if( first )
@@ -54,13 +54,13 @@ public  Status  WS_create_window(
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                colour_map_mode,
-    BOOLEAN                double_buffer_flag,
-    BOOLEAN                depth_buffer_flag,
+    VIO_BOOL                colour_map_mode,
+    VIO_BOOL                double_buffer_flag,
+    VIO_BOOL                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode,
-    BOOLEAN                *actual_double_buffer_flag,
-    BOOLEAN                *actual_depth_buffer_flag,
+    VIO_BOOL                *actual_colour_map_mode,
+    VIO_BOOL                *actual_double_buffer_flag,
+    VIO_BOOL                *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
     WS_window_struct       *window )
 {
@@ -237,7 +237,7 @@ public  void  WS_delete_window(
     }
 }
 
-public  BOOLEAN  WS_window_has_overlay_planes(
+public  VIO_BOOL  WS_window_has_overlay_planes(
     WS_window_struct  *window )
 {
     return( window->overlay_present );
@@ -322,7 +322,7 @@ public  int    WS_get_n_overlay_planes( void )
 #endif
 }
 
-public  BOOLEAN  WS_get_event(
+public  VIO_BOOL  WS_get_event(
     Event_types          *event_type,
     Window_id            *window,
     event_info_struct    *info )
@@ -378,7 +378,7 @@ public  void  WS_swap_buffers(
     glXSwapBuffers( X_get_display(), window->x_window.window_id );
 }
 
-public  BOOLEAN  WS_get_font(
+public  VIO_BOOL  WS_get_font(
     Font_types       type,
     Real             size,
     WS_font_info     *font_info )
@@ -485,7 +485,7 @@ public  void  WS_delete_font_in_window(
 
 /* ARGSUSED */
 
-public  BOOLEAN  WS_set_font(
+public  VIO_BOOL  WS_set_font(
     WS_window_struct     *window,
     int                  font_index )
 {

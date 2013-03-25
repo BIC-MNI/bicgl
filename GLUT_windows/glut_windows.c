@@ -13,7 +13,7 @@
 private  int         n_windows_to_delete = 0;
 private  Window_id   *windows_to_delete = NULL;
 
-private  void  set_event_callbacks_for_current_window( BOOLEAN );
+private  void  set_event_callbacks_for_current_window( VIO_BOOL );
 private  void  resize_function(
     int   width,
     int   height );
@@ -145,7 +145,7 @@ private  void  my_glutDisplayFunc(
 
 public  void  WS_initialize( void )
 {
-    static  BOOLEAN  initialized = FALSE;
+    static  VIO_BOOL  initialized = FALSE;
     int              argc = 1;
     char             *argv[] = { "no_program_name" };
 
@@ -162,22 +162,22 @@ private  Window_id  create_GLUT_window(
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                colour_map_mode,
-    BOOLEAN                double_buffer_flag,
-    BOOLEAN                depth_buffer_flag,
+    VIO_BOOL                colour_map_mode,
+    VIO_BOOL                double_buffer_flag,
+    VIO_BOOL                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode_ptr,
-    BOOLEAN                *actual_double_buffer_flag_ptr,
-    BOOLEAN                *actual_depth_buffer_flag_ptr,
+    VIO_BOOL                *actual_colour_map_mode_ptr,
+    VIO_BOOL                *actual_double_buffer_flag_ptr,
+    VIO_BOOL                *actual_depth_buffer_flag_ptr,
     int                    *actual_n_overlay_planes_ptr )
 {
     int                rgba, doub, depth;
     unsigned  int      mode;
     int                used_size;
     Window_id          window_id;
-    BOOLEAN            actual_colour_map_mode;
-    BOOLEAN            actual_double_buffer_flag;
-    BOOLEAN            actual_depth_buffer_flag;
+    VIO_BOOL            actual_colour_map_mode;
+    VIO_BOOL            actual_double_buffer_flag;
+    VIO_BOOL            actual_depth_buffer_flag;
     int                actual_n_overlay_planes;
     
     if( initial_x_pos >= 0 && initial_y_pos >= 0 )
@@ -279,13 +279,13 @@ public  Status  WS_create_window(
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                colour_map_mode,
-    BOOLEAN                double_buffer_flag,
-    BOOLEAN                depth_buffer_flag,
+    VIO_BOOL                colour_map_mode,
+    VIO_BOOL                double_buffer_flag,
+    VIO_BOOL                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode,
-    BOOLEAN                *actual_double_buffer_flag,
-    BOOLEAN                *actual_depth_buffer_flag,
+    VIO_BOOL                *actual_colour_map_mode,
+    VIO_BOOL                *actual_double_buffer_flag,
+    VIO_BOOL                *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
     WSwindow               window )
 {
@@ -319,15 +319,15 @@ public  Status  WS_create_window(
     return( OK );
 }
 
-public  BOOLEAN  WS_set_double_buffer_state(
+public  VIO_BOOL  WS_set_double_buffer_state(
     WSwindow               window,
-    BOOLEAN                double_buffer_flag )
+    VIO_BOOL                double_buffer_flag )
 {
-    BOOLEAN    colour_map_mode, depth_buffer_flag;
+    VIO_BOOL    colour_map_mode, depth_buffer_flag;
     int        n_overlay_planes, actual_n_overlay_planes;
     int        x_pos, y_pos, x_size, y_size;
-    BOOLEAN    actual_colour_map_mode, actual_double_buffer_flag;
-    BOOLEAN    actual_depth_buffer_flag;
+    VIO_BOOL    actual_colour_map_mode, actual_double_buffer_flag;
+    VIO_BOOL    actual_depth_buffer_flag;
     Window_id  old_window_id;
 
     old_window_id = window->window_id;
@@ -376,15 +376,15 @@ public  BOOLEAN  WS_set_double_buffer_state(
     return( actual_double_buffer_flag );
 }
 
-public  BOOLEAN  WS_set_colour_map_state(
+public  VIO_BOOL  WS_set_colour_map_state(
     WSwindow               window,
-    BOOLEAN                colour_map_flag )
+    VIO_BOOL                colour_map_flag )
 {
-    BOOLEAN    double_buffer_state, depth_buffer_flag;
+    VIO_BOOL    double_buffer_state, depth_buffer_flag;
     int        n_overlay_planes, actual_n_overlay_planes;
     int        x_pos, y_pos, x_size, y_size;
-    BOOLEAN    actual_colour_map_mode, actual_double_buffer_flag;
-    BOOLEAN    actual_depth_buffer_flag;
+    VIO_BOOL    actual_colour_map_mode, actual_double_buffer_flag;
+    VIO_BOOL    actual_depth_buffer_flag;
     Window_id  old_window_id;
 
     old_window_id = window->window_id;
@@ -450,7 +450,7 @@ private  Window_id  get_current_event_window( void )
     return( glutGetWindow() );
 }
 
-public  BOOLEAN  WS_window_has_overlay_planes(
+public  VIO_BOOL  WS_window_has_overlay_planes(
     WSwindow  window )
 {
     return( FALSE );
@@ -976,7 +976,7 @@ typedef struct
 {
     void  (*function) ( void * );
     void              *data;
-    BOOLEAN           active;
+    VIO_BOOL           active;
 } callback_info_struct;
 
 static  callback_info_struct   *timers;

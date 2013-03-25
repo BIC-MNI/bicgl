@@ -17,7 +17,7 @@ typedef  Window   Window_id;
 typedef  struct
 {
     Window_id        window_id;
-    BOOLEAN          colour_map_mode;
+    VIO_BOOL          colour_map_mode;
     Colormap         colour_map;
     int              n_colours;
     unsigned long    *colour_indices;

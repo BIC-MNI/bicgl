@@ -20,57 +20,57 @@ typedef  struct   window_struct
     Transform              modeling_transform;
     int                    n_overlay_planes;
     Bitplane_types         current_bitplanes;
-    BOOLEAN                automatic_clear_flag;
-    BOOLEAN                bitplanes_cleared[N_BITPLANE_TYPES];
+    VIO_BOOL                automatic_clear_flag;
+    VIO_BOOL                bitplanes_cleared[N_BITPLANE_TYPES];
 
     Real                   front_clip_distance;
     Real                   back_clip_distance;
-    BOOLEAN                perspective_flag;
+    VIO_BOOL                perspective_flag;
     Real                   perspective_distance;
-    BOOLEAN                stereo_flag;
+    VIO_BOOL                stereo_flag;
     Real                   eye_separation;
     Real                   window_width;
     Real                   window_height;
 
-    BOOLEAN                double_buffer_available;
-    BOOLEAN                double_buffer_state;
+    VIO_BOOL                double_buffer_available;
+    VIO_BOOL                double_buffer_state;
 
-    BOOLEAN                zbuffer_available;
-    BOOLEAN                zbuffer_state;
-    BOOLEAN                colour_map_state;
+    VIO_BOOL                zbuffer_available;
+    VIO_BOOL                zbuffer_state;
+    VIO_BOOL                colour_map_state;
 
-    BOOLEAN                shaded_mode_state;
+    VIO_BOOL                shaded_mode_state;
     Shading_types          shading_type;
-    BOOLEAN                lighting_state;
-    BOOLEAN                transparency_state;
-    BOOLEAN                backface_culling_state;
-    BOOLEAN                render_lines_as_curves_state;
+    VIO_BOOL                lighting_state;
+    VIO_BOOL                transparency_state;
+    VIO_BOOL                backface_culling_state;
+    VIO_BOOL                render_lines_as_curves_state;
     int                    n_curve_segments;
-    BOOLEAN                marker_labels_visibility;
+    VIO_BOOL                marker_labels_visibility;
 
     int                    x_viewport_min;
     int                    x_viewport_max;
     int                    y_viewport_min;
     int                    y_viewport_max;
 
-    BOOLEAN                interrupt_allowed;
-    BOOLEAN                continuation_flag;
-    BOOLEAN                interrupt_occurred;
+    VIO_BOOL                interrupt_allowed;
+    VIO_BOOL                continuation_flag;
+    VIO_BOOL                interrupt_occurred;
     int                    interrupt_interval;
     Real                   interrupt_time;
     Real                   interrupt_time_interval;
     int                    next_item;
     int                    n_items_done;
 
-    BOOLEAN                update_required_flag;
+    VIO_BOOL                update_required_flag;
     Real                   last_update_time;
-    BOOLEAN                last_update_was_idle;
+    VIO_BOOL                last_update_was_idle;
     int                    n_update_timers;
     int                    n_update_timers_to_ignore;
 
-    BOOLEAN                overlay_update_required_flag;
+    VIO_BOOL                overlay_update_required_flag;
     Real                   last_overlay_update_time;
-    BOOLEAN                last_overlay_update_was_idle;
+    VIO_BOOL                last_overlay_update_was_idle;
 
     Real                   min_update_time;
 

@@ -14,7 +14,7 @@ typedef  struct
 {
     X_window_struct   x_window;
     GLXContext        graphics_context;
-    BOOLEAN           overlay_present;
+    VIO_BOOL           overlay_present;
     X_window_struct   overlay_window;
     GLXContext        overlay_context;
     int               n_fonts;

@@ -7,7 +7,7 @@
 
 public  void  G_set_shaded_state(
     Gwindow      window,
-    BOOLEAN      state )
+    VIO_BOOL      state )
 {
     if( state != window->shaded_mode_state )
         window->shaded_mode_state = state;
@@ -35,7 +35,7 @@ public  void  G_set_shading_type(
     }
 }
 
-public  BOOLEAN  G_get_lighting_state(
+public  VIO_BOOL  G_get_lighting_state(
     Gwindow      window )
 {
     return( window->lighting_state );
@@ -43,7 +43,7 @@ public  BOOLEAN  G_get_lighting_state(
 
 public  void  G_set_lighting_state(
     Gwindow      window,
-    BOOLEAN      state )
+    VIO_BOOL      state )
 {
     if( state != window->lighting_state )
     {
@@ -57,7 +57,7 @@ public  void  G_set_lighting_state(
 
 public  void  G_backface_culling_state(
     Gwindow     window,
-    BOOLEAN     state )
+    VIO_BOOL     state )
 {
     if( state != window->backface_culling_state )
     {
@@ -71,7 +71,7 @@ public  void  G_backface_culling_state(
 
 public  void  G_set_render_lines_as_curves_state(
     Gwindow     window,
-    BOOLEAN     state )
+    VIO_BOOL     state )
 {
     window->render_lines_as_curves_state = state;
 }
@@ -92,7 +92,7 @@ public  void  G_set_n_curve_segments(
 
 public  void  G_set_markers_labels_visibility(
     Gwindow    window,
-    BOOLEAN    state )
+    VIO_BOOL    state )
 {
     window->marker_labels_visibility = state;
 }

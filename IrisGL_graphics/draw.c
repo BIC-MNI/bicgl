@@ -27,7 +27,7 @@ public  void  GS_set_colour_index(
 }
 
 public  void  GS_set_ambient_and_diffuse_mode(
-    BOOLEAN  state )
+    VIO_BOOL  state )
 {
     if( state )
         lmcolor( LMC_AD );
@@ -219,7 +219,7 @@ public  void  GS_draw_rgb_pixels(
 /* ARGSUSED */
 
 public  void  GS_read_pixels(
-    BOOLEAN         colour_map_state,
+    VIO_BOOL         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,
@@ -261,7 +261,7 @@ private  struct
 private  int  n_fonts = 0;
 private  int  current_font_index = 0;
 
-private  BOOLEAN  fonts_present( void )
+private  VIO_BOOL  fonts_present( void )
 {
     return( base_font_handle != (fmfonthandle) 0 );
 }
@@ -270,7 +270,7 @@ private  fmfonthandle  lookup_font(
     Font_types    font_type,
     Real          size )
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
 
     if( first )
     {

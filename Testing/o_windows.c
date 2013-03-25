@@ -28,13 +28,13 @@ public  Status  GS_create_window(
     int            y_pos,
     int            width,
     int            height,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired,
-    BOOLEAN        *actual_colour_map_flag,
-    BOOLEAN        *actual_double_buffer_flag,
-    BOOLEAN        *actual_depth_buffer_flag,
+    VIO_BOOL        *actual_colour_map_flag,
+    VIO_BOOL        *actual_double_buffer_flag,
+    VIO_BOOL        *actual_depth_buffer_flag,
     int            *actual_n_overlay_planes )
 {
     Status       status;

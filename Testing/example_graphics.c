@@ -26,7 +26,7 @@ int main(
     Point             point;
     Vector            normal, light_direction;
     Event_types       event_type;
-    BOOLEAN           update_required, done;
+    VIO_BOOL           update_required, done;
     int               key_pressed;
     int               x_position, y_position, x_size, y_size;
     int               i, j, pixels_x_size, pixels_y_size;

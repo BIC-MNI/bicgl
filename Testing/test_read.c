@@ -22,13 +22,13 @@ main()
     Point             point, centre_of_rotation;
     Vector            normal, light_direction;
     Event_types       event_type;
-    BOOLEAN           update_required, done;
+    VIO_BOOL           update_required, done;
     int               key_pressed;
     int               mouse_x, mouse_y, prev_mouse_x, prev_mouse_y;
-    BOOLEAN           mouse_in_window, prev_mouse_in_window;
+    VIO_BOOL           mouse_in_window, prev_mouse_in_window;
     int               x_position, y_position, x_size, y_size;
     int               x_pixel, y_pixel;
-    BOOLEAN           in_rotation_mode;
+    VIO_BOOL           in_rotation_mode;
     int               prev_rotation_mouse_x;
     Real              angle_in_degrees;
     int               i, j, pixels_x_size, pixels_y_size;

@@ -30,7 +30,7 @@ public  void  GS_set_colour_index(
 }
 
 public  void  GS_set_ambient_and_diffuse_mode(
-    BOOLEAN  state )
+    VIO_BOOL  state )
 {
     if( state )
     {
@@ -221,7 +221,7 @@ public  void  GS_draw_rgb_pixels(
 }
 
 public  void  GS_read_pixels(
-    BOOLEAN         colour_map_state,
+    VIO_BOOL         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,

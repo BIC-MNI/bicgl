@@ -9,9 +9,9 @@ public  Status  X_create_window(
     int              initial_y_pos,
     int              initial_x_size,
     int              initial_y_size,
-    BOOLEAN          colour_map_mode,  
-    BOOLEAN          double_buffer_flag,  
-    BOOLEAN          depth_buffer_flag,  
+    VIO_BOOL          colour_map_mode,  
+    VIO_BOOL          double_buffer_flag,  
+    VIO_BOOL          depth_buffer_flag,  
     int              n_overlay_planes,
     X_window_struct  *window )
 {

@@ -32,7 +32,7 @@ public  void  GS_set_colour_index(
     Colour  colour );
 
 public  void  GS_set_ambient_and_diffuse_mode(
-    BOOLEAN  state );
+    VIO_BOOL  state );
 
 public  void  GS_initialize_surface_property(
     GSwindow        window );
@@ -88,7 +88,7 @@ public  void  GS_draw_rgb_pixels(
     pixels_struct   *pixels );
 
 public  void  GS_read_pixels(
-    BOOLEAN         colour_map_state,
+    VIO_BOOL         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,
@@ -182,7 +182,7 @@ public  void  GS_set_mouse_position(
     int       x_screen,
     int       y_screen );
 
-public  BOOLEAN  GS_are_mouse_coordinates_in_screen_space( void );
+public  VIO_BOOL  GS_are_mouse_coordinates_in_screen_space( void );
 
 public  void  GS_initialize_lights(
     GSwindow        window );
@@ -207,7 +207,7 @@ public  void  GS_define_light(
 public  void  GS_set_light_state(
     GSwindow        window,
     int             light_index,
-    BOOLEAN         state );
+    VIO_BOOL         state );
 
 public  void  redefine_lights(
     GSwindow        window );
@@ -221,10 +221,10 @@ public  void  GS_turn_on_blend_function( void );
 
 public  void  GS_set_lighting_state(
     GSwindow     window,
-    BOOLEAN      state );
+    VIO_BOOL      state );
 
 public  void  GS_backface_culling_state(
-    BOOLEAN     state );
+    VIO_BOOL     state );
 
 public  void  GS_set_n_curve_segments(
     int      n_segments );
@@ -288,9 +288,9 @@ public  void  GS_initialize( void );
 
 public  void  GS_terminate( void );
 
-public  BOOLEAN  GS_can_switch_double_buffering( void );
+public  VIO_BOOL  GS_can_switch_double_buffering( void );
 
-public  BOOLEAN  GS_can_switch_colour_map_mode( void );
+public  VIO_BOOL  GS_can_switch_colour_map_mode( void );
 
 public  Status  GS_create_window(
     GSwindow       window,
@@ -299,13 +299,13 @@ public  Status  GS_create_window(
     int            y_pos,
     int            width,
     int            height,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired,
-    BOOLEAN        *actual_colour_map_flag,
-    BOOLEAN        *actual_double_buffer_flag,
-    BOOLEAN        *actual_depth_buffer_flag,
+    VIO_BOOL        *actual_colour_map_flag,
+    VIO_BOOL        *actual_double_buffer_flag,
+    VIO_BOOL        *actual_depth_buffer_flag,
     int            *actual_n_overlay_planes );
 
 public  void  print_info( void );
@@ -314,21 +314,21 @@ public  void  GS_set_window_title(
     GSwindow   window,
     STRING     title );
 
-public  BOOLEAN  GS_has_transparency_mode( void );
+public  VIO_BOOL  GS_has_transparency_mode( void );
 
-public  BOOLEAN  GS_has_rgb_mode( void );
+public  VIO_BOOL  GS_has_rgb_mode( void );
 
-public  BOOLEAN  GS_set_double_buffer_state(
+public  VIO_BOOL  GS_set_double_buffer_state(
     GSwindow       window,
-    BOOLEAN        flag );
+    VIO_BOOL        flag );
 
-public  BOOLEAN  GS_set_colour_map_state(
+public  VIO_BOOL  GS_set_colour_map_state(
     GSwindow       window,
-    BOOLEAN        flag );
+    VIO_BOOL        flag );
 
 public  int  GS_get_n_colour_map_entries(
     GSwindow  window,
-    BOOLEAN   double_buffer_state );
+    VIO_BOOL   double_buffer_state );
 
 public  void  GS_set_colour_map_entry(
     GSwindow        window,
@@ -336,15 +336,15 @@ public  void  GS_set_colour_map_entry(
     int             ind,
     Colour          colour );
 
-public  BOOLEAN  GS_is_double_buffer_supported( void );
+public  VIO_BOOL  GS_is_double_buffer_supported( void );
 
-public  BOOLEAN  GS_is_depth_buffer_supported( void );
+public  VIO_BOOL  GS_is_depth_buffer_supported( void );
 
 public  void  GS_set_depth_function(
     Depth_functions  func );
 
 public  void  GS_set_depth_buffer_state(
-    BOOLEAN         flag );
+    VIO_BOOL         flag );
 
 public  Status  GS_delete_window(
     GSwindow   window );
@@ -370,8 +370,8 @@ public  void  GS_clear_window(
     int             x_size,
     int             y_size,
     Bitplane_types  current_bitplanes,
-    BOOLEAN         colour_map_state,
-    BOOLEAN         zbuffer_state,
+    VIO_BOOL         colour_map_state,
+    VIO_BOOL         zbuffer_state,
     Colour          colour );
 
 public  void  GS_clear_viewport(
@@ -383,15 +383,15 @@ public  void  GS_clear_viewport(
     int             x_size,
     int             y_size,
     Bitplane_types  current_bitplanes,
-    BOOLEAN         colour_map_state,
-    BOOLEAN         zbuffer_state,
+    VIO_BOOL         colour_map_state,
+    VIO_BOOL         zbuffer_state,
     Colour          colour );
 
 public  void  GS_flush( void );
 
 public  void  GS_append_to_last_update(
     GSwindow   window,
-    BOOLEAN    zbuffer_state,
+    VIO_BOOL    zbuffer_state,
     int        x_size,
     int        y_size );
 

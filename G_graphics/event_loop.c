@@ -5,9 +5,9 @@
 #include  <volume_io.h>
 #include  <graphics.h>
 
-static  BOOLEAN    left_button_state = FALSE;
-static  BOOLEAN    middle_button_state = FALSE;
-static  BOOLEAN    right_button_state = FALSE;
+static  VIO_BOOL    left_button_state = FALSE;
+static  VIO_BOOL    middle_button_state = FALSE;
+static  VIO_BOOL    right_button_state = FALSE;
 static  int        keyboard_modifiers = 0;
 static  int        current_mouse_x = 0;
 static  int        current_mouse_y = 0;
@@ -18,32 +18,32 @@ static  int        n_windows_to_update_on_idle = 0;
 private  void  check_update_windows(
     void  *void_ptr );
 
-public  BOOLEAN  G_get_left_mouse_button( void )
+public  VIO_BOOL  G_get_left_mouse_button( void )
 {
     return( left_button_state );
 }
 
-public  BOOLEAN  G_get_middle_mouse_button( void )
+public  VIO_BOOL  G_get_middle_mouse_button( void )
 {
     return( middle_button_state );
 }
 
-public  BOOLEAN  G_get_right_mouse_button( void )
+public  VIO_BOOL  G_get_right_mouse_button( void )
 {
     return( right_button_state );
 }
 
-public  BOOLEAN  G_get_shift_key_state( void )
+public  VIO_BOOL  G_get_shift_key_state( void )
 {
     return( (keyboard_modifiers & SHIFT_KEY_BIT) != 0 );
 }
 
-public  BOOLEAN  G_get_ctrl_key_state( void )
+public  VIO_BOOL  G_get_ctrl_key_state( void )
 {
     return( (keyboard_modifiers & CTRL_KEY_BIT) != 0 );
 }
 
-public  BOOLEAN  G_get_alt_key_state( void )
+public  VIO_BOOL  G_get_alt_key_state( void )
 {
     return( (keyboard_modifiers & ALT_KEY_BIT) != 0 );
 }
@@ -773,7 +773,7 @@ public  void  G_set_mouse_position(
     GS_set_mouse_position( x_screen, y_screen );
 }
 
-public  BOOLEAN  G_is_mouse_in_window(
+public  VIO_BOOL  G_is_mouse_in_window(
     Gwindow window )
 {
     return( current_window == window && window != NULL );
@@ -797,12 +797,12 @@ public  void  G_get_mouse_screen_position(
     }
 }
 
-public  BOOLEAN  G_get_mouse_position(
+public  VIO_BOOL  G_get_mouse_position(
     Gwindow        window,
     int            *x_pixel_pos,
     int            *y_pixel_pos )
 {
-    BOOLEAN        in_window;
+    VIO_BOOL        in_window;
 
     in_window = G_is_mouse_in_window( window );
 
@@ -815,13 +815,13 @@ public  BOOLEAN  G_get_mouse_position(
     return( in_window );
 }
 
-public  BOOLEAN  G_get_mouse_position_0_to_1(
+public  VIO_BOOL  G_get_mouse_position_0_to_1(
     Gwindow        window,
     Real           *x_pos,
     Real           *y_pos )
 {
     int            x_pixel, y_pixel;
-    BOOLEAN        in_window;
+    VIO_BOOL        in_window;
 
     in_window = G_get_mouse_position( window, &x_pixel, &y_pixel );
 

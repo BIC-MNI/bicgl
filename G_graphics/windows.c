@@ -88,7 +88,7 @@ public  Gwindow  get_current_window( void )
 
 private  void  check_graphics_initialized( void )
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
 
     if( first )
     {
@@ -199,16 +199,16 @@ public  Status  G_create_window(
     int            y_pos,
     int            width,
     int            height,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired,
     Gwindow        *window )
 {
     Status   status;
-    BOOLEAN  actual_colour_map_flag;
-    BOOLEAN  actual_double_buffer_flag;
-    BOOLEAN  actual_depth_buffer_flag;
+    VIO_BOOL  actual_colour_map_flag;
+    VIO_BOOL  actual_double_buffer_flag;
+    VIO_BOOL  actual_depth_buffer_flag;
     int      actual_n_overlay_planes;
 
     check_graphics_initialized();
@@ -292,10 +292,10 @@ public  void  G_terminate( void )
     GS_terminate();
 }
 
-public  BOOLEAN  G_is_double_buffer_supported( void )
+public  VIO_BOOL  G_is_double_buffer_supported( void )
 {
-    static  BOOLEAN   first = TRUE;
-    static  BOOLEAN   available;
+    static  VIO_BOOL   first = TRUE;
+    static  VIO_BOOL   available;
 
     if( first )
     {
@@ -320,7 +320,7 @@ public  BOOLEAN  G_is_double_buffer_supported( void )
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  G_get_double_buffer_state(
+public  VIO_BOOL  G_get_double_buffer_state(
     Gwindow        window )
 {
     return( window->double_buffer_state );
@@ -328,7 +328,7 @@ public  BOOLEAN  G_get_double_buffer_state(
 
 public  void  G_set_double_buffer_state(
     Gwindow        window,
-    BOOLEAN        flag )
+    VIO_BOOL        flag )
 {
     Bitplane_types  save_bitplane;
 
@@ -353,10 +353,10 @@ public  void  G_set_double_buffer_state(
     }
 }
 
-public  BOOLEAN  G_is_depth_buffer_supported( void )
+public  VIO_BOOL  G_is_depth_buffer_supported( void )
 {
-    static  BOOLEAN   first = TRUE;
-    static  BOOLEAN   available;
+    static  VIO_BOOL   first = TRUE;
+    static  VIO_BOOL   available;
 
     if( first )
     {
@@ -370,7 +370,7 @@ public  BOOLEAN  G_is_depth_buffer_supported( void )
 
 public  void  G_set_zbuffer_state(
     Gwindow         window,
-    BOOLEAN         flag )
+    VIO_BOOL         flag )
 {
     if( flag && (!G_is_depth_buffer_supported() || !window->zbuffer_available) )
         flag = FALSE;
@@ -385,7 +385,7 @@ public  void  G_set_zbuffer_state(
     }
 }
 
-public  BOOLEAN  G_get_zbuffer_state(
+public  VIO_BOOL  G_get_zbuffer_state(
     Gwindow         window )
 {
     return( window->zbuffer_state );
@@ -404,7 +404,7 @@ public  BOOLEAN  G_get_zbuffer_state(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  G_get_colour_map_state(
+public  VIO_BOOL  G_get_colour_map_state(
     Gwindow        window )
 {
     return( window->colour_map_state );
@@ -426,7 +426,7 @@ public  BOOLEAN  G_get_colour_map_state(
 
 public  void  G_set_colour_map_state(
     Gwindow        window,
-    BOOLEAN        flag )
+    VIO_BOOL        flag )
 {
     Bitplane_types  save_bitplane;
 
@@ -663,7 +663,7 @@ public  void  G_clear_viewport(
 
 public  void  G_set_automatic_clear_state(
     Gwindow    window,
-    BOOLEAN    state )
+    VIO_BOOL    state )
 {
     window->automatic_clear_flag = state;
 }
@@ -714,12 +714,12 @@ public  void  check_window_cleared(
     }
 }
 
-public  BOOLEAN  G_has_overlay_planes( void )
+public  VIO_BOOL  G_has_overlay_planes( void )
 {
     return( G_get_n_overlay_planes() > 0 );
 }
 
-public  BOOLEAN  G_window_has_overlay_planes(
+public  VIO_BOOL  G_window_has_overlay_planes(
     Gwindow   window )
 {
     return( window->n_overlay_planes > 0 );
@@ -770,22 +770,22 @@ public  Bitplane_types  G_get_bitplanes(
     return( window->current_bitplanes );
 }
 
-public  BOOLEAN  G_can_switch_double_buffering( void )
+public  VIO_BOOL  G_can_switch_double_buffering( void )
 {
     return( GS_can_switch_double_buffering() );
 }
 
-public  BOOLEAN  G_can_switch_colour_map_mode( void )
+public  VIO_BOOL  G_can_switch_colour_map_mode( void )
 {
     return( GS_can_switch_colour_map_mode() );
 }
 
-public  BOOLEAN  G_has_transparency_mode( void )
+public  VIO_BOOL  G_has_transparency_mode( void )
 {
     return( GS_has_transparency_mode() );
 }
 
-public  BOOLEAN  G_has_rgb_mode( void )
+public  VIO_BOOL  G_has_rgb_mode( void )
 {
     return( GS_has_transparency_mode() );
 }
@@ -835,7 +835,7 @@ public  void  G_continue_last_update(
 
 public  void  G_set_transparency_state(
     Gwindow        window,
-    BOOLEAN        state )
+    VIO_BOOL        state )
 {
     if( state != window->transparency_state )
     {

@@ -24,9 +24,9 @@ public  void  GS_set_current_window(
 
 private  void  initialize_window(
     GSwindow       window,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired );
 
 private  long     zdepth_clear;
@@ -82,12 +82,12 @@ public  void  GS_terminate( void )
     gexit();
 }
 
-public  BOOLEAN  GS_can_switch_double_buffering( void )
+public  VIO_BOOL  GS_can_switch_double_buffering( void )
 {
     return( TRUE );
 }
 
-public  BOOLEAN  GS_can_switch_colour_map_mode( void )
+public  VIO_BOOL  GS_can_switch_colour_map_mode( void )
 {
     return( TRUE );
 }
@@ -117,13 +117,13 @@ public  Status  GS_create_window(
     int            y_pos,
     int            width,
     int            height,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired,
-    BOOLEAN        *actual_colour_map_flag,
-    BOOLEAN        *actual_double_buffer_flag,
-    BOOLEAN        *actual_depth_buffer_flag,
+    VIO_BOOL        *actual_colour_map_flag,
+    VIO_BOOL        *actual_double_buffer_flag,
+    VIO_BOOL        *actual_depth_buffer_flag,
     int            *actual_n_overlay_planes )
 {
     Status     status;
@@ -202,9 +202,9 @@ public  Status  GS_create_window(
 
 private  void  initialize_window(
     GSwindow       window,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired )
 {
     (void) GS_set_double_buffer_state( window, double_buffer_desired );
@@ -248,7 +248,7 @@ public  void  GS_set_window_title(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_has_transparency_mode( void )
+public  VIO_BOOL  GS_has_transparency_mode( void )
 {
     return( getgdesc( GD_BLEND ) != 0 );
 }
@@ -266,16 +266,16 @@ public  BOOLEAN  GS_has_transparency_mode( void )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_has_rgb_mode( void )
+public  VIO_BOOL  GS_has_rgb_mode( void )
 {
     return( getgdesc( GD_BITS_NORM_SNG_RED ) > 0 &&
             getgdesc( GD_BITS_NORM_SNG_GREEN ) > 0 &&
             getgdesc( GD_BITS_NORM_SNG_BLUE ) > 0 );
 }
 
-public  BOOLEAN  GS_set_double_buffer_state(
+public  VIO_BOOL  GS_set_double_buffer_state(
     GSwindow       window,
-    BOOLEAN        flag )
+    VIO_BOOL        flag )
 {
     long   display_mode;
 
@@ -308,9 +308,9 @@ public  BOOLEAN  GS_set_double_buffer_state(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  BOOLEAN  GS_set_colour_map_state(
+public  VIO_BOOL  GS_set_colour_map_state(
     GSwindow       window,
-    BOOLEAN        flag )
+    VIO_BOOL        flag )
 {
     if( flag )
         cmode();
@@ -338,7 +338,7 @@ public  BOOLEAN  GS_set_colour_map_state(
 
 public  int  GS_get_n_colour_map_entries(
     GSwindow  window,
-    BOOLEAN   double_buffer_state )
+    VIO_BOOL   double_buffer_state )
 {
     int   n_bits, n_colours, query;
 
@@ -400,9 +400,9 @@ public  void  GS_set_colour_map_entry(
     }
 }
 
-public  BOOLEAN  GS_is_double_buffer_supported( void )
+public  VIO_BOOL  GS_is_double_buffer_supported( void )
 {
-    BOOLEAN   available;
+    VIO_BOOL   available;
 
     if( getgdesc( GD_BITS_NORM_DBL_RED ) <= 0 ||
         getgdesc( GD_BITS_NORM_DBL_GREEN ) <= 0 ||
@@ -418,18 +418,18 @@ public  BOOLEAN  GS_is_double_buffer_supported( void )
     return( available );
 }
 
-public  BOOLEAN  GS_is_transparency_supported( void )
+public  VIO_BOOL  GS_is_transparency_supported( void )
 {
-    BOOLEAN   available;
+    VIO_BOOL   available;
 
     available = (getgdesc( GD_BITS_NORM_DBL_ALPHA ) > 0);
 
     return( available );
 }
 
-public  BOOLEAN  GS_is_depth_buffer_supported( void )
+public  VIO_BOOL  GS_is_depth_buffer_supported( void )
 {
-    BOOLEAN   available;
+    VIO_BOOL   available;
 
     available = (getgdesc( GD_BITS_NORM_ZBUFFER ) > 0);
 
@@ -437,7 +437,7 @@ public  BOOLEAN  GS_is_depth_buffer_supported( void )
 }
 
 public  void  GS_set_depth_buffer_state(
-    BOOLEAN         flag )
+    VIO_BOOL         flag )
 {
     zbuffer( (Boolean) flag );
 }
@@ -533,8 +533,8 @@ public  void  GS_clear_depth_buffer( void )
 private   void  clear_viewport(
     GSwindow        window,
     Bitplane_types  current_bitplanes,
-    BOOLEAN         colour_map_state,
-    BOOLEAN         zbuffer_state,
+    VIO_BOOL         colour_map_state,
+    VIO_BOOL         zbuffer_state,
     Colour          colour )
 {
     if( current_bitplanes == NORMAL_PLANES )
@@ -585,8 +585,8 @@ public  void  GS_clear_window(
     int             x_size,
     int             y_size,
     Bitplane_types  bitplane,
-    BOOLEAN         colour_map_state,
-    BOOLEAN         zbuffer_state,
+    VIO_BOOL         colour_map_state,
+    VIO_BOOL         zbuffer_state,
     Colour          colour )
 {
     pushviewport();
@@ -619,8 +619,8 @@ public  void  GS_clear_viewport(
     int             x_size,
     int             y_size,
     Bitplane_types  bitplane,
-    BOOLEAN         colour_map_state,
-    BOOLEAN         zbuffer_state,
+    VIO_BOOL         colour_map_state,
+    VIO_BOOL         zbuffer_state,
     Colour          colour )
 {
     clear_viewport( window, bitplane, colour_map_state, zbuffer_state, colour );
@@ -640,11 +640,11 @@ public  void  GS_swap_buffers( void )
 
 public  void  GS_append_to_last_update(
     GSwindow   window,
-    BOOLEAN    zbuffer_state,
+    VIO_BOOL    zbuffer_state,
     int        x_size,
     int        y_size )
 {
-    BOOLEAN   zbuffer_on;
+    VIO_BOOL   zbuffer_on;
 
     zbuffer_on = zbuffer_state;
 
@@ -666,7 +666,7 @@ public  void  GS_append_to_last_update(
 
 public  int  GS_get_num_overlay_planes( void )
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
     static  int      n_planes;
 
     if( first )

@@ -86,9 +86,9 @@ private  void  display_loop(
     pixels_struct    pixels[],
     Real             frame_rate )
 {
-    BOOLEAN        running;
+    VIO_BOOL        running;
     Real           seconds_per_frame;
-    BOOLEAN        done;
+    VIO_BOOL        done;
     int            frame;
     Real           next_update;
     Event_types    event_type;
@@ -167,7 +167,7 @@ private  void  display_frame_info(
     int             frame_rate,
     char            filename[] )
 {
-    static   BOOLEAN       first = TRUE;
+    static   VIO_BOOL       first = TRUE;
     static   text_struct   text;
     static   Point         origin = { 10.0, 10.0, 0.0 };
 

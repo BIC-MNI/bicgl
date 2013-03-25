@@ -6,7 +6,7 @@ private  void  bind_special_keys( void );
 
 public  Display   *X_get_display( void )
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
     static  Display  *display;
 
     if( first )
@@ -26,7 +26,7 @@ public  Display   *X_get_display( void )
 
 public  int  X_get_screen( void )
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
     static  int      default_screen;
 
     if( first )
@@ -61,12 +61,12 @@ public  Status  X_create_window_with_visual(
     int              initial_y_pos,
     int              initial_x_size,
     int              initial_y_size,
-    BOOLEAN          colour_map_mode,  
+    VIO_BOOL          colour_map_mode,  
     XVisualInfo      *visual,
     Colormap         cmap,
     X_window_struct  *window )
 {
-    BOOLEAN                  setting_position;
+    VIO_BOOL                  setting_position;
     long                     event_mask;
     unsigned long            cwa_mask;
     XEvent                   event;
@@ -273,7 +273,7 @@ public  void  X_get_screen_size(
     int    *y_size )
 {
     static  unsigned   int  width, height, border_width, depth;
-    static  BOOLEAN    first = TRUE;
+    static  VIO_BOOL    first = TRUE;
     int                x, y;
     Window             root;
 
@@ -297,7 +297,7 @@ public  void  X_get_screen_size(
 
 /*--------------------------------- events ----------------------------- */
 
-private  BOOLEAN  translate_key(
+private  VIO_BOOL  translate_key(
     XEvent   *x_event,
     int      *key )
 {
@@ -313,7 +313,7 @@ private  BOOLEAN  translate_key(
     return( char_count >= 1 );
 }
 
-public  BOOLEAN  X_get_event(
+public  VIO_BOOL  X_get_event(
     Event_types          *event_type,
     Window_id            *window,
     event_info_struct    *info )
@@ -465,7 +465,7 @@ private  void  bind_key(
 private  void  bind_special_keys( void )
 {
     int      i;
-    static   BOOLEAN  first = TRUE;
+    static   VIO_BOOL  first = TRUE;
     static  struct  { KeySym keysym;  int  character; }  table[] =
          {
              { XK_Left,       LEFT_ARROW_KEY },
@@ -492,13 +492,13 @@ private  void  bind_special_keys( void )
 #define  MAX_NAMES   10
 #define  MAX_FONT_SIZE_ERROR   5
 
-private  BOOLEAN  find_font(
+private  VIO_BOOL  find_font(
     Font_types       type,
     int              size,
     STRING           *font_name )
 {
     int      n_returned;
-    BOOLEAN  found;
+    VIO_BOOL  found;
     char     pattern[EXTREMELY_LARGE_STRING_SIZE];
     char     **names;
     int      dpi, family, width, slant, weight;
@@ -576,12 +576,12 @@ private  BOOLEAN  find_font(
     return( found );
 }
 
-public  BOOLEAN  X_get_font_name(
+public  VIO_BOOL  X_get_font_name(
     Font_types       type,
     int              size,
     STRING           *font_name )
 {
-    BOOLEAN  found;
+    VIO_BOOL  found;
     int      offset;
 
     offset = 0;

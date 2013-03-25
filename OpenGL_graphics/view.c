@@ -87,7 +87,7 @@ public  void  GS_ortho_2d(
 
 #ifdef NOT_NEEDED
 {
-    static  BOOLEAN  first = TRUE;
+    static  VIO_BOOL  first = TRUE;
     static  Real     start, end;
 
     if( first )

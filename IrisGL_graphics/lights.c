@@ -126,7 +126,7 @@ public  void  GS_define_light(
 public  void  GS_set_light_state(
     GSwindow        window,
     int             light_index,
-    BOOLEAN         state )
+    VIO_BOOL         state )
 {
     short   gl_light_index;
 

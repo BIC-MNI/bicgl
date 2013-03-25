@@ -228,7 +228,7 @@ public  void  GS_event_loop( void )
     short      val;
     int        i;
     Real       current_time;
-    BOOLEAN    idle;
+    VIO_BOOL    idle;
 
     while( TRUE )
     {
@@ -559,7 +559,7 @@ public  void  GS_set_mouse_position(
     setvaluator( MOUSEY, (short) y_screen, 0, 10000 );
 }
 
-public  BOOLEAN  GS_are_mouse_coordinates_in_screen_space( void )
+public  VIO_BOOL  GS_are_mouse_coordinates_in_screen_space( void )
 {
     return( TRUE );
 }

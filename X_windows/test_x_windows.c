@@ -8,7 +8,7 @@ int  main(
     char   *argv[] )
 {
     int                   i, j, n_colours, min_colour, max_colour, intensity, n;
-    BOOLEAN               done;
+    VIO_BOOL               done;
     Status                status;
     X_window_struct       window;
     pixels_struct         pixels;

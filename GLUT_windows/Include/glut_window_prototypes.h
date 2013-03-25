@@ -9,23 +9,23 @@ public  Status  WS_create_window(
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    BOOLEAN                colour_map_mode,
-    BOOLEAN                double_buffer_flag,
-    BOOLEAN                depth_buffer_flag,
+    VIO_BOOL                colour_map_mode,
+    VIO_BOOL                double_buffer_flag,
+    VIO_BOOL                depth_buffer_flag,
     int                    n_overlay_planes,
-    BOOLEAN                *actual_colour_map_mode,
-    BOOLEAN                *actual_double_buffer_flag,
-    BOOLEAN                *actual_depth_buffer_flag,
+    VIO_BOOL                *actual_colour_map_mode,
+    VIO_BOOL                *actual_double_buffer_flag,
+    VIO_BOOL                *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
     WSwindow               window );
 
-public  BOOLEAN  WS_set_double_buffer_state(
+public  VIO_BOOL  WS_set_double_buffer_state(
     WSwindow               window,
-    BOOLEAN                double_buffer_flag );
+    VIO_BOOL                double_buffer_flag );
 
-public  BOOLEAN  WS_set_colour_map_state(
+public  VIO_BOOL  WS_set_colour_map_state(
     WSwindow               window,
-    BOOLEAN                colour_map_flag );
+    VIO_BOOL                colour_map_flag );
 
 public  void  WS_set_window_title(
     WSwindow   window,
@@ -34,7 +34,7 @@ public  void  WS_set_window_title(
 public  void  WS_delete_window(
     WSwindow  window );
 
-public  BOOLEAN  WS_window_has_overlay_planes(
+public  VIO_BOOL  WS_window_has_overlay_planes(
     WSwindow  window );
 
 public  void  WS_set_current_window(

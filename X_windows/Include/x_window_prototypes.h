@@ -11,7 +11,7 @@ public  Status  X_create_window_with_visual(
     int              initial_y_pos,
     int              initial_x_size,
     int              initial_y_size,
-    BOOLEAN          colour_map_mode,  
+    VIO_BOOL          colour_map_mode,  
     XVisualInfo      *visual,
     Colormap         cmap,
     X_window_struct  *window );
@@ -45,12 +45,12 @@ public  void  X_get_screen_size(
     int    *x_size,
     int    *y_size );
 
-public  BOOLEAN  X_get_event(
+public  VIO_BOOL  X_get_event(
     Event_types          *event_type,
     Window_id            *window,
     event_info_struct    *info );
 
-public  BOOLEAN  X_get_font_name(
+public  VIO_BOOL  X_get_font_name(
     Font_types       type,
     int              size,
     STRING           *font_name );

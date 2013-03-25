@@ -8,7 +8,7 @@ typedef  struct
 {
     int             n_objects;
     object_struct   **objects;
-    BOOLEAN         update_flag[2];    /* DOUBLE BUFFER */
+    VIO_BOOL         update_flag[2];    /* DOUBLE BUFFER */
 } bitplane_graphics_struct;
 
 typedef struct
@@ -24,7 +24,7 @@ typedef struct
 
 typedef  struct
 {
-    BOOLEAN           clear_bitplane_flags[N_BITPLANE_TYPES][2]; /* doub buff */
+    VIO_BOOL           clear_bitplane_flags[N_BITPLANE_TYPES][2]; /* doub buff */
     int               n_viewports;
     viewport_struct   *viewports;
 } graphics_struct;

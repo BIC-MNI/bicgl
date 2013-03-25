@@ -33,9 +33,9 @@ public  void  initialize_window_view(
     static  Vector default_up_direction = { 0.0f, 1.0f, 0.0f };
     Real           default_front_clip_distance = 0.01;
     Real           default_back_clip_distance = 2.0;
-    BOOLEAN        default_perspective_flag = TRUE;
+    VIO_BOOL        default_perspective_flag = TRUE;
     Real           default_perspective_distance = 1.0;
-    BOOLEAN        default_stereo_flag = FALSE;
+    VIO_BOOL        default_stereo_flag = FALSE;
     Real           default_eye_separation = 0.1;
     Real           default_window_width = 1.0;
     Real           default_window_height = 1.0;
@@ -158,9 +158,9 @@ private  void  define_3D_projection(
     Gwindow        window,
     Real           front_clip_distance,
     Real           back_clip_distance,
-    BOOLEAN        perspective_flag,
+    VIO_BOOL        perspective_flag,
     Real           perspective_distance,
-    BOOLEAN        stereo_flag,
+    VIO_BOOL        stereo_flag,
     Real           eye_separation,
     Real           window_width,
     Real           window_height )
@@ -259,9 +259,9 @@ public  void  G_set_3D_view(
     Vector         *up_direction,
     Real           front_clip_distance,
     Real           back_clip_distance,
-    BOOLEAN        perspective_flag,
+    VIO_BOOL        perspective_flag,
     Real           perspective_distance,
-    BOOLEAN        stereo_flag,
+    VIO_BOOL        stereo_flag,
     Real           eye_separation,
     Real           window_width,
     Real           window_height )

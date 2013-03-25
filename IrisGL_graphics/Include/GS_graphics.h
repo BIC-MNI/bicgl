@@ -12,7 +12,7 @@ typedef  struct
 {
     Window_id       window_id;
     long            unique_lmdef_id;
-    BOOLEAN         update_required;
+    VIO_BOOL         update_required;
 }
 GS_window_struct;
 

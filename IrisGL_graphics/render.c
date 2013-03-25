@@ -23,7 +23,7 @@ public  void  GS_turn_on_blend_function( void )
 
 public  void  GS_set_lighting_state(
     GSwindow     window,
-    BOOLEAN      state )
+    VIO_BOOL      state )
 {
     if( state )
         lmbind( MATERIAL, (short) window->unique_lmdef_id );
@@ -32,7 +32,7 @@ public  void  GS_set_lighting_state(
 }
 
 public  void  GS_backface_culling_state(
-    BOOLEAN     state )
+    VIO_BOOL     state )
 {
     backface( (Boolean) state );
 }

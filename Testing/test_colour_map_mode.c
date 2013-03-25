@@ -21,7 +21,7 @@ typedef struct
 {
     Gwindow          window;
     int              prev_rotation_mouse_x;
-    BOOLEAN          in_rotation_mode;
+    VIO_BOOL          in_rotation_mode;
     pixels_struct    pixels;
     pixels_struct    ball;
     Real             ball_x;
@@ -36,7 +36,7 @@ typedef struct
     polygons_struct  polygons;
     Transform        modeling_transform;
     Real             last_message;
-    BOOLEAN          double_buffer_flag;
+    VIO_BOOL          double_buffer_flag;
 
 }main_struct;
 
@@ -376,7 +376,7 @@ int main(
 {
     main_struct       info;
     Status            status;
-    BOOLEAN           stereo_flag;
+    VIO_BOOL           stereo_flag;
     static Font_types font_types[N_FONTS] = {
                           FIXED_FONT,
                           SIZED_FONT,

@@ -6,9 +6,9 @@ public  void  initialize_display_interrupts(
 
 public  void  G_set_drawing_interrupt_state(
     Gwindow          window,
-    BOOLEAN         state );
+    VIO_BOOL         state );
 
-public  BOOLEAN  G_get_drawing_interrupt_state(
+public  VIO_BOOL  G_get_drawing_interrupt_state(
     Gwindow          window );
 
 public  void  G_set_drawing_interrupt_check_n_objects(
@@ -22,7 +22,7 @@ public  void  G_set_drawing_interrupt_time(
 public  void  G_start_interrupt_test(
     Gwindow          window );
 
-public  BOOLEAN  G_get_interrupt_occurred(
+public  VIO_BOOL  G_get_interrupt_occurred(
     Gwindow          window );
 
 public  void  G_clear_drawing_interrupt_flag(
@@ -30,12 +30,12 @@ public  void  G_clear_drawing_interrupt_flag(
 
 public  void  set_continuation_flag(
     Gwindow         window,
-    BOOLEAN         state );
+    VIO_BOOL         state );
 
 public  void  initialize_surface_property(
     Gwindow        window );
 
-public  BOOLEAN  view_is_stereo(
+public  VIO_BOOL  view_is_stereo(
     Gwindow        window );
 
 public  void  G_draw_polygons(
@@ -83,17 +83,17 @@ public  void  draw_object(
     Gwindow         window,
     object_struct   *object );
 
-public  BOOLEAN  G_get_left_mouse_button( void );
+public  VIO_BOOL  G_get_left_mouse_button( void );
 
-public  BOOLEAN  G_get_middle_mouse_button( void );
+public  VIO_BOOL  G_get_middle_mouse_button( void );
 
-public  BOOLEAN  G_get_right_mouse_button( void );
+public  VIO_BOOL  G_get_right_mouse_button( void );
 
-public  BOOLEAN  G_get_shift_key_state( void );
+public  VIO_BOOL  G_get_shift_key_state( void );
 
-public  BOOLEAN  G_get_ctrl_key_state( void );
+public  VIO_BOOL  G_get_ctrl_key_state( void );
 
-public  BOOLEAN  G_get_alt_key_state( void );
+public  VIO_BOOL  G_get_alt_key_state( void );
 
 public  void  G_set_update_function(
     Gwindow                 window,
@@ -205,19 +205,19 @@ public  void  G_set_mouse_position(
     int       x_screen,
     int       y_screen );
 
-public  BOOLEAN  G_is_mouse_in_window(
+public  VIO_BOOL  G_is_mouse_in_window(
     Gwindow window );
 
 public  void  G_get_mouse_screen_position(
     int            *x_screen_pos,
     int            *y_screen_pos );
 
-public  BOOLEAN  G_get_mouse_position(
+public  VIO_BOOL  G_get_mouse_position(
     Gwindow        window,
     int            *x_pixel_pos,
     int            *y_pixel_pos );
 
-public  BOOLEAN  G_get_mouse_position_0_to_1(
+public  VIO_BOOL  G_get_mouse_position_0_to_1(
     Gwindow        window,
     Real           *x_pos,
     Real           *y_pos );
@@ -274,7 +274,7 @@ public  void  set_viewport_update_flag(
     int               viewport_index,
     Bitplane_types    bitplane );
 
-public  BOOLEAN  get_viewport_update_flag( 
+public  VIO_BOOL  get_viewport_update_flag( 
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
@@ -288,14 +288,14 @@ public  void  set_viewport_bitplane_objects_visibility(
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
-    BOOLEAN           visibility );
+    VIO_BOOL           visibility );
 
 public  void  set_viewport_objects_visibility(
     graphics_struct   *graphics,
     int               viewport_index,
-    BOOLEAN           visibility );
+    VIO_BOOL           visibility );
 
-public  BOOLEAN  redraw_out_of_date_viewports(
+public  VIO_BOOL  redraw_out_of_date_viewports(
     graphics_struct   *graphics,
     Gwindow           window,
     int               current_buffer );
@@ -320,33 +320,33 @@ public  void  G_define_light(
 public  void  G_set_light_state(
     Gwindow         window,
     int             light_index,
-    BOOLEAN         state );
+    VIO_BOOL         state );
 
 public  Random_mask_type  get_random_order_mask(
     int  size );
 
 public  void  G_set_shaded_state(
     Gwindow      window,
-    BOOLEAN      state );
+    VIO_BOOL      state );
 
 public  void  G_set_shading_type(
     Gwindow        window,
     Shading_types  type );
 
-public  BOOLEAN  G_get_lighting_state(
+public  VIO_BOOL  G_get_lighting_state(
     Gwindow      window );
 
 public  void  G_set_lighting_state(
     Gwindow      window,
-    BOOLEAN      state );
+    VIO_BOOL      state );
 
 public  void  G_backface_culling_state(
     Gwindow     window,
-    BOOLEAN     state );
+    VIO_BOOL     state );
 
 public  void  G_set_render_lines_as_curves_state(
     Gwindow     window,
-    BOOLEAN     state );
+    VIO_BOOL     state );
 
 public  void  G_set_n_curve_segments(
     Gwindow  window,
@@ -354,7 +354,7 @@ public  void  G_set_n_curve_segments(
 
 public  void  G_set_markers_labels_visibility(
     Gwindow    window,
-    BOOLEAN    state );
+    VIO_BOOL    state );
 
 public  void  initialize_window_view(
     Gwindow   window );
@@ -374,9 +374,9 @@ public  void  G_set_3D_view(
     Vector         *up_direction,
     Real           front_clip_distance,
     Real           back_clip_distance,
-    BOOLEAN        perspective_flag,
+    VIO_BOOL        perspective_flag,
     Real           perspective_distance,
-    BOOLEAN        stereo_flag,
+    VIO_BOOL        stereo_flag,
     Real           eye_separation,
     Real           window_width,
     Real           window_height );
@@ -427,9 +427,9 @@ public  Status  G_create_window(
     int            y_pos,
     int            width,
     int            height,
-    BOOLEAN        colour_map_desired,
-    BOOLEAN        double_buffer_desired,
-    BOOLEAN        depth_buffer_desired,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
     int            n_overlay_planes_desired,
     Gwindow        *window );
 
@@ -442,30 +442,30 @@ public  void  G_set_window_title(
 
 public  void  G_terminate( void );
 
-public  BOOLEAN  G_is_double_buffer_supported( void );
+public  VIO_BOOL  G_is_double_buffer_supported( void );
 
-public  BOOLEAN  G_get_double_buffer_state(
+public  VIO_BOOL  G_get_double_buffer_state(
     Gwindow        window );
 
 public  void  G_set_double_buffer_state(
     Gwindow        window,
-    BOOLEAN        flag );
+    VIO_BOOL        flag );
 
-public  BOOLEAN  G_is_depth_buffer_supported( void );
+public  VIO_BOOL  G_is_depth_buffer_supported( void );
 
 public  void  G_set_zbuffer_state(
     Gwindow         window,
-    BOOLEAN         flag );
+    VIO_BOOL         flag );
 
-public  BOOLEAN  G_get_zbuffer_state(
+public  VIO_BOOL  G_get_zbuffer_state(
     Gwindow         window );
 
-public  BOOLEAN  G_get_colour_map_state(
+public  VIO_BOOL  G_get_colour_map_state(
     Gwindow        window );
 
 public  void  G_set_colour_map_state(
     Gwindow        window,
-    BOOLEAN        flag );
+    VIO_BOOL        flag );
 
 public  int  G_get_n_colour_map_entries(
     Gwindow        window );
@@ -511,16 +511,16 @@ public  void  G_clear_viewport(
 
 public  void  G_set_automatic_clear_state(
     Gwindow    window,
-    BOOLEAN    state );
+    VIO_BOOL    state );
 
 public  void  G_update_window( Gwindow   window );
 
 public  void  check_window_cleared(
      Gwindow    window  );
 
-public  BOOLEAN  G_has_overlay_planes( void );
+public  VIO_BOOL  G_has_overlay_planes( void );
 
-public  BOOLEAN  G_window_has_overlay_planes(
+public  VIO_BOOL  G_window_has_overlay_planes(
     Gwindow   window );
 
 public  void  G_set_bitplanes(
@@ -530,13 +530,13 @@ public  void  G_set_bitplanes(
 public  Bitplane_types  G_get_bitplanes(
     Gwindow          window );
 
-public  BOOLEAN  G_can_switch_double_buffering( void );
+public  VIO_BOOL  G_can_switch_double_buffering( void );
 
-public  BOOLEAN  G_can_switch_colour_map_mode( void );
+public  VIO_BOOL  G_can_switch_colour_map_mode( void );
 
-public  BOOLEAN  G_has_transparency_mode( void );
+public  VIO_BOOL  G_has_transparency_mode( void );
 
-public  BOOLEAN  G_has_rgb_mode( void );
+public  VIO_BOOL  G_has_rgb_mode( void );
 
 public  int  G_get_n_overlay_planes( void );
 
@@ -553,5 +553,5 @@ public  void  G_continue_last_update(
 
 public  void  G_set_transparency_state(
     Gwindow        window,
-    BOOLEAN        state );
+    VIO_BOOL        state );
 #endif

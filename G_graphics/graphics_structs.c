@@ -199,7 +199,7 @@ public  void  set_viewport_update_flag(
                                                            = TRUE;
 }
 
-public  BOOLEAN  get_viewport_update_flag( 
+public  VIO_BOOL  get_viewport_update_flag( 
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
@@ -223,7 +223,7 @@ public  void  set_viewport_bitplane_objects_visibility(
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
-    BOOLEAN           visibility )
+    VIO_BOOL           visibility )
 {
     int                        i;
     bitplane_graphics_struct   *viewport_bitplane;
@@ -241,7 +241,7 @@ public  void  set_viewport_bitplane_objects_visibility(
 public  void  set_viewport_objects_visibility(
     graphics_struct   *graphics,
     int               viewport_index,
-    BOOLEAN           visibility )
+    VIO_BOOL           visibility )
 {
     Bitplane_types  bitplane;
 
@@ -252,12 +252,12 @@ public  void  set_viewport_objects_visibility(
     }
 }
 
-private  BOOLEAN  check_redraw_viewport(
+private  VIO_BOOL  check_redraw_viewport(
     Gwindow           window,
     viewport_struct   *viewport,
     int               current_buffer )
 {
-    BOOLEAN          drawn;
+    VIO_BOOL          drawn;
     int              i;
     Colour           bg_colour_or_index;
     Bitplane_types   bitplane;
@@ -295,12 +295,12 @@ private  BOOLEAN  check_redraw_viewport(
     return( drawn );
 }
 
-public  BOOLEAN  redraw_out_of_date_viewports(
+public  VIO_BOOL  redraw_out_of_date_viewports(
     graphics_struct   *graphics,
     Gwindow           window,
     int               current_buffer )
 {
-    BOOLEAN          something_drawn;
+    VIO_BOOL          something_drawn;
     int              viewport_index;
     Bitplane_types   bitplane;
 
