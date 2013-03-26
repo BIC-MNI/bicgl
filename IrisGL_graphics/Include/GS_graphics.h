@@ -18,15 +18,15 @@ GS_window_struct;
 
 typedef  GS_window_struct  *GSwindow;
 
-#ifndef  public
-#define       public
+#ifndef  
+#define       
 #define       public_was_defined_here
 #endif
 
 #include  <irisgl_graphics_prototypes.h>
 
 #ifdef  public_was_defined_here
-#undef       public
+#undef       
 #undef       public_was_defined_here
 #endif
 

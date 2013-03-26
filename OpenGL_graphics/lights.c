@@ -5,7 +5,7 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-private  void  initialize_lights( void )
+static  void  initialize_lights( void )
 {
     static  float ambient_light[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -15,7 +15,7 @@ private  void  initialize_lights( void )
 }
 
 
-public  void  GS_initialize_lights(
+  void  GS_initialize_lights(
     GSwindow        window )
 {
     initialize_lights();
@@ -25,7 +25,7 @@ public  void  GS_initialize_lights(
     window->n_light_states = 0;
 }
 
-public  void  delete_lights(
+  void  delete_lights(
     GSwindow        window )
 {
     if( window->n_lights_defined > 0 )
@@ -38,8 +38,8 @@ public  void  delete_lights(
     }
 }
 
-private  void  set_ambient_light(
-    Colour         colour )
+static  void  set_ambient_light(
+    VIO_Colour         colour )
 {
     float     ambient_light[4];
 
@@ -53,24 +53,24 @@ private  void  set_ambient_light(
 
 /* ARGSUSED */
 
-public  void  GS_set_ambient_light(
+  void  GS_set_ambient_light(
     GSwindow       window,
-    Colour         colour )
+    VIO_Colour         colour )
 {
     set_ambient_light( colour );
 }
 
-private  void  define_light(
+static  void  define_light(
     int             light_index,
     Light_types     type,
-    Colour          colour,
-    Vector          *direction,
-    Point           *position,
-    Real            spot_exponent,
-    Real            spot_angle )
+    VIO_Colour          colour,
+    VIO_Vector          *direction,
+    VIO_Point           *position,
+    VIO_Real            spot_exponent,
+    VIO_Real            spot_angle )
 {
     int     gl_light_index;
-    Vector  unit_direction;
+    VIO_Vector  unit_direction;
     float   colour_list[4];
     float   position_list[4];
     static  float  null_colour[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -136,15 +136,15 @@ private  void  define_light(
 
 /* ARGSUSED */
 
-public  void  GS_define_light(
+  void  GS_define_light(
     GSwindow        window,
     int             light_index,
     Light_types     type,
-    Colour          colour,
-    Vector          *direction,
-    Point           *position,
-    Real            spot_exponent,
-    Real            spot_angle )
+    VIO_Colour          colour,
+    VIO_Vector          *direction,
+    VIO_Point           *position,
+    VIO_Real            spot_exponent,
+    VIO_Real            spot_angle )
 {
     int    ind;
 
@@ -181,7 +181,7 @@ public  void  GS_define_light(
     window->lights[ind].spot_angle = spot_angle;
 }
 
-private  void  set_light_state(
+static  void  set_light_state(
     int             light_index,
     VIO_BOOL         state )
 {
@@ -207,7 +207,7 @@ private  void  set_light_state(
 
 /* ARGSUSED */
 
-public  void  GS_set_light_state(
+  void  GS_set_light_state(
     GSwindow        window,
     int             light_index,
     VIO_BOOL         state )
@@ -236,12 +236,12 @@ public  void  GS_set_light_state(
     window->light_states[ind] = state;
 }
 
-public  void  redefine_lights(
+  void  redefine_lights(
     GSwindow        window )
 {
     int                ind;
     light_info_struct  *l;
-    Transform          identity;
+    VIO_Transform          identity;
 
     GS_push_transform();
 

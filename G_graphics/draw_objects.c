@@ -5,7 +5,7 @@
 #include  <volume_io.h>
 #include  <graphics.h>
 
-public  void  draw_object(
+  void  draw_object(
     Gwindow         window,
     object_struct   *object )
 {

@@ -3,7 +3,7 @@
 
 /* ARGSUSED */
 
-public  Status  X_create_window(
+  Status  X_create_window(
     STRING           title,
     int              initial_x_pos,
     int              initial_y_pos,
@@ -56,7 +56,7 @@ public  Status  X_create_window(
     return( status );
 }
 
-public  void  X_draw_pixels(
+  void  X_draw_pixels(
     X_window_struct   *window,
     pixels_struct     *pixels )
 {
@@ -97,7 +97,7 @@ public  void  X_draw_pixels(
     XDestroyImage( image );
 }
 
-public  void  X_update_window(
+  void  X_update_window(
     X_window_struct   *window )
 {
     XFlush( X_get_display() );

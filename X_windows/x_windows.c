@@ -2,9 +2,9 @@
 #include  <x_windows.h>
 #include  <X11/keysym.h>
 
-private  void  bind_special_keys( void );
+static  void  bind_special_keys( void );
 
-public  Display   *X_get_display( void )
+  Display   *X_get_display( void )
 {
     static  VIO_BOOL  first = TRUE;
     static  Display  *display;
@@ -24,7 +24,7 @@ public  Display   *X_get_display( void )
     return( display );
 }
 
-public  int  X_get_screen( void )
+  int  X_get_screen( void )
 {
     static  VIO_BOOL  first = TRUE;
     static  int      default_screen;
@@ -40,7 +40,7 @@ public  int  X_get_screen( void )
 
 /* ARGSUSED */
 
-private   int   wait_for_window(
+static   int   wait_for_window(
     Display *display,
     XEvent  *event,
     char    *arg )
@@ -55,7 +55,7 @@ private   int   wait_for_window(
         return( FALSE );
 }
 
-public  Status  X_create_window_with_visual(
+  Status  X_create_window_with_visual(
     STRING           title,
     int              initial_x_pos,
     int              initial_y_pos,
@@ -156,7 +156,7 @@ public  Status  X_create_window_with_visual(
     return( OK );
 }
 
-public  Status  X_create_overlay_window(
+  Status  X_create_overlay_window(
     X_window_struct  *window,
     XVisualInfo      *visual,
     X_window_struct  *overlay_window )
@@ -198,7 +198,7 @@ public  Status  X_create_overlay_window(
     return( OK );
 }
 
-public  void  X_delete_window(
+  void  X_delete_window(
     X_window_struct  *window )
 {
     XFree( (void *) window->visual );
@@ -209,13 +209,13 @@ public  void  X_delete_window(
     XDestroyWindow( X_get_display(), window->window_id );
 }
 
-public  int  X_get_n_colours(
+  int  X_get_n_colours(
     X_window_struct          *window )
 {
     return( window->visual->colormap_size );
 }
 
-public  void  X_set_colour_map_entry(
+  void  X_set_colour_map_entry(
     X_window_struct          *window,
     int                      ind,
     int                      r,
@@ -238,7 +238,7 @@ public  void  X_set_colour_map_entry(
     XStoreColor( X_get_display(), window->colour_map, &def );
 }
 
-public  void  X_get_window_geometry(
+  void  X_get_window_geometry(
     X_window_struct          *window,
     int                      *x_position,
     int                      *y_position,
@@ -268,7 +268,7 @@ public  void  X_get_window_geometry(
     }
 }
 
-public  void  X_get_screen_size(
+  void  X_get_screen_size(
     int    *x_size,
     int    *y_size )
 {
@@ -297,7 +297,7 @@ public  void  X_get_screen_size(
 
 /*--------------------------------- events ----------------------------- */
 
-private  VIO_BOOL  translate_key(
+static  VIO_BOOL  translate_key(
     XEvent   *x_event,
     int      *key )
 {
@@ -313,7 +313,7 @@ private  VIO_BOOL  translate_key(
     return( char_count >= 1 );
 }
 
-public  VIO_BOOL  X_get_event(
+  VIO_BOOL  X_get_event(
     Event_types          *event_type,
     Window_id            *window,
     event_info_struct    *info )
@@ -440,7 +440,7 @@ public  VIO_BOOL  X_get_event(
     return( *event_type != NO_EVENT );
 }
 
-private  void  bind_key(
+static  void  bind_key(
     KeySym   keysym,
     int      output_key_value )
 {
@@ -462,7 +462,7 @@ private  void  bind_key(
     }
 }
 
-private  void  bind_special_keys( void )
+static  void  bind_special_keys( void )
 {
     int      i;
     static   VIO_BOOL  first = TRUE;
@@ -492,7 +492,7 @@ private  void  bind_special_keys( void )
 #define  MAX_NAMES   10
 #define  MAX_FONT_SIZE_ERROR   5
 
-private  VIO_BOOL  find_font(
+static  VIO_BOOL  find_font(
     Font_types       type,
     int              size,
     STRING           *font_name )
@@ -576,7 +576,7 @@ private  VIO_BOOL  find_font(
     return( found );
 }
 
-public  VIO_BOOL  X_get_font_name(
+  VIO_BOOL  X_get_font_name(
     Font_types       type,
     int              size,
     STRING           *font_name )
@@ -601,7 +601,7 @@ public  VIO_BOOL  X_get_font_name(
     return( found );
 }
 
-public  void  X_set_mouse_position(
+  void  X_set_mouse_position(
     int                      x,
     int                      y )
 {

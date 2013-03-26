@@ -25,7 +25,7 @@ X_WINDOW_PROTOTYPE_FILE = Include/x_window_prototypes.h
 $(X_WINDOW_PROTOTYPE_FILE): $(OBJECTS:.o=.c)
 	@echo "#ifndef  DEF_X_WINDOW_PROTOTYPES"         >  $@
 	@echo "#define  DEF_X_WINDOW_PROTOTYPES"         >> $@
-	@extract_functions -public $(OBJECTS:.o=.c) >> $@
+	@extract_functions - $(OBJECTS:.o=.c) >> $@
 	@echo "#endif"                                      >> $@
 
 #-----------------------------------------------------------------------------

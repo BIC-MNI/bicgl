@@ -14,27 +14,17 @@ typedef  int  Window_id;
 typedef  struct
 {
     Window_id         window_id;
-    STRING            title;
+    VIO_STR            title;
     VIO_BOOL           overlay_present;
     void              *current_font;
     int               n_colours;
-    Smallest_int      *colour_map_entry_set;
-    Colour            *colour_map;
+    VIO_SCHAR      *colour_map_entry_set;
+    VIO_Colour            *colour_map;
 }
 WS_window_struct;
 
 typedef  WS_window_struct *  WSwindow;
 
-#ifndef  public
-#define       public   extern
-#define       public_was_defined_here
-#endif
-
 #include  <glut_window_prototypes.h>
-
-#ifdef  public_was_defined_here
-#undef       public
-#undef       public_was_defined_here
-#endif
 
 #endif

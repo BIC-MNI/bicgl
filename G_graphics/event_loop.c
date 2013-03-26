@@ -12,43 +12,43 @@ static  int        keyboard_modifiers = 0;
 static  int        current_mouse_x = 0;
 static  int        current_mouse_y = 0;
 static  Gwindow    current_window = NULL;
-static  Real       default_min_update_time = 0.01;  /* max 100 frames per sec */
+static  VIO_Real       default_min_update_time = 0.01;  /* max 100 frames per sec */
 static  int        n_windows_to_update_on_idle = 0;
 
-private  void  check_update_windows(
+static  void  check_update_windows(
     void  *void_ptr );
 
-public  VIO_BOOL  G_get_left_mouse_button( void )
+  VIO_BOOL  G_get_left_mouse_button( void )
 {
     return( left_button_state );
 }
 
-public  VIO_BOOL  G_get_middle_mouse_button( void )
+  VIO_BOOL  G_get_middle_mouse_button( void )
 {
     return( middle_button_state );
 }
 
-public  VIO_BOOL  G_get_right_mouse_button( void )
+  VIO_BOOL  G_get_right_mouse_button( void )
 {
     return( right_button_state );
 }
 
-public  VIO_BOOL  G_get_shift_key_state( void )
+  VIO_BOOL  G_get_shift_key_state( void )
 {
     return( (keyboard_modifiers & SHIFT_KEY_BIT) != 0 );
 }
 
-public  VIO_BOOL  G_get_ctrl_key_state( void )
+  VIO_BOOL  G_get_ctrl_key_state( void )
 {
     return( (keyboard_modifiers & CTRL_KEY_BIT) != 0 );
 }
 
-public  VIO_BOOL  G_get_alt_key_state( void )
+  VIO_BOOL  G_get_alt_key_state( void )
 {
     return( (keyboard_modifiers & ALT_KEY_BIT) != 0 );
 }
 
-private  Gwindow  lookup_window_for_window_id(
+static  Gwindow  lookup_window_for_window_id(
     Window_id  window_id )
 {
     int       i, n_windows;
@@ -81,7 +81,7 @@ private  Gwindow  lookup_window_for_window_id(
     return( current_window );
 }
 
-private  Gwindow  get_event_window(
+static  Gwindow  get_event_window(
     Window_id   window_id )
 {
     Gwindow     window;
@@ -102,7 +102,7 @@ private  Gwindow  get_event_window(
     return( window );
 }
 
-private  void  assign_mouse_position(
+static  void  assign_mouse_position(
     Gwindow   window,
     int       x,
     int       y )
@@ -118,7 +118,7 @@ private  void  assign_mouse_position(
 }
 
 
-private  Gwindow  get_key_or_mouse_event_window(
+static  Gwindow  get_key_or_mouse_event_window(
     Window_id   window_id,
     int         x,
     int         y,
@@ -137,7 +137,7 @@ private  Gwindow  get_key_or_mouse_event_window(
     return( window );
 }
 
-private  void  update_the_window(
+static  void  update_the_window(
     Gwindow  window )
 {
     --n_windows_to_update_on_idle;
@@ -158,7 +158,7 @@ private  void  update_the_window(
     window->update_required_flag = FALSE;
 }
 
-private  void  global_update_function(
+static  void  global_update_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -170,7 +170,7 @@ private  void  global_update_function(
     update_the_window( window );
 }
 
-private  void  update_the_overlay_window(
+static  void  update_the_overlay_window(
     Gwindow  window )
 {
     if( window->update_overlay_callback != NULL )
@@ -182,7 +182,7 @@ private  void  update_the_overlay_window(
     window->last_overlay_update_was_idle = FALSE;
 }
 
-private  void  global_update_overlay_function(
+static  void  global_update_overlay_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -194,7 +194,7 @@ private  void  global_update_overlay_function(
     update_the_overlay_window( window );
 }
 
-private  void  global_resize_function(
+static  void  global_resize_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -220,7 +220,7 @@ private  void  global_resize_function(
                                     window->resize_data );
 }
 
-private  void  global_key_down_function(
+static  void  global_key_down_function(
     Window_id  window_id,
     int        key,
     int        x,
@@ -237,7 +237,7 @@ private  void  global_key_down_function(
         (*window->key_down_callback)( window, key, window->key_down_data );
 }
 
-private  void  global_key_up_function(
+static  void  global_key_up_function(
     Window_id  window_id,
     int        key,
     int        x,
@@ -254,7 +254,7 @@ private  void  global_key_up_function(
         (*window->key_up_callback)( window, key, window->key_up_data );
 }
 
-private  void  global_mouse_movement_function(
+static  void  global_mouse_movement_function(
     Window_id  window_id,
     int        x,
     int        y )
@@ -272,7 +272,7 @@ private  void  global_mouse_movement_function(
                                             window->mouse_movement_data );
 }
 
-private  void  global_left_mouse_down_function(
+static  void  global_left_mouse_down_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -292,7 +292,7 @@ private  void  global_left_mouse_down_function(
                                              window->left_mouse_down_data );
 }
 
-private  void  global_left_mouse_up_function(
+static  void  global_left_mouse_up_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -311,7 +311,7 @@ private  void  global_left_mouse_up_function(
                                            window->left_mouse_up_data );
 }
 
-private  void  global_middle_mouse_down_function(
+static  void  global_middle_mouse_down_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -330,7 +330,7 @@ private  void  global_middle_mouse_down_function(
                                                window->middle_mouse_down_data );
 }
 
-private  void  global_middle_mouse_up_function(
+static  void  global_middle_mouse_up_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -349,7 +349,7 @@ private  void  global_middle_mouse_up_function(
                                              window->middle_mouse_up_data );
 }
 
-private  void  global_right_mouse_down_function(
+static  void  global_right_mouse_down_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -368,7 +368,7 @@ private  void  global_right_mouse_down_function(
                                               window->right_mouse_down_data );
 }
 
-private  void  global_right_mouse_up_function(
+static  void  global_right_mouse_up_function(
     Window_id  window_id,
     int        x,
     int        y,
@@ -387,7 +387,7 @@ private  void  global_right_mouse_up_function(
                                             window->right_mouse_up_data );
 }
 
-private  void  global_iconify_function(
+static  void  global_iconify_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -400,7 +400,7 @@ private  void  global_iconify_function(
         (*window->iconify_callback)( window, window->iconify_data );
 }
 
-private  void  global_deiconify_function(
+static  void  global_deiconify_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -413,7 +413,7 @@ private  void  global_deiconify_function(
         (*window->deiconify_callback)( window, window->deiconify_data );
 }
 
-private  void  global_enter_function(
+static  void  global_enter_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -426,7 +426,7 @@ private  void  global_enter_function(
         (*window->enter_callback)( window, window->enter_data );
 }
 
-private  void  global_leave_function(
+static  void  global_leave_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -439,7 +439,7 @@ private  void  global_leave_function(
         (*window->leave_callback)( window, window->leave_data );
 }
 
-private  void  global_quit_function(
+static  void  global_quit_function(
     Window_id  window_id )
 {
     Gwindow     window;
@@ -452,7 +452,7 @@ private  void  global_quit_function(
         (*window->quit_callback)( window, window->quit_data );
 }
 
-private  void  initialize_callbacks( void )
+static  void  initialize_callbacks( void )
 {
     GS_set_update_function( global_update_function );
     GS_set_update_overlay_function( global_update_overlay_function );
@@ -473,7 +473,7 @@ private  void  initialize_callbacks( void )
     GS_set_quit_function( global_quit_function );
 }
 
-public  void  G_set_update_function(
+  void  G_set_update_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -482,7 +482,7 @@ public  void  G_set_update_function(
     window->update_data = func_data;
 }
 
-public  void  G_set_update_overlay_function(
+  void  G_set_update_overlay_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -491,7 +491,7 @@ public  void  G_set_update_overlay_function(
     window->update_overlay_data = func_data;
 }
 
-public  void  G_set_resize_function(
+  void  G_set_resize_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, int, int, void * ),
     void                    *func_data )
@@ -500,7 +500,7 @@ public  void  G_set_resize_function(
     window->resize_data = func_data;
 }
 
-public  void  G_set_key_down_function(
+  void  G_set_key_down_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, void * ),
     void                    *func_data )
@@ -509,7 +509,7 @@ public  void  G_set_key_down_function(
     window->key_down_data = func_data;
 }
 
-public  void  G_set_key_up_function(
+  void  G_set_key_up_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, void * ),
     void                    *func_data )
@@ -518,7 +518,7 @@ public  void  G_set_key_up_function(
     window->key_up_data = func_data;
 }
 
-public  void  G_set_mouse_movement_function(
+  void  G_set_mouse_movement_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -527,7 +527,7 @@ public  void  G_set_mouse_movement_function(
     window->mouse_movement_data = func_data;
 }
 
-public  void  G_set_left_mouse_down_function(
+  void  G_set_left_mouse_down_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -536,7 +536,7 @@ public  void  G_set_left_mouse_down_function(
     window->left_mouse_down_data = func_data;
 }
 
-public  void  G_set_left_mouse_up_function(
+  void  G_set_left_mouse_up_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -545,7 +545,7 @@ public  void  G_set_left_mouse_up_function(
     window->left_mouse_up_data = func_data;
 }
 
-public  void  G_set_middle_mouse_down_function(
+  void  G_set_middle_mouse_down_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -554,7 +554,7 @@ public  void  G_set_middle_mouse_down_function(
     window->middle_mouse_down_data = func_data;
 }
 
-public  void  G_set_middle_mouse_up_function(
+  void  G_set_middle_mouse_up_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -563,7 +563,7 @@ public  void  G_set_middle_mouse_up_function(
     window->middle_mouse_up_data = func_data;
 }
 
-public  void  G_set_right_mouse_down_function(
+  void  G_set_right_mouse_down_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -572,7 +572,7 @@ public  void  G_set_right_mouse_down_function(
     window->right_mouse_down_data = func_data;
 }
 
-public  void  G_set_right_mouse_up_function(
+  void  G_set_right_mouse_up_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data )
@@ -581,7 +581,7 @@ public  void  G_set_right_mouse_up_function(
     window->right_mouse_up_data = func_data;
 }
 
-public  void  G_set_iconify_function(
+  void  G_set_iconify_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -590,7 +590,7 @@ public  void  G_set_iconify_function(
     window->iconify_data = func_data;
 }
 
-public  void  G_set_deiconify_function(
+  void  G_set_deiconify_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -599,7 +599,7 @@ public  void  G_set_deiconify_function(
     window->deiconify_data = func_data;
 }
 
-public  void  G_set_window_enter_function(
+  void  G_set_window_enter_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -608,7 +608,7 @@ public  void  G_set_window_enter_function(
     window->enter_data = func_data;
 }
 
-public  void  G_set_window_leave_function(
+  void  G_set_window_leave_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -617,7 +617,7 @@ public  void  G_set_window_leave_function(
     window->leave_data = func_data;
 }
 
-public  void  G_set_window_quit_function(
+  void  G_set_window_quit_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
     void                    *func_data )
@@ -626,7 +626,7 @@ public  void  G_set_window_quit_function(
     window->quit_data = func_data;
 }
 
-public  void  initialize_callbacks_for_window(
+  void  initialize_callbacks_for_window(
     Gwindow                 window )
 {
     window->update_required_flag = FALSE;
@@ -659,7 +659,7 @@ public  void  initialize_callbacks_for_window(
     window->quit_callback = NULL;
 }
 
-private  void  timer_update_window(
+static  void  timer_update_window(
     void   *void_ptr )
 {
     Gwindow  window;
@@ -682,7 +682,7 @@ private  void  timer_update_window(
 
 /* ARGSUSED */
 
-private  void  check_update_windows(
+static  void  check_update_windows(
     void  *void_ptr )
 {
     int       i;
@@ -703,10 +703,10 @@ private  void  check_update_windows(
 
 }
 
-public  void  G_set_update_flag(
+  void  G_set_update_flag(
     Gwindow  window )
 {
-    Real   current_time, time_remaining;
+    VIO_Real   current_time, time_remaining;
 
     if( window->update_required_flag )
         return;
@@ -737,49 +737,49 @@ public  void  G_set_update_flag(
     }
 }
 
-public  void  G_add_timer_function(
-    Real          seconds,
+  void  G_add_timer_function(
+    VIO_Real          seconds,
     void          (*func) ( void * ),
     void          *data )
 {
     GS_add_timer_function( seconds, func, data );
 }
 
-public  void  G_add_idle_function(
+  void  G_add_idle_function(
     void  (*func) ( void * ),
     void          *data )
 {
     GS_add_idle_function( func, data );
 }
 
-public  void  G_remove_idle_function(
+  void  G_remove_idle_function(
     void  (*func) ( void * ),
     void          *data )
 {
     GS_remove_idle_function( func, data );
 }
 
-public  void  G_main_loop( void )
+  void  G_main_loop( void )
 {
     initialize_callbacks();
 
     GS_event_loop();
 }
 
-public  void  G_set_mouse_position(
+  void  G_set_mouse_position(
     int       x_screen,
     int       y_screen )
 {
     GS_set_mouse_position( x_screen, y_screen );
 }
 
-public  VIO_BOOL  G_is_mouse_in_window(
+  VIO_BOOL  G_is_mouse_in_window(
     Gwindow window )
 {
     return( current_window == window && window != NULL );
 }
 
-public  void  G_get_mouse_screen_position(
+  void  G_get_mouse_screen_position(
     int            *x_screen_pos,
     int            *y_screen_pos )
 {
@@ -797,7 +797,7 @@ public  void  G_get_mouse_screen_position(
     }
 }
 
-public  VIO_BOOL  G_get_mouse_position(
+  VIO_BOOL  G_get_mouse_position(
     Gwindow        window,
     int            *x_pixel_pos,
     int            *y_pixel_pos )
@@ -815,10 +815,10 @@ public  VIO_BOOL  G_get_mouse_position(
     return( in_window );
 }
 
-public  VIO_BOOL  G_get_mouse_position_0_to_1(
+  VIO_BOOL  G_get_mouse_position_0_to_1(
     Gwindow        window,
-    Real           *x_pos,
-    Real           *y_pos )
+    VIO_Real           *x_pos,
+    VIO_Real           *y_pos )
 {
     int            x_pixel, y_pixel;
     VIO_BOOL        in_window;
@@ -827,15 +827,15 @@ public  VIO_BOOL  G_get_mouse_position_0_to_1(
 
     if( window != (Gwindow) NULL )
     {
-        *x_pos = ((Real) x_pixel + 0.5) / (Real) window->x_size;
-        *y_pos = ((Real) y_pixel + 0.5) / (Real) window->y_size;
+        *x_pos = ((VIO_Real) x_pixel + 0.5) / (VIO_Real) window->x_size;
+        *y_pos = ((VIO_Real) y_pixel + 0.5) / (VIO_Real) window->y_size;
     }
     
     return( in_window );
 }
 
-public  void  G_set_default_update_min_interval(
-    Real   seconds )
+  void  G_set_default_update_min_interval(
+    VIO_Real   seconds )
 {
     if( seconds <= 0.0 )
         default_min_update_time = 0.0;
@@ -843,9 +843,9 @@ public  void  G_set_default_update_min_interval(
         default_min_update_time = seconds;
 }
 
-public  void  G_set_window_update_min_interval(
+  void  G_set_window_update_min_interval(
     Gwindow   window,
-    Real      seconds )
+    VIO_Real      seconds )
 {
     if( seconds <= 0.0 )
         window->min_update_time = 0.0;

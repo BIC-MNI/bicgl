@@ -2,7 +2,7 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-private  void  make_matrix(
+static  void  make_matrix(
     Transform   *trans,
     Matrix      gl_trans )
 {
@@ -17,7 +17,7 @@ private  void  make_matrix(
     }
 }
 
-public  void  GS_mult_transform(
+  void  GS_mult_transform(
     Transform  *transform )
 {
     Matrix  gl_trans;
@@ -28,7 +28,7 @@ public  void  GS_mult_transform(
 }
 
 
-public  void  GS_load_transform(
+  void  GS_load_transform(
     Transform  *transform )
 {
     Matrix  gl_trans;
@@ -38,7 +38,7 @@ public  void  GS_load_transform(
     loadmatrix( gl_trans );
 }
 
-public  void  GS_get_transform(
+  void  GS_get_transform(
     Transform  *trans )
 {
     int      i, j;
@@ -50,24 +50,24 @@ public  void  GS_get_transform(
     {
         for_less( j, 0, 4 )
         {
-            Transform_elem( *trans, j, i ) = (Real) gl_trans[i][j];
+            Transform_elem( *trans, j, i ) = (VIO_Real) gl_trans[i][j];
         }
     }
 }
 
-public  void  GS_ortho(
-    Real   x_min,
-    Real   x_max,
-    Real   y_min,
-    Real   y_max,
-    Real   z_min,
-    Real   z_max )
+  void  GS_ortho(
+    VIO_Real   x_min,
+    VIO_Real   x_max,
+    VIO_Real   y_min,
+    VIO_Real   y_max,
+    VIO_Real   z_min,
+    VIO_Real   z_max )
 {
     ortho( (Coord) x_min, (Coord) x_max, (Coord) y_min, (Coord) y_max,
            (Coord) z_min, (Coord) z_max );
 }
 
-public  void  GS_ortho_2d(
+  void  GS_ortho_2d(
     int   x_min,
     int   x_max,
     int   y_min,
@@ -78,13 +78,13 @@ public  void  GS_ortho_2d(
            (Coord) -1.0,                (Coord) 1.0 );
 }
 
-public  void  GS_frustum(
-    Real   x_min,
-    Real   x_max,
-    Real   y_min,
-    Real   y_max,
-    Real   z_min,
-    Real   z_max )
+  void  GS_frustum(
+    VIO_Real   x_min,
+    VIO_Real   x_max,
+    VIO_Real   y_min,
+    VIO_Real   y_max,
+    VIO_Real   z_min,
+    VIO_Real   z_max )
 {
     window( (Coord) x_min, (Coord) x_max, (Coord) y_min, (Coord) y_max,
             (Coord) z_min, (Coord) z_max );
@@ -105,22 +105,22 @@ public  void  GS_frustum(
 
 /* ARGSUSED */
 
-public  void  GS_initialize_window_view(
+  void  GS_initialize_window_view(
     GSwindow   window )
 {
 }
 
-public  void  GS_push_transform( void )
+  void  GS_push_transform( void )
 {
     pushmatrix();
 }
 
-public  void  GS_pop_transform( void )
+  void  GS_pop_transform( void )
 {
     popmatrix();
 }
 
-public  void  GS_set_viewport(
+  void  GS_set_viewport(
     int            x_min,
     int            x_max,
     int            y_min,
@@ -130,7 +130,7 @@ public  void  GS_set_viewport(
               (Screencoord) y_min, (Screencoord) y_max );
 }
 
-public  void  clear_overlay_planes( void )
+  void  clear_overlay_planes( void )
 {
     Matrix          save_projection;
 
@@ -159,7 +159,7 @@ public  void  clear_overlay_planes( void )
     mmode( MVIEWING );
 }
 
-public  void  GS_set_matrix_mode(
+  void  GS_set_matrix_mode(
     Matrix_modes   mode )
 {
     int  gl_mode;

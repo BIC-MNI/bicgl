@@ -13,7 +13,7 @@ typedef  struct
 
 typedef struct
 {
-    Colour                      background_colour;
+    VIO_Colour                      background_colour;
     int                         background_colour_index;
     int                         x_min;
     int                         x_max;

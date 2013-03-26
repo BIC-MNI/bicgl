@@ -8,11 +8,11 @@
 
 #define  MAX_LINE_WIDTH  1000.0f
 
-private  void     draw_marker_as_cube( Gwindow, Colour );
+static  void     draw_marker_as_cube( Gwindow, VIO_Colour );
 
-private  void  set_colour(
+static  void  set_colour(
     Gwindow   window,
-    Colour    colour )
+    VIO_Colour    colour )
 {
      if( window->colour_map_state ||
          window->current_bitplanes == OVERLAY_PLANES )
@@ -29,7 +29,7 @@ private  void  set_colour(
          GS_set_colour( colour );
 }
 
-public  void  initialize_display_interrupts(
+  void  initialize_display_interrupts(
     Gwindow        window )
 {
     window->interrupt_allowed = FALSE;
@@ -39,55 +39,55 @@ public  void  initialize_display_interrupts(
     window->interrupt_time_interval = 0.3;
 }
 
-public  void  G_set_drawing_interrupt_state(
+  void  G_set_drawing_interrupt_state(
     Gwindow          window,
     VIO_BOOL         state )
 {
     window->interrupt_allowed = state;
 }
 
-public  VIO_BOOL  G_get_drawing_interrupt_state(
+  VIO_BOOL  G_get_drawing_interrupt_state(
     Gwindow          window )
 {
     return( window->interrupt_allowed );
 }
 
-public  void  G_set_drawing_interrupt_check_n_objects(
+  void  G_set_drawing_interrupt_check_n_objects(
     Gwindow          window,
     int             interval )
 {
     window->interrupt_interval = interval;
 }
 
-public  void  G_set_drawing_interrupt_time(
+  void  G_set_drawing_interrupt_time(
     Gwindow          window,
-    Real             interval )
+    VIO_Real             interval )
 {
     window->interrupt_time_interval = interval;
 }
 
-public  void  G_start_interrupt_test(
+  void  G_start_interrupt_test(
     Gwindow          window )
 {
-    Real   current_time;
+    VIO_Real   current_time;
 
     current_time = current_realtime_seconds();
     window->interrupt_time = current_time + window->interrupt_time_interval;
 }
 
-public  VIO_BOOL  G_get_interrupt_occurred(
+  VIO_BOOL  G_get_interrupt_occurred(
     Gwindow          window )
 {
     return( window->interrupt_occurred );
 }
 
-public  void  G_clear_drawing_interrupt_flag(
+  void  G_clear_drawing_interrupt_flag(
     Gwindow          window )
 {
     window->interrupt_occurred = FALSE;
 }
 
-public  void  set_continuation_flag(
+  void  set_continuation_flag(
     Gwindow         window,
     VIO_BOOL         state )
 {
@@ -105,7 +105,7 @@ public  void  set_continuation_flag(
     int                         _check_every, _n_objects_to_do; \
     VIO_BOOL                     _random_order, _interrupt_allowed; \
     Random_mask_type            _random_order_mask; \
-    Real                        interrupt_at, current_time; \
+    VIO_Real                        interrupt_at, current_time; \
     int                         _n_objects, _first_object, _second_object; \
     VIO_BOOL                     _wireframe_flag; \
     static   VIO_BOOL            const_true = TRUE; \
@@ -254,19 +254,19 @@ public  void  set_continuation_flag(
 
 #endif
 
-private  void  set_surface_property(
+static  void  set_surface_property(
     Gwindow        window,
-    Colour         col,
-    Surfprop       *surfprop )
+    VIO_Colour         col,
+    VIO_Surfprop       *surfprop )
 {
     GS_set_surface_property( window->GS_window, col, surfprop );
 }
 
-public  void  initialize_surface_property(
+  void  initialize_surface_property(
     Gwindow        window )
 {
-    Colour                 col;
-    static  Surfprop       surfprop = { 1.0f, 1.0f, 1.0f, 40.0f, 1.0f };
+    VIO_Colour                 col;
+    static  VIO_Surfprop       surfprop = { 1.0f, 1.0f, 1.0f, 40.0f, 1.0f };
 
     col = make_Colour( 255, 255, 255 );
 
@@ -274,7 +274,7 @@ public  void  initialize_surface_property(
     set_surface_property( window, col, &surfprop );
 }
 
-public  VIO_BOOL  view_is_stereo(
+  VIO_BOOL  view_is_stereo(
     Gwindow        window )
 {
     return( window->stereo_flag &&
@@ -298,7 +298,7 @@ public  VIO_BOOL  view_is_stereo(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  about_to_draw_graphics( Gwindow        window )
+static  void  about_to_draw_graphics( Gwindow        window )
 {
     set_current_window( window );
     check_window_cleared( window );
@@ -319,7 +319,7 @@ private  void  about_to_draw_graphics( Gwindow        window )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_polygons_one_colour(
+static  void  draw_polygons_one_colour(
     Gwindow         window,
     polygons_struct *polygons )
 {
@@ -327,7 +327,7 @@ private  void  draw_polygons_one_colour(
 
     if( window->shaded_mode_state )
     {
-        if( window->lighting_state && polygons->normals != (Vector *) 0 )
+        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_polygons.include.c"
@@ -341,7 +341,7 @@ private  void  draw_polygons_one_colour(
     else
     {
 #define  DEF_WIREFRAME
-        if( window->lighting_state && polygons->normals != (Vector *) 0 )
+        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_polygons.include.c"
@@ -372,7 +372,7 @@ private  void  draw_polygons_one_colour(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_polygons_per_item_colours(
+static  void  draw_polygons_per_item_colours(
     Gwindow         window,
     polygons_struct *polygons )
 {
@@ -380,7 +380,7 @@ private  void  draw_polygons_per_item_colours(
 
     if( window->shaded_mode_state )
     {
-        if( window->lighting_state && polygons->normals != (Vector *) 0 )
+        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_polygons.include.c"
@@ -394,7 +394,7 @@ private  void  draw_polygons_per_item_colours(
     else
     {
 #define  DEF_WIREFRAME
-        if( window->lighting_state && polygons->normals != (Vector *) 0 )
+        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_polygons.include.c"
@@ -425,7 +425,7 @@ private  void  draw_polygons_per_item_colours(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_polygons_per_vertex_colours(
+static  void  draw_polygons_per_vertex_colours(
     Gwindow         window,
     polygons_struct *polygons )
 {
@@ -433,7 +433,7 @@ private  void  draw_polygons_per_vertex_colours(
 
     if( window->shaded_mode_state )
     {
-        if( window->lighting_state && polygons->normals != (Vector *) 0 )
+        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_polygons.include.c"
@@ -447,7 +447,7 @@ private  void  draw_polygons_per_vertex_colours(
     else
     {
 #define  DEF_WIREFRAME
-        if( window->lighting_state && polygons->normals != (Vector *) 0 )
+        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_polygons.include.c"
@@ -477,7 +477,7 @@ private  void  draw_polygons_per_vertex_colours(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_polygons(
+static  void  draw_polygons(
     Gwindow         window,
     polygons_struct *polygons )
 {
@@ -485,7 +485,7 @@ private  void  draw_polygons(
         polygons->line_thickness > 1.0f &&
         polygons->line_thickness < MAX_LINE_WIDTH )
     {
-        GS_set_line_width( (Real) polygons->line_thickness );
+        GS_set_line_width( (VIO_Real) polygons->line_thickness );
     }
 
     switch( polygons->colour_flag )
@@ -523,7 +523,7 @@ private  void  draw_polygons(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_draw_polygons(
+  void  G_draw_polygons(
     Gwindow         window,
     polygons_struct *polygons )
 {
@@ -546,7 +546,7 @@ public  void  G_draw_polygons(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_quadmesh_one_colour(
+static  void  draw_quadmesh_one_colour(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
@@ -554,7 +554,7 @@ private  void  draw_quadmesh_one_colour(
 
     if( window->shaded_mode_state )
     {
-        if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
+        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_quadmesh.include.c"
@@ -568,7 +568,7 @@ private  void  draw_quadmesh_one_colour(
     else
     {
 #define  DEF_WIREFRAME
-        if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
+        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_quadmesh.include.c"
@@ -598,7 +598,7 @@ private  void  draw_quadmesh_one_colour(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_quadmesh_per_item_colours(
+static  void  draw_quadmesh_per_item_colours(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
@@ -606,7 +606,7 @@ private  void  draw_quadmesh_per_item_colours(
 
     if( window->shaded_mode_state )
     {
-        if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
+        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_quadmesh.include.c"
@@ -620,7 +620,7 @@ private  void  draw_quadmesh_per_item_colours(
     else
     {
 #define  DEF_WIREFRAME
-        if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
+        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_quadmesh.include.c"
@@ -650,7 +650,7 @@ private  void  draw_quadmesh_per_item_colours(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  draw_quadmesh_per_vertex_colours(
+static  void  draw_quadmesh_per_vertex_colours(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
@@ -658,7 +658,7 @@ private  void  draw_quadmesh_per_vertex_colours(
 
     if( window->shaded_mode_state )
     {
-        if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
+        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_quadmesh.include.c"
@@ -672,7 +672,7 @@ private  void  draw_quadmesh_per_vertex_colours(
     else
     {
 #define  DEF_WIREFRAME
-        if( window->lighting_state && quadmesh->normals != (Vector *) 0 )
+        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
         {
 #define     DEF_NORMALS
 #include    "draw_quadmesh.include.c"
@@ -702,7 +702,7 @@ private  void  draw_quadmesh_per_vertex_colours(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_draw_quadmesh(
+  void  G_draw_quadmesh(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
@@ -738,7 +738,7 @@ public  void  G_draw_quadmesh(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_draw_lines(
+  void  G_draw_lines(
     Gwindow         window,
     lines_struct    *lines )
 {
@@ -750,10 +750,10 @@ public  void  G_draw_lines(
     about_to_draw_graphics( window );
 
     save_lights = G_get_lighting_state( window );
-    G_set_lighting_state( window, OFF );
+    G_set_lighting_state( window, FALSE );
 
     if( lines->line_thickness > 1.0f && lines->line_thickness < MAX_LINE_WIDTH )
-        GS_set_line_width( (Real) lines->line_thickness );
+        GS_set_line_width( (VIO_Real) lines->line_thickness );
 
     n_lines = lines->n_items;
 
@@ -857,17 +857,17 @@ public  void  G_draw_lines(
 
 /* ------------------------------ text and fonts ------------------- */
 
-public  Real  G_get_text_height(
+  VIO_Real  G_get_text_height(
     Font_types       type,
-    Real             size )
+    VIO_Real             size )
 {
     return( GS_get_character_height( type, size ) );
 }
 
-public  Real  G_get_text_length(
-    STRING           str,
+  VIO_Real  G_get_text_length(
+    VIO_STR           str,
     Font_types       type,
-    Real             size )
+    VIO_Real             size )
 {
     return( GS_get_text_length( str, type, size ) );
 }
@@ -886,7 +886,7 @@ public  Real  G_get_text_length(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_draw_text(
+  void  G_draw_text(
     Gwindow         window,
     text_struct     *text )
 {
@@ -896,9 +896,9 @@ public  void  G_draw_text(
 
     BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, 1, TRUE )
 
-        GS_set_raster_position( (Real) Point_x(text->origin),
-                                (Real) Point_y(text->origin),
-                                (Real) Point_z(text->origin) );
+        GS_set_raster_position( (VIO_Real) Point_x(text->origin),
+                                (VIO_Real) Point_y(text->origin),
+                                (VIO_Real) Point_z(text->origin) );
 
         GS_draw_text( text->font, text->size, text->string );
 
@@ -919,17 +919,17 @@ public  void  G_draw_text(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_draw_marker(
+  void  G_draw_marker(
     Gwindow         window,
     marker_struct   *marker )
 {
     VIO_BOOL     save_lights;
-    Transform   transform;
+    VIO_Transform   transform;
 
     about_to_draw_graphics( window );
 
     save_lights = G_get_lighting_state( window );
-    G_set_lighting_state( window, OFF );
+    G_set_lighting_state( window, FALSE );
 
     set_colour( window, marker->colour );
 
@@ -945,9 +945,9 @@ public  void  G_draw_marker(
         {
             GS_push_transform();
 
-            make_translation_transform( (Real) Point_x(marker->position),
-                                        (Real) Point_y(marker->position),
-                                        (Real) Point_z(marker->position),
+            make_translation_transform( (VIO_Real) Point_x(marker->position),
+                                        (VIO_Real) Point_y(marker->position),
+                                        (VIO_Real) Point_z(marker->position),
                                         &transform );
             GS_mult_transform( &transform );
 
@@ -971,10 +971,10 @@ public  void  G_draw_marker(
 
         if( window->marker_labels_visibility )
         {
-            GS_set_raster_position( (Real) Point_x(marker->position) +
-                                       1.5 * (Real) marker->size / 2.0,
-                                    (Real) Point_y(marker->position),
-                                    (Real) Point_z(marker->position) );
+            GS_set_raster_position( (VIO_Real) Point_x(marker->position) +
+                                       1.5 * (VIO_Real) marker->size / 2.0,
+                                    (VIO_Real) Point_y(marker->position),
+                                    (VIO_Real) Point_z(marker->position) );
 
             GS_draw_text( FIXED_FONT, 10.0, marker->label );
         }
@@ -984,10 +984,10 @@ public  void  G_draw_marker(
     G_set_lighting_state( window, save_lights );
 }
 
-private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
+static  void  draw_marker_as_cube( Gwindow         window, VIO_Colour colour )
 {
-    static  Colour           colours[1];
-    static  Point            points[24] = {
+    static  VIO_Colour           colours[1];
+    static  VIO_Point            points[24] = {
                                    { -0.5f, -0.5f, -0.5f },
                                    { -0.5f, -0.5f,  0.5f },
                                    { -0.5f,  0.5f,  0.5f },
@@ -1019,7 +1019,7 @@ private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
                                    { -0.5f,  0.5f,  0.5f } };
 
 
-    static  Vector           normals[24] = {
+    static  VIO_Vector           normals[24] = {
 
                                    { -1.0f,  0.0f,  0.0f },
                                    { -1.0f,  0.0f,  0.0f },
@@ -1067,7 +1067,7 @@ private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
                                             6,
                                             end_indices,
                                             indices,
-                                            (Smallest_int *) NULL,
+                                            (VIO_SCHAR *) NULL,
                                             (int *) NULL,
                                             (bintree_struct_ptr) NULL
                                         };
@@ -1090,7 +1090,7 @@ private  void  draw_marker_as_cube( Gwindow         window, Colour colour )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_draw_pixels(
+  void  G_draw_pixels(
     Gwindow         window,
     pixels_struct   *pixels )
 {
@@ -1147,13 +1147,13 @@ public  void  G_draw_pixels(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_read_pixels(
+  void  G_read_pixels(
     Gwindow         window,
     int             x_min,
     int             x_max,
     int             y_min,
     int             y_max,
-    Colour          pixels[] )
+    VIO_Colour          pixels[] )
 {
     set_current_window( window );
 

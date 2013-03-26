@@ -7,7 +7,7 @@ main()
     text_struct       text;
     lines_struct      lines;
     polygons_struct   polygons;
-    Point             point;
+    VIO_Point             point;
     int               i, j, x_position, y_position;
 
     status = G_create_window( "Test Window2", -1, -1, -1, -1, &window2 );
@@ -46,13 +46,13 @@ main()
     initialize_polygons( &polygons, make_Colour(0,255,255), (Surfprop *) NULL );
 
     fill_Point( point, 10.0, 10.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
     fill_Point( point, 90.0, 10.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
     fill_Point( point, 90.0, 90.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
     fill_Point( point, 10.0, 90.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
 
     /* draw window 1 */
 

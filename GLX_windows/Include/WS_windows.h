@@ -24,19 +24,19 @@ WS_window_struct;
 
 typedef  struct
 {
-    STRING        font_name;
+    VIO_STR        font_name;
     XFontStruct   *x_font_info;
 }  WS_font_info;
 
-#ifndef  public
-#define       public   extern
+#ifndef  
+#define          extern
 #define       public_was_defined_here
 #endif
 
 #include  <glx_window_prototypes.h>
 
 #ifdef  public_was_defined_here
-#undef       public
+#undef       
 #undef       public_was_defined_here
 #endif
 

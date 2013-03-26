@@ -7,12 +7,12 @@
 
 /*--------------- maintaining list of known windows ------------------------ */
 
-private  Gwindow        *windows = NULL;
-private  int            n_windows = 0;
-private  Gwindow        current_window = NULL;
+static  Gwindow        *windows = NULL;
+static  int            n_windows = 0;
+static  Gwindow        current_window = NULL;
 
 
-private  Gwindow  create_window_struct( void )
+static  Gwindow  create_window_struct( void )
 {
     Gwindow     new_window;
 
@@ -23,7 +23,7 @@ private  Gwindow  create_window_struct( void )
     return( new_window );
 }
 
-private  int  lookup_window_index( Gwindow  window )
+static  int  lookup_window_index( Gwindow  window )
 {
     int  i;
 
@@ -39,18 +39,18 @@ private  int  lookup_window_index( Gwindow  window )
     return( i );
 }
 
-public  int  get_n_graphics_windows( void )
+  int  get_n_graphics_windows( void )
 {
     return( n_windows );
 }
 
-public  Gwindow  get_nth_graphics_window(
+  Gwindow  get_nth_graphics_window(
     int   i )
 {
     return( windows[i] );
 }
 
-private  void  delete_window_struct( Gwindow   window )
+static  void  delete_window_struct( Gwindow   window )
 {
     int            ind;
 
@@ -65,7 +65,7 @@ private  void  delete_window_struct( Gwindow   window )
     FREE( window );
 }
 
-public  void  set_current_window( Gwindow   window )
+  void  set_current_window( Gwindow   window )
 {
     if( window != current_window )
     {
@@ -79,14 +79,14 @@ public  void  set_current_window( Gwindow   window )
     }
 }
 
-public  Gwindow  get_current_window( void )
+  Gwindow  get_current_window( void )
 {
     return( current_window );
 }
 
 /*---------------------- window configurations ------------------------ */
 
-private  void  check_graphics_initialized( void )
+static  void  check_graphics_initialized( void )
 {
     static  VIO_BOOL  first = TRUE;
 
@@ -100,12 +100,12 @@ private  void  check_graphics_initialized( void )
 
 #define  DEFAULT_N_CURVE_SEGMENTS  8
 
-private  void  reinitialize_window(
+static  void  reinitialize_window(
     Gwindow   window )
 {
     int            n_segments;
     Shading_types  type;
-    static  Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    static  VIO_Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
     set_current_window( window );
 
@@ -143,10 +143,10 @@ private  void  reinitialize_window(
     update_transforms( window );
 }
 
-private  void  initialize_window(
+static  void  initialize_window(
     Gwindow   window )
 {
-    Colour     default_background_col;
+    VIO_Colour     default_background_col;
 
     default_background_col = make_Colour( 0, 0, 0 );
 
@@ -169,16 +169,16 @@ private  void  initialize_window(
     window->bitplanes_cleared[OVERLAY_PLANES] = FALSE;
 
     window->shading_type = GOURAUD_SHADING;
-    window->lighting_state = OFF;
-    window->transparency_state = ON;
-    window->backface_culling_state = OFF;
+    window->lighting_state = FALSE;
+    window->transparency_state = TRUE;
+    window->backface_culling_state = FALSE;
     window->n_curve_segments = DEFAULT_N_CURVE_SEGMENTS;
-    window->marker_labels_visibility = ON;
+    window->marker_labels_visibility = TRUE;
 
-    window->shaded_mode_state = OFF;
-    G_set_shaded_state( window, ON );
+    window->shaded_mode_state = FALSE;
+    G_set_shaded_state( window, TRUE );
 
-    G_set_render_lines_as_curves_state( window, OFF );
+    G_set_render_lines_as_curves_state( window, FALSE );
 
     GS_initialize_surface_property( window->GS_window );
 
@@ -193,8 +193,8 @@ private  void  initialize_window(
     initialize_callbacks_for_window( window );
 }
 
-public  Status  G_create_window(
-    STRING         title,
+  VIO_Status  G_create_window(
+    VIO_STR         title,
     int            x_pos,
     int            y_pos,
     int            width,
@@ -205,7 +205,7 @@ public  Status  G_create_window(
     int            n_overlay_planes_desired,
     Gwindow        *window )
 {
-    Status   status;
+    VIO_Status   status;
     VIO_BOOL  actual_colour_map_flag;
     VIO_BOOL  actual_double_buffer_flag;
     VIO_BOOL  actual_depth_buffer_flag;
@@ -229,7 +229,7 @@ public  Status  G_create_window(
                                &actual_depth_buffer_flag,
                                &actual_n_overlay_planes );
 
-    if( status != OK )
+    if( status != VIO_OK )
     {
         print_error( "G_create_window():  cannot open a graphics window.\n" );
     }
@@ -249,10 +249,10 @@ public  Status  G_create_window(
     return( status );
 }
 
-public  Status  G_delete_window(
+  VIO_Status  G_delete_window(
     Gwindow   window )
 {
-    Status    status;
+    VIO_Status    status;
 
     set_current_window( window );
 
@@ -273,16 +273,16 @@ public  Status  G_delete_window(
     return( status );
 }
 
-public  void  G_set_window_title(
+  void  G_set_window_title(
     Gwindow   window,
-    STRING    title )
+    VIO_STR    title )
 {
     set_current_window( window );
 
     GS_set_window_title( window->GS_window, title );
 }
 
-public  void  G_terminate( void )
+  void  G_terminate( void )
 {
     while( n_windows > 0 )
     {
@@ -292,7 +292,7 @@ public  void  G_terminate( void )
     GS_terminate();
 }
 
-public  VIO_BOOL  G_is_double_buffer_supported( void )
+  VIO_BOOL  G_is_double_buffer_supported( void )
 {
     static  VIO_BOOL   first = TRUE;
     static  VIO_BOOL   available;
@@ -320,13 +320,13 @@ public  VIO_BOOL  G_is_double_buffer_supported( void )
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  VIO_BOOL  G_get_double_buffer_state(
+  VIO_BOOL  G_get_double_buffer_state(
     Gwindow        window )
 {
     return( window->double_buffer_state );
 }
 
-public  void  G_set_double_buffer_state(
+  void  G_set_double_buffer_state(
     Gwindow        window,
     VIO_BOOL        flag )
 {
@@ -353,7 +353,7 @@ public  void  G_set_double_buffer_state(
     }
 }
 
-public  VIO_BOOL  G_is_depth_buffer_supported( void )
+  VIO_BOOL  G_is_depth_buffer_supported( void )
 {
     static  VIO_BOOL   first = TRUE;
     static  VIO_BOOL   available;
@@ -368,7 +368,7 @@ public  VIO_BOOL  G_is_depth_buffer_supported( void )
     return( available );
 }
 
-public  void  G_set_zbuffer_state(
+  void  G_set_zbuffer_state(
     Gwindow         window,
     VIO_BOOL         flag )
 {
@@ -385,7 +385,7 @@ public  void  G_set_zbuffer_state(
     }
 }
 
-public  VIO_BOOL  G_get_zbuffer_state(
+  VIO_BOOL  G_get_zbuffer_state(
     Gwindow         window )
 {
     return( window->zbuffer_state );
@@ -404,7 +404,7 @@ public  VIO_BOOL  G_get_zbuffer_state(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  VIO_BOOL  G_get_colour_map_state(
+  VIO_BOOL  G_get_colour_map_state(
     Gwindow        window )
 {
     return( window->colour_map_state );
@@ -424,7 +424,7 @@ public  VIO_BOOL  G_get_colour_map_state(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_set_colour_map_state(
+  void  G_set_colour_map_state(
     Gwindow        window,
     VIO_BOOL        flag )
 {
@@ -447,7 +447,7 @@ public  void  G_set_colour_map_state(
     }
 }
 
-public  int  G_get_n_colour_map_entries(
+  int  G_get_n_colour_map_entries(
     Gwindow        window )
 {
     set_current_window( window );
@@ -456,10 +456,10 @@ public  int  G_get_n_colour_map_entries(
                                          G_get_double_buffer_state(window) ) );
 }
 
-public  void  G_set_colour_map_entry(
+  void  G_set_colour_map_entry(
     Gwindow         window,
     int             ind,
-    Colour          colour )
+    VIO_Colour          colour )
 {
     Bitplane_types  save_bitplane;
 
@@ -477,7 +477,7 @@ public  void  G_set_colour_map_entry(
         restore_bitplanes( window, save_bitplane );
 }
 
-public  void  restore_bitplanes(
+  void  restore_bitplanes(
     Gwindow         window,
     Bitplane_types  bitplane )
 {
@@ -488,12 +488,12 @@ public  void  restore_bitplanes(
         G_set_bitplanes( window, bitplane );
 }
 
-public  int  G_get_monitor_width( void )
+  int  G_get_monitor_width( void )
 {
     return( GS_get_monitor_width() );
 }
 
-public  int  G_get_monitor_height( void )
+  int  G_get_monitor_height( void )
 {
     return( GS_get_monitor_height() );
 }
@@ -512,7 +512,7 @@ public  int  G_get_monitor_height( void )
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  Real  G_get_monitor_widths_to_eye( void )
+  VIO_Real  G_get_monitor_widths_to_eye( void )
 {
     return( 1.2 );
 }
@@ -531,7 +531,7 @@ public  Real  G_get_monitor_widths_to_eye( void )
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_get_window_size(
+  void  G_get_window_size(
     Gwindow        window,
     int            *x_size,
     int            *y_size )
@@ -553,7 +553,7 @@ public  void  G_get_window_size(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_get_window_position(
+  void  G_get_window_position(
     Gwindow        window,
     int            *x_pos,
     int            *y_pos )
@@ -576,9 +576,9 @@ public  void  G_get_window_position(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_set_background_colour(
+  void  G_set_background_colour(
     Gwindow         window,
-    Colour          colour )
+    VIO_Colour          colour )
 {
     if( window->colour_map_state )
         window->background_colour_index = colour;
@@ -599,7 +599,7 @@ public  void  G_set_background_colour(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  Colour  G_get_background_colour(
+  VIO_Colour  G_get_background_colour(
     Gwindow         window )
 {
     if( window->colour_map_state )
@@ -621,10 +621,10 @@ public  Colour  G_get_background_colour(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_clear_window(
+  void  G_clear_window(
     Gwindow    window )
 {
-    Colour    colour;
+    VIO_Colour    colour;
 
     set_current_window( window );
 
@@ -643,9 +643,9 @@ public  void  G_clear_window(
     window->bitplanes_cleared[window->current_bitplanes] = TRUE;
 }
 
-public  void  G_clear_viewport(
+  void  G_clear_viewport(
     Gwindow    window,
-    Colour     colour )
+    VIO_Colour     colour )
 {
     set_current_window( window );
 
@@ -661,7 +661,7 @@ public  void  G_clear_viewport(
                        G_get_zbuffer_state(window), colour );
 }
 
-public  void  G_set_automatic_clear_state(
+  void  G_set_automatic_clear_state(
     Gwindow    window,
     VIO_BOOL    state )
 {
@@ -682,7 +682,7 @@ public  void  G_set_automatic_clear_state(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_update_window( Gwindow   window )
+  void  G_update_window( Gwindow   window )
 {
     set_current_window( window );
 
@@ -704,7 +704,7 @@ public  void  G_update_window( Gwindow   window )
 
 /* ARGSUSED */
 
-public  void  check_window_cleared(
+  void  check_window_cleared(
      Gwindow    window  )
 {
     if( window->automatic_clear_flag &&
@@ -714,18 +714,18 @@ public  void  check_window_cleared(
     }
 }
 
-public  VIO_BOOL  G_has_overlay_planes( void )
+  VIO_BOOL  G_has_overlay_planes( void )
 {
     return( G_get_n_overlay_planes() > 0 );
 }
 
-public  VIO_BOOL  G_window_has_overlay_planes(
+  VIO_BOOL  G_window_has_overlay_planes(
     Gwindow   window )
 {
     return( window->n_overlay_planes > 0 );
 }
 
-private  void  update_blend_function(
+static  void  update_blend_function(
     Gwindow         window,
     Bitplane_types  bitplane )
 {
@@ -751,7 +751,7 @@ private  void  update_blend_function(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-public  void  G_set_bitplanes(
+  void  G_set_bitplanes(
     Gwindow          window,
     Bitplane_types   bitplanes )
 {
@@ -764,41 +764,41 @@ public  void  G_set_bitplanes(
     }
 }
 
-public  Bitplane_types  G_get_bitplanes(
+  Bitplane_types  G_get_bitplanes(
     Gwindow          window )
 {
     return( window->current_bitplanes );
 }
 
-public  VIO_BOOL  G_can_switch_double_buffering( void )
+  VIO_BOOL  G_can_switch_double_buffering( void )
 {
     return( GS_can_switch_double_buffering() );
 }
 
-public  VIO_BOOL  G_can_switch_colour_map_mode( void )
+  VIO_BOOL  G_can_switch_colour_map_mode( void )
 {
     return( GS_can_switch_colour_map_mode() );
 }
 
-public  VIO_BOOL  G_has_transparency_mode( void )
+  VIO_BOOL  G_has_transparency_mode( void )
 {
     return( GS_has_transparency_mode() );
 }
 
-public  VIO_BOOL  G_has_rgb_mode( void )
+  VIO_BOOL  G_has_rgb_mode( void )
 {
     return( GS_has_transparency_mode() );
 }
 
-public  int  G_get_n_overlay_planes( void )
+  int  G_get_n_overlay_planes( void )
 {
     return( GS_get_num_overlay_planes() );
 }
 
-public  void  G_set_overlay_colour_map(
+  void  G_set_overlay_colour_map(
     Gwindow         window,
     int             ind,
-    Colour          colour )
+    VIO_Colour          colour )
 {
     Bitplane_types   save_bitplane;
 
@@ -816,7 +816,7 @@ public  void  G_set_overlay_colour_map(
     }
 }
 
-public  void  G_append_to_last_update(
+  void  G_append_to_last_update(
      Gwindow   window )
 {
     set_current_window( window );
@@ -826,14 +826,14 @@ public  void  G_append_to_last_update(
     window->bitplanes_cleared[NORMAL_PLANES] = TRUE;
 }
 
-public  void  G_continue_last_update(
+  void  G_continue_last_update(
      Gwindow   window )
 {
     set_current_window( window );
     set_continuation_flag( window, TRUE );
 }
 
-public  void  G_set_transparency_state(
+  void  G_set_transparency_state(
     Gwindow        window,
     VIO_BOOL        state )
 {

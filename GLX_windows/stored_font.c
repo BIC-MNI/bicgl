@@ -9,7 +9,7 @@
  * or publicity pertaining to distribution of the software without specific,
  * written prior permission. 
  *
- * THE MATERIAL EMBODIED ON THIS SOFTWARE IS PROVIDED TO YOU "AS-IS"
+ * THE MATERIAL EMBODIED TRUE THIS SOFTWARE IS PROVIDED TO YOU "AS-IS"
  * AND WITHOUT WARRANTY OF ANY KIND, EXPRESS, IMPLIED OR OTHERWISE,
  * INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY OR
  * FITNESS FOR A PARTICULAR PURPOSE.  IN NO EVENT SHALL SILICON
@@ -18,7 +18,7 @@
  * KIND, OR ANY DAMAGES WHATSOEVER, INCLUDING WITHOUT LIMITATION,
  * LOSS OF PROFIT, LOSS OF USE, SAVINGS OR REVENUE, OR THE CLAIMS OF
  * THIRD PARTIES, WHETHER OR NOT SILICON GRAPHICS, INC.  HAS BEEN
- * ADVISED OF THE POSSIBILITY OF SUCH LOSS, HOWEVER CAUSED AND ON
+ * ADVISED OF THE POSSIBILITY OF SUCH LOSS, HOWEVER CAUSED AND TRUE
  * ANY THEORY OF LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE
  * POSSESSION, USE OR PERFORMANCE OF THIS SOFTWARE.
  * 
@@ -148,7 +148,7 @@ static   GLubyte rasters[][13] = {
 };
 
 
-public  void create_fixed_font(
+  void create_fixed_font(
     GLuint fontOffset )
 {
     GLuint i;
@@ -162,19 +162,19 @@ public  void create_fixed_font(
     }
 }
 
-public  int  get_fixed_font_n_chars( void )
+  int  get_fixed_font_n_chars( void )
 {
     return( 127 );
 }
 
-public  Real  get_fixed_font_height( void )
+  VIO_Real  get_fixed_font_height( void )
 {
     return( 13.0 );
 }
 
 /* ARGSUSED */
 
-public  Real  get_fixed_font_width(
+  VIO_Real  get_fixed_font_width(
     char   ch )
 {
     return( 10.0 );

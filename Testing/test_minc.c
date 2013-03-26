@@ -6,16 +6,16 @@ int  main(
 {
     Status         status;
     int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
-    Real           intensity, separation[MAX_DIMENSIONS];
-    Real           min_value, max_value;
-    Real           min_real, max_real;
-    Real           fraction_done;
+    VIO_Real           intensity, separation[MAX_DIMENSIONS];
+    VIO_Real           min_value, max_value;
+    VIO_Real           min_real, max_real;
+    VIO_Real           fraction_done;
     pixels_struct  pixels;
     Volume         volume;
     window_struct  *window;
     Minc_file      file;
-    Real           scale;
-    Colour         *rgb_map;
+    VIO_Real           scale;
+    VIO_Colour         *rgb_map;
     char           *filename;
     static STRING  dim_names[N_DIMENSIONS] = { MIxspace, MIyspace, MIzspace };
 
@@ -60,15 +60,15 @@ int  main(
 
     for_less( i, 0, (int) max_value + 1 )
     {
-        intensity = (Real) i / max_value;
+        intensity = (VIO_Real) i / max_value;
         rgb_map[i] = make_Colour_0_1( intensity, intensity, intensity );
     }
 
-    scale = (Real) x_size / (Real) sizes[X];
-    if( (Real) y_size / (Real) sizes[Y] < scale )
-        scale = (Real) y_size / (Real) sizes[Y];
+    scale = (VIO_Real) x_size / (VIO_Real) sizes[X];
+    if( (VIO_Real) y_size / (VIO_Real) sizes[Y] < scale )
+        scale = (VIO_Real) y_size / (VIO_Real) sizes[Y];
 
-    create_volume_slice( volume, (Real) sizes[Z] / 2.0,
+    create_volume_slice( volume, (VIO_Real) sizes[Z] / 2.0,
                          0.0, 0.0, scale, scale,
                          (Volume) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
                          X, Y, x_size, y_size, RGB_PIXEL, FALSE,

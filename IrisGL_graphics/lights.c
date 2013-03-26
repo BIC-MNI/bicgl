@@ -2,7 +2,7 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-public  void   GS_initialize_lights(
+  void   GS_initialize_lights(
     GSwindow  window )
 {
     static   float    data[] = { (float) AMBIENT, 1.0f, 1.0f, 1.0f,
@@ -25,9 +25,9 @@ public  void   GS_initialize_lights(
     lmbind( LIGHT7, 0 );
 }
 
-public  void  GS_set_ambient_light(
+  void  GS_set_ambient_light(
     GSwindow       window,
-    Colour         colour )
+    VIO_Colour         colour )
 {
     static   float    data[] = { (float) AMBIENT, 0.0f, 0.0f, 0.0f,
                                  (float) LMNULL };
@@ -40,17 +40,17 @@ public  void  GS_set_ambient_light(
            SIZEOF_STATIC_ARRAY(data), data );
 }
 
-public  void  GS_define_light(
+  void  GS_define_light(
     GSwindow        window,
     int             light_index,
     Light_types     type,
-    Colour          colour,
-    Vector          *direction,
-    Point           *position,
-    Real            spot_exponent,
-    Real            spot_angle )
+    VIO_Colour          colour,
+    VIO_Vector          *direction,
+    VIO_Point           *position,
+    VIO_Real            spot_exponent,
+    VIO_Real            spot_angle )
 {
-    Vector  unit_direction;
+    VIO_Vector  unit_direction;
     int     n_data;
     float   data[25];
 
@@ -123,7 +123,7 @@ public  void  GS_define_light(
            (short) n_data, data );
 }
 
-public  void  GS_set_light_state(
+  void  GS_set_light_state(
     GSwindow        window,
     int             light_index,
     VIO_BOOL         state )

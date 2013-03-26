@@ -7,7 +7,7 @@
 
 #define  CLOSEST_FRONT_PLANE    1.0e-5
 
-private  void  set_view_type(
+static  void  set_view_type(
     Gwindow         window,
     View_types      view_type );
 
@@ -24,21 +24,21 @@ private  void  set_view_type(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  initialize_window_view(
+  void  initialize_window_view(
     Gwindow   window )
 {
-    Transform      identity;
-    static  Point  default_origin = { 0.0f, 0.0f, 1.0f };
-    static  Vector default_line_of_sight = { 0.0f, 0.0f, -1.0f };
-    static  Vector default_up_direction = { 0.0f, 1.0f, 0.0f };
-    Real           default_front_clip_distance = 0.01;
-    Real           default_back_clip_distance = 2.0;
+    VIO_Transform      identity;
+    static  VIO_Point  default_origin = { 0.0f, 0.0f, 1.0f };
+    static  VIO_Vector default_line_of_sight = { 0.0f, 0.0f, -1.0f };
+    static  VIO_Vector default_up_direction = { 0.0f, 1.0f, 0.0f };
+    VIO_Real           default_front_clip_distance = 0.01;
+    VIO_Real           default_back_clip_distance = 2.0;
     VIO_BOOL        default_perspective_flag = TRUE;
-    Real           default_perspective_distance = 1.0;
+    VIO_Real           default_perspective_distance = 1.0;
     VIO_BOOL        default_stereo_flag = FALSE;
-    Real           default_eye_separation = 0.1;
-    Real           default_window_width = 1.0;
-    Real           default_window_height = 1.0;
+    VIO_Real           default_eye_separation = 0.1;
+    VIO_Real           default_window_width = 1.0;
+    VIO_Real           default_window_height = 1.0;
 
     make_identity_transform( &identity );
 
@@ -82,7 +82,7 @@ public  void  initialize_window_view(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  set_view_type(
+static  void  set_view_type(
     Gwindow         window,
     View_types      view_type )
 {
@@ -99,7 +99,7 @@ private  void  set_view_type(
     GS_load_transform( &window->viewing_matrices[view_type] );
 }
 
-public  void  set_view_for_eye(
+  void  set_view_for_eye(
     Gwindow         window,
     int             which_eye )
 {
@@ -146,7 +146,7 @@ public  void  set_view_for_eye(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_set_view_type(
+  void  G_set_view_type(
     Gwindow         window,
     View_types      view_type )
 {
@@ -154,25 +154,25 @@ public  void  G_set_view_type(
         set_view_type( window, view_type );
 }
 
-private  void  define_3D_projection(
+static  void  define_3D_projection(
     Gwindow        window,
-    Real           front_clip_distance,
-    Real           back_clip_distance,
+    VIO_Real           front_clip_distance,
+    VIO_Real           back_clip_distance,
     VIO_BOOL        perspective_flag,
-    Real           perspective_distance,
+    VIO_Real           perspective_distance,
     VIO_BOOL        stereo_flag,
-    Real           eye_separation,
-    Real           window_width,
-    Real           window_height )
+    VIO_Real           eye_separation,
+    VIO_Real           window_width,
+    VIO_Real           window_height )
 {
-    Real        real_aspect, virtual_aspect, scaling;
-    Transform   translate1, translate2, right_transform;
-    Transform   left_transform;
+    VIO_Real        real_aspect, virtual_aspect, scaling;
+    VIO_Transform   translate1, translate2, right_transform;
+    VIO_Transform   left_transform;
 
     /* first modify window width and height to match aspect */
 
-    real_aspect = (Real) window->y_size / (Real) window->x_size;
-    virtual_aspect = (Real) window_height / (Real) window_width;
+    real_aspect = (VIO_Real) window->y_size / (VIO_Real) window->x_size;
+    virtual_aspect = (VIO_Real) window_height / (VIO_Real) window_width;
 
     if( virtual_aspect > real_aspect )
         window_width = window_height / real_aspect;
@@ -252,22 +252,22 @@ private  void  define_3D_projection(
     set_view_type( window, window->current_view_type );  /* restore view type */
 }
 
-public  void  G_set_3D_view(
+  void  G_set_3D_view(
     Gwindow        window,
-    Point          *origin,
-    Vector         *line_of_sight,
-    Vector         *up_direction,
-    Real           front_clip_distance,
-    Real           back_clip_distance,
+    VIO_Point          *origin,
+    VIO_Vector         *line_of_sight,
+    VIO_Vector         *up_direction,
+    VIO_Real           front_clip_distance,
+    VIO_Real           back_clip_distance,
     VIO_BOOL        perspective_flag,
-    Real           perspective_distance,
+    VIO_Real           perspective_distance,
     VIO_BOOL        stereo_flag,
-    Real           eye_separation,
-    Real           window_width,
-    Real           window_height )
+    VIO_Real           eye_separation,
+    VIO_Real           window_width,
+    VIO_Real           window_height )
 {
-    Vector      x_axis, y_axis, z_axis;
-    Transform   view_matrix;
+    VIO_Vector      x_axis, y_axis, z_axis;
+    VIO_Transform   view_matrix;
 
     set_current_window( window );
 
@@ -304,9 +304,9 @@ public  void  G_set_3D_view(
     update_transforms( window );
 }
 
-public  void  G_set_modeling_transform(
+  void  G_set_modeling_transform(
     Gwindow         window,
-    Transform       *transform )
+    VIO_Transform       *transform )
 {
     window->modeling_transform = *transform;
     update_transforms( window );
@@ -328,28 +328,28 @@ public  void  G_set_modeling_transform(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_transform_point(
+  void  G_transform_point(
     Gwindow         window,
-    Point           *point,
+    VIO_Point           *point,
     View_types      view_type,
     int             *x_pixel,
     int             *y_pixel )
 {
-    Real   x, y, z;
+    VIO_Real   x, y, z;
 
     transform_point( &window->viewing_matrices[view_type],
-                     (Real) Point_x(*point),
-                     (Real) Point_y(*point),
-                     (Real) Point_z(*point),
+                     (VIO_Real) Point_x(*point),
+                     (VIO_Real) Point_y(*point),
+                     (VIO_Real) Point_z(*point),
                      &x, &y, &z );
     transform_point( &window->projection_matrices[view_type], x, y, z,
                      &x, &y, &z );
 
-    *x_pixel = (int) (((Real) x + 1.0) / 2.0 * (Real) window->x_size);
-    *y_pixel = (int) (((Real) y + 1.0) / 2.0 * (Real) window->y_size);
+    *x_pixel = (int) (((VIO_Real) x + 1.0) / 2.0 * (VIO_Real) window->x_size);
+    *y_pixel = (int) (((VIO_Real) y + 1.0) / 2.0 * (VIO_Real) window->y_size);
 }
 
-public  void  update_transforms(
+  void  update_transforms(
     Gwindow         window )
 {
     set_current_window( window );
@@ -375,7 +375,7 @@ public  void  update_transforms(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-private  void  define_pixel_view(
+static  void  define_pixel_view(
     Gwindow   window )
 {
     set_current_window( window );
@@ -392,27 +392,27 @@ private  void  define_pixel_view(
     set_view_type( window, window->current_view_type );  /* restore view type */
 }
 
-private  void  push_local_transform( Transform   *transform )
+static  void  push_local_transform( VIO_Transform   *transform )
 {
     GS_push_transform();
     GS_mult_transform( transform );
 }
 
-private  void  pop_local_transform( void )
+static  void  pop_local_transform( void )
 {
     GS_pop_transform();
 }
 
-public  void  G_push_transform(
+  void  G_push_transform(
     Gwindow      window,
-    Transform    *transform )
+    VIO_Transform    *transform )
 {
     set_current_window( window );
 
     push_local_transform( transform );
 }
 
-public  void  G_pop_transform(
+  void  G_pop_transform(
     Gwindow    window )
 {
     set_current_window( window );
@@ -434,7 +434,7 @@ public  void  G_pop_transform(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  window_was_resized(
+  void  window_was_resized(
     Gwindow    window )
 {
     set_current_window( window );
@@ -471,7 +471,7 @@ public  void  window_was_resized(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  G_set_viewport(
+  void  G_set_viewport(
     Gwindow        window,
     int            x_min,
     int            x_max,

@@ -24,10 +24,10 @@ typedef struct
     VIO_BOOL          in_rotation_mode;
     pixels_struct    pixels;
     pixels_struct    ball;
-    Real             ball_x;
-    Real             ball_y;
-    Real             ball_x_dir;
-    Real             ball_y_dir;
+    VIO_Real             ball_x;
+    VIO_Real             ball_y;
+    VIO_Real             ball_x_dir;
+    VIO_Real             ball_y_dir;
     lines_struct     lines;
     lines_struct     lines_2d;
     lines_struct     single_point;
@@ -35,19 +35,19 @@ typedef struct
     text_struct      font_examples[N_FONTS_TO_DRAW];
     polygons_struct  polygons;
     Transform        modeling_transform;
-    Real             last_message;
+    VIO_Real             last_message;
     VIO_BOOL          double_buffer_flag;
 
 }main_struct;
 
-private  void  update(
+static  void  update(
     Gwindow    window,
     void       *update_data )
 {
 static  VIO_BOOL   first = TRUE;
 static  int   count = 0;
-static  Real  start_time = 0;
-Real  end_time;
+static  VIO_Real  start_time = 0;
+VIO_Real  end_time;
 
     int           i;
     main_struct   *info;
@@ -56,20 +56,20 @@ Real  end_time;
 
     G_clear_window( window );
 
-    G_set_zbuffer_state( window, OFF );
-    G_set_lighting_state( window, OFF );
+    G_set_zbuffer_state( window, FALSE );
+    G_set_lighting_state( window, FALSE );
     G_set_view_type( window, PIXEL_VIEW );
     G_draw_pixels( window, &info->pixels ); 
     G_draw_pixels( window, &info->ball ); 
 
-    G_set_zbuffer_state( window, ON );
-    G_set_lighting_state( window, ON );
+    G_set_zbuffer_state( window, TRUE );
+    G_set_lighting_state( window, TRUE );
     G_set_view_type( window, MODEL_VIEW );
     G_draw_polygons( window, &info->polygons );
-    G_set_lighting_state( window, OFF );
+    G_set_lighting_state( window, FALSE );
     G_draw_lines( window, &info->lines );
 
-    G_set_lighting_state( window, OFF );
+    G_set_lighting_state( window, FALSE );
     G_set_view_type( window, PIXEL_VIEW );
     G_draw_lines( window, &info->lines_2d );
     G_draw_lines( window, &info->single_point );
@@ -91,13 +91,13 @@ Real  end_time;
     {
         end_time = current_realtime_seconds();
         (void) printf( "%6.2f frames per second\n",
-                    (Real) count / (end_time - start_time) );
+                    (VIO_Real) count / (end_time - start_time) );
         count = 0;
         start_time = end_time;
     }
 }
 
-private  void  resize_window(
+static  void  resize_window(
     Gwindow    window,
     int        x,
     int        y,
@@ -112,14 +112,14 @@ private  void  resize_window(
     print( "Window resized/moved: %d %d    %d by %d\n", x, y, x_size, y_size );
 
     fill_Point( info->lines_2d.points[0], 5.0, 5.0, 0.0 );
-    fill_Point( info->lines_2d.points[1], (Real) x_size - 5.0, 5.0, 0.0 );
-    fill_Point( info->lines_2d.points[2], (Real) x_size - 5.0,
-                                          (Real) y_size - 5.0, 0.0 );
-    fill_Point( info->lines_2d.points[3], 5.0, (Real) y_size - 5.0, 0.0 );
+    fill_Point( info->lines_2d.points[1], (VIO_Real) x_size - 5.0, 5.0, 0.0 );
+    fill_Point( info->lines_2d.points[2], (VIO_Real) x_size - 5.0,
+                                          (VIO_Real) y_size - 5.0, 0.0 );
+    fill_Point( info->lines_2d.points[3], 5.0, (VIO_Real) y_size - 5.0, 0.0 );
     G_set_update_flag( window );
 }
 
-private  void  left_mouse_down(
+static  void  left_mouse_down(
     Gwindow    window,
     int        x,
     int        y,
@@ -133,16 +133,16 @@ private  void  left_mouse_down(
     info->in_rotation_mode = TRUE;
 }
 
-private  void  update_rotation(
+static  void  update_rotation(
     Gwindow       window,
     main_struct   *info,
     int           x )
 {
-    Real        angle_in_degrees;
+    VIO_Real        angle_in_degrees;
     Transform   rotation_transform;
-    Point       centre_of_rotation;
+    VIO_Point       centre_of_rotation;
 
-    angle_in_degrees = (Real) (info->prev_rotation_mouse_x - x);
+    angle_in_degrees = (VIO_Real) (info->prev_rotation_mouse_x - x);
 
     make_rotation_transform( angle_in_degrees * DEG_TO_RAD, Y,
                              &rotation_transform );
@@ -160,7 +160,7 @@ private  void  update_rotation(
     G_set_update_flag( window );
 }
 
-private  void  left_mouse_up(
+static  void  left_mouse_up(
     Gwindow    window,
     int        x,
     int        y,
@@ -174,7 +174,7 @@ private  void  left_mouse_up(
     info->in_rotation_mode = FALSE;
 }
 
-private  void  middle_mouse_down(
+static  void  middle_mouse_down(
     Gwindow    window,
     int        x,
     int        y,
@@ -198,15 +198,15 @@ private  void  middle_mouse_down(
 
     G_clear_window( second );
 
-    G_set_zbuffer_state( second, OFF );
-    G_set_lighting_state( second, OFF );
+    G_set_zbuffer_state( second, FALSE );
+    G_set_lighting_state( second, FALSE );
     G_set_view_type( second, PIXEL_VIEW );
     G_draw_pixels( second, &info->ball ); 
     G_update_window( second );
 
 }
 
-private  void  middle_mouse_up(
+static  void  middle_mouse_up(
     Gwindow    window,
     int        x,
     int        y,
@@ -219,7 +219,7 @@ private  void  middle_mouse_up(
     print( "MIDDLE mouse up\n" );
 }
 
-private  void  right_mouse_down(
+static  void  right_mouse_down(
     Gwindow    window,
     int        x,
     int        y,
@@ -241,7 +241,7 @@ private  void  right_mouse_down(
     G_set_update_flag( window );
 }
 
-private  void  right_mouse_up(
+static  void  right_mouse_up(
     Gwindow    window,
     int        x,
     int        y,
@@ -254,7 +254,7 @@ private  void  right_mouse_up(
     print( "RIGHT mouse up\n" );
 }
 
-private  void  mouse_movement(
+static  void  mouse_movement(
     Gwindow    window,
     int        x,
     int        y,
@@ -272,19 +272,19 @@ private  void  mouse_movement(
 
     (void) sprintf( info->text.string,
                     "Mouse: %4d,%4d pixels   %4.2f,%4.2f window",
-                    x, y, ((Real) x + 0.5) / (Real) x_size,
-                          ((Real) y + 0.5) / (Real) y_size );
+                    x, y, ((VIO_Real) x + 0.5) / (VIO_Real) x_size,
+                          ((VIO_Real) y + 0.5) / (VIO_Real) y_size );
 
     G_set_update_flag( window );
 }
 
-private  void  enter_window(
+static  void  enter_window(
     Gwindow    window,
     void       *update_data )
 {
 }
 
-private  void  leave_window(
+static  void  leave_window(
     Gwindow    window,
     void       *update_data )
 {
@@ -298,7 +298,7 @@ private  void  leave_window(
     G_set_update_flag( window );
 }
 
-private  void  quit_program(
+static  void  quit_program(
     main_struct  *info )
 {
     int   i;
@@ -327,14 +327,14 @@ private  void  quit_program(
     exit( 0 );
 }
 
-private  void  quit_window(
+static  void  quit_window(
     Gwindow    window,
     void       *update_data )
 {
     quit_program( (main_struct *) update_data );
 }
 
-private  void  key_down(
+static  void  key_down(
     Gwindow    window,
     int        key,
     void       *update_data )
@@ -351,7 +351,7 @@ private  void  key_down(
 
 /* ARGSUSED */
 
-private  void  key_up(
+static  void  key_up(
     Gwindow    window,
     int        key,
     void       *update_data )
@@ -363,26 +363,26 @@ private  void  key_up(
     print( "Key released: \"%c\" (%d)\n", key, key );
 }
 
-private  void  timer_function(
+static  void  timer_function(
     void       *update_data )
 {
     int            window_x_size, window_y_size;
-    Real           ball_size;
+    VIO_Real           ball_size;
     main_struct    *info;
 
     info = (main_struct *) update_data;
 
     G_get_window_size( info->window, &window_x_size, &window_y_size );
 
-    ball_size = (Real) info->ball.x_size;
+    ball_size = (VIO_Real) info->ball.x_size;
 
     if( info->ball_x < 0.0 ||
-        info->ball_x + ball_size >= (Real) window_x_size ||
+        info->ball_x + ball_size >= (VIO_Real) window_x_size ||
         info->ball_y < 0.0 ||
-        info->ball_y + ball_size >= (Real) window_y_size )
+        info->ball_y + ball_size >= (VIO_Real) window_y_size )
     {
-        info->ball_x = (Real) window_x_size / 2.0 - ball_size / 2.0;
-        info->ball_y = (Real) window_y_size / 2.0 - ball_size / 2.0;
+        info->ball_x = (VIO_Real) window_x_size / 2.0 - ball_size / 2.0;
+        info->ball_y = (VIO_Real) window_y_size / 2.0 - ball_size / 2.0;
     }
 
     info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
@@ -391,7 +391,7 @@ private  void  timer_function(
         info->ball_x_dir = FABS( info->ball_x_dir );
         info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
     }
-    else if( info->ball_x + ball_size >= (Real) window_x_size )
+    else if( info->ball_x + ball_size >= (VIO_Real) window_x_size )
     {
         info->ball_x_dir = - FABS( info->ball_x_dir );
         info->ball_x += info->ball_x_dir * TIMER_INCREMENT;
@@ -403,7 +403,7 @@ private  void  timer_function(
         info->ball_y_dir = FABS( info->ball_y_dir );
         info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
     }
-    else if( info->ball_y + ball_size >= (Real) window_y_size )
+    else if( info->ball_y + ball_size >= (VIO_Real) window_y_size )
     {
         info->ball_y_dir = - FABS( info->ball_y_dir );
         info->ball_y += info->ball_y_dir * TIMER_INCREMENT;
@@ -416,10 +416,10 @@ private  void  timer_function(
     G_add_timer_function( TIMER_INCREMENT, timer_function, (void *) info );
 }
 
-private  void  idle_function(
+static  void  idle_function(
     void       *update_data )
 {
-    Real           current_time;
+    VIO_Real           current_time;
     main_struct    *info;
 
     info = (main_struct *) update_data;
@@ -456,20 +456,20 @@ int main(
                           SIZED_FONT,
                           SIZED_FONT,
                           SIZED_FONT };
-    static Real       font_sizes[N_FONTS] = { 10.0,
+    static VIO_Real       font_sizes[N_FONTS] = { 10.0,
                            6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
                            15.0, 18.0, 24.0 };
     static Surfprop   spr = { 0.2f, 0.5f, 0.5f, 20.0f, 1.0f };
-    Point             point;
-    Vector            normal, light_direction;
-    Real              dx, dy;
+    VIO_Point             point;
+    VIO_Vector            normal, light_direction;
+    VIO_Real              dx, dy;
     int               x_position, y_position, ball_size;
     int               x_pixel, y_pixel;
     int               i, j, pixels_x_size, pixels_y_size, x_size, y_size;
-    Real              eye_separation;
-    static Point      origin = { 0.0f, 0.0f, 2.0f };
-    static Vector     up_direction = { 0.0f, 1.0f, 0.0f };
-    static Vector     line_of_sight = { 0.0f, 0.0f, -1.0f };
+    VIO_Real              eye_separation;
+    static VIO_Point      origin = { 0.0f, 0.0f, 2.0f };
+    static VIO_Vector     up_direction = { 0.0f, 1.0f, 0.0f };
+    static VIO_Vector     line_of_sight = { 0.0f, 0.0f, -1.0f };
 
     info.in_rotation_mode = FALSE;
     info.double_buffer_flag = TRUE;
@@ -484,9 +484,9 @@ int main(
                               FALSE, info.double_buffer_flag, TRUE, 0,
                               &info.window );
 
-    G_set_transparency_state( info.window, ON );
+    G_set_transparency_state( info.window, TRUE );
 
-    G_set_window_update_min_interval( info.window, 1.0 / (Real) MAX_FRAMES_PER_SECOND );
+    G_set_window_update_min_interval( info.window, 1.0 / (VIO_Real) MAX_FRAMES_PER_SECOND );
 
     if( status != OK )
         return( 1 );
@@ -495,7 +495,7 @@ int main(
         G_set_background_colour( info.window, WHITE );
 
     G_set_3D_view( info.window, &origin, &line_of_sight, &up_direction,
-                   0.01, 4.0, ON, 2.0, stereo_flag, eye_separation, 2.0, 2.0 );
+                   0.01, 4.0, TRUE, 2.0, stereo_flag, eye_separation, 2.0, 2.0 );
 
     fill_Point( point, -0.3, 0.3, 0.0 );
     G_transform_point( info.window, &point, MODEL_VIEW, &x_pixel, &y_pixel );
@@ -515,7 +515,7 @@ int main(
 
     for_less( i, 0, N_FONTS )
     {
-        fill_Point( point, 10.0, 30.0 + (Real) i * 20.0, 0.0 );
+        fill_Point( point, 10.0, 30.0 + (VIO_Real) i * 20.0, 0.0 );
         initialize_text( &info.font_examples[i], &point,
                          make_Colour(255,0,255),
                          font_types[i], font_sizes[i] );
@@ -582,10 +582,10 @@ int main(
     info.lines_2d.n_points = 4;
     ALLOC( info.lines_2d.points, 4 );
     fill_Point( info.lines_2d.points[0], 5.0, 5.0, 0.0 );
-    fill_Point( info.lines_2d.points[1], (Real) x_size - 5.0, 5.0, 0.0 );
-    fill_Point( info.lines_2d.points[2], (Real) x_size - 5.0, (Real) y_size - 5.0,
+    fill_Point( info.lines_2d.points[1], (VIO_Real) x_size - 5.0, 5.0, 0.0 );
+    fill_Point( info.lines_2d.points[2], (VIO_Real) x_size - 5.0, (VIO_Real) y_size - 5.0,
                                     0.0 );
-    fill_Point( info.lines_2d.points[3], 5.0, (Real) y_size - 5.0, 0.0 );
+    fill_Point( info.lines_2d.points[3], 5.0, (VIO_Real) y_size - 5.0, 0.0 );
 
     info.lines_2d.n_items = 1;
     ALLOC( info.lines_2d.end_indices, info.lines_2d.n_items );
@@ -614,8 +614,8 @@ int main(
         for_less( j, 0, pixels_y_size )
         {
             PIXEL_RGB_COLOUR(info.pixels,i,j) = make_Colour_0_1(
-                      (Real) i / (Real) (pixels_x_size-1),
-                      (Real) j / (Real) (pixels_y_size-1), 0.0 );
+                      (VIO_Real) i / (VIO_Real) (pixels_x_size-1),
+                      (VIO_Real) j / (VIO_Real) (pixels_y_size-1), 0.0 );
         }
     }
 
@@ -623,8 +623,8 @@ int main(
 
     ball_size = 5;
 
-    info.ball_x = (Real) x_size / 2.0;
-    info.ball_y = (Real) y_size / 2.0;
+    info.ball_x = (VIO_Real) x_size / 2.0;
+    info.ball_y = (VIO_Real) y_size / 2.0;
     info.ball_x_dir = X_VELOCITY;
     info.ball_y_dir = Y_VELOCITY;
 
@@ -634,11 +634,11 @@ int main(
 
     for_less( i, 0, ball_size )
     {
-        dx = (Real) i - (Real) (ball_size-1) / 2.0;
+        dx = (VIO_Real) i - (VIO_Real) (ball_size-1) / 2.0;
         for_less( j, 0, ball_size )
         {
-            dy = (Real) j - (Real) (ball_size-1) / 2.0;
-            if( dx * dx + dy * dy < (Real) ((ball_size-1) * (ball_size-1))/4.0)
+            dy = (VIO_Real) j - (VIO_Real) (ball_size-1) / 2.0;
+            if( dx * dx + dy * dy < (VIO_Real) ((ball_size-1) * (ball_size-1))/4.0)
                 PIXEL_RGB_COLOUR(info.ball,i,j) = make_rgba_Colour(0,0,255,255);
             else
                 PIXEL_RGB_COLOUR(info.ball,i,j) = make_rgba_Colour(0,0,0,0);
@@ -668,8 +668,8 @@ int main(
 
     G_define_light( info.window, LIGHT_INDEX, DIRECTIONAL_LIGHT,
                     make_Colour(255,255,255),
-                    &light_direction, (Point *) 0, 0.0, 0.0 );
-    G_set_light_state( info.window, LIGHT_INDEX, ON );
+                    &light_direction, (VIO_Point *) 0, 0.0, 0.0 );
+    G_set_light_state( info.window, LIGHT_INDEX, TRUE );
 
     /* --------------------------------------- */
     /* ------------ do main loop ------------- */

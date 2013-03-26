@@ -7,14 +7,14 @@ int  main(
     Status         status;
     int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
     int            n_slices_displayed;
-    Real           intensity, separations[MAX_DIMENSIONS];
-    Real           min_value, max_value;
+    VIO_Real           intensity, separations[MAX_DIMENSIONS];
+    VIO_Real           min_value, max_value;
     pixels_struct  pixels;
     Volume         volume;
     window_struct  *window;
-    Real           x_scale, y_scale, x_translation, y_translation;
-    Real           slice_fit_oversize = 0.1;
-    Colour         *colour_map;
+    VIO_Real           x_scale, y_scale, x_translation, y_translation;
+    VIO_Real           slice_fit_oversize = 0.1;
+    VIO_Colour         *colour_map;
     char           *filename;
     static char    *dim_names[] = { MIxspace, MIyspace, MIzspace };
 
@@ -54,7 +54,7 @@ int  main(
 
     for_less( i, 0, (int) max_value+1 )
     {
-        intensity = (Real) i / max_value;
+        intensity = (VIO_Real) i / max_value;
         colour_map[i] = make_Colour_0_1( intensity, intensity, intensity );
     }
 
@@ -63,8 +63,8 @@ int  main(
                slice_fit_oversize,
                &x_scale, &y_scale, &x_translation, &y_translation );
 
-    create_volume_slice( BOX_FILTER, (Real) n_slices_displayed,
-                         volume, (Real) (sizes[Z] - 1) / 2.0,
+    create_volume_slice( BOX_FILTER, (VIO_Real) n_slices_displayed,
+                         volume, (VIO_Real) (sizes[Z] - 1) / 2.0,
                          x_translation, y_translation, x_scale, y_scale,
                          (Volume) NULL, 0.0, 0.0, 0.0, 0.0, 0.0,
                          X, Y, Z, x_size, y_size, RGB_PIXEL, FALSE,

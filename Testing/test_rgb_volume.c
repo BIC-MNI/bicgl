@@ -6,19 +6,19 @@ int  main(
 {
     Status         status;
     int            n_alloced, x_size, y_size, i, sizes[MAX_DIMENSIONS];
-    Real           separations[MAX_DIMENSIONS];
-    Real           min_value, max_value;
-    Real           x_axis[N_DIMENSIONS];
-    Real           y_axis[N_DIMENSIONS];
-    Real           origin[N_DIMENSIONS];
+    VIO_Real           separations[MAX_DIMENSIONS];
+    VIO_Real           min_value, max_value;
+    VIO_Real           x_axis[N_DIMENSIONS];
+    VIO_Real           y_axis[N_DIMENSIONS];
+    VIO_Real           origin[N_DIMENSIONS];
     int            used_x_viewport_size, used_y_viewport_size;
     int            v[MAX_DIMENSIONS];
     pixels_struct  pixels1;
     Volume         volume;
     window_struct  *window;
-    Real           x_scale, y_scale, x_translation, y_translation;
-    Real           slice_fit_oversize = 0.1;
-    Colour         colour;
+    VIO_Real           x_scale, y_scale, x_translation, y_translation;
+    VIO_Real           slice_fit_oversize = 0.1;
+    VIO_Colour         colour;
     char           *filename;
     static char    *dim_names[] = { MIxspace, MIyspace, MIzspace };
     minc_input_options  options;
@@ -49,7 +49,7 @@ int  main(
             separations[X], separations[Y], separations[Z] );
 
     status = G_create_window( "Volume Browser", -1, -1, -1, -1, &window );
-    G_set_double_buffer_state( window, OFF );
+    G_set_double_buffer_state( window, FALSE );
 
     G_get_window_size( window, &x_size, &y_size );
 
@@ -57,7 +57,7 @@ int  main(
 
     origin[X] = 0.0;
     origin[Y] = 0.0;
-    origin[Z] = (Real) (sizes[Z] - 1) / 2.0;
+    origin[Z] = (VIO_Real) (sizes[Z] - 1) / 2.0;
     x_axis[X] = 1.0;
     x_axis[Y] = 0.0;
     x_axis[Z] = 0.0;
@@ -76,7 +76,7 @@ int  main(
                          x_translation, y_translation,
                          x_scale, y_scale,
                          (Volume) NULL, BOX_FILTER, 0.0,
-                         (Real *) NULL, (Real *) NULL, (Real *) NULL,
+                         (VIO_Real *) NULL, (VIO_Real *) NULL, (VIO_Real *) NULL,
                          0.0, 0.0, 0.0, 0.0,
                          x_size, y_size, RGB_PIXEL, FALSE,
                          (unsigned short **) NULL,

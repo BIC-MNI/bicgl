@@ -4,13 +4,13 @@
 
 #define  DEFAULT_FRAME_RATE   10.0
 
-private  void  display_loop(
+static  void  display_loop(
     STRING           filenames[],
     window_struct    *window,
     int              n_frames,
     pixels_struct    pixels[],
-    Real             frame_rate );
-private  void  display_frame_info(
+    VIO_Real             frame_rate );
+static  void  display_frame_info(
     window_struct   *window,
     int             frame_number,
     int             frame_rate,
@@ -20,10 +20,10 @@ int  main( argc, argv )
     int   argc;
     char  *argv[];
 {
-    Colour           background = GREY;
+    VIO_Colour           background = GREY;
     int              i, x_size, y_size;
     window_struct    *window;
-    Real             frame_rate;
+    VIO_Real             frame_rate;
     int              n_frames;
     STRING           *filenames;
     pixels_struct    *pixels;
@@ -79,25 +79,25 @@ int  main( argc, argv )
     return( 0 );
 }
 
-private  void  display_loop(
+static  void  display_loop(
     STRING           filenames[],
     window_struct    *window,
     int              n_frames,
     pixels_struct    pixels[],
-    Real             frame_rate )
+    VIO_Real             frame_rate )
 {
     VIO_BOOL        running;
-    Real           seconds_per_frame;
+    VIO_Real           seconds_per_frame;
     VIO_BOOL        done;
     int            frame;
-    Real           next_update;
+    VIO_Real           next_update;
     Event_types    event_type;
     int            key_pressed;
     window_struct  *event_window;
 
     G_set_view_type( window, PIXEL_VIEW );
 
-    seconds_per_frame = 1.0 / (Real) frame_rate;
+    seconds_per_frame = 1.0 / (VIO_Real) frame_rate;
 
     frame = 0;
 
@@ -128,7 +128,7 @@ private  void  display_loop(
 
             case RIGHT_MOUSE_DOWN_EVENT:
                 ++frame_rate;
-                seconds_per_frame = 1.0 / (Real) frame_rate;
+                seconds_per_frame = 1.0 / (VIO_Real) frame_rate;
                 next_update = current_realtime_seconds();
                 break;
 
@@ -136,7 +136,7 @@ private  void  display_loop(
                 if( frame_rate > 1 )
                 {
                     --frame_rate;
-                    seconds_per_frame = 1.0 / (Real) frame_rate;
+                    seconds_per_frame = 1.0 / (VIO_Real) frame_rate;
                     next_update = current_realtime_seconds();
                 }
                 break;
@@ -161,7 +161,7 @@ private  void  display_loop(
     (void) G_delete_window( window );
 }
 
-private  void  display_frame_info(
+static  void  display_frame_info(
     window_struct   *window,
     int             frame_number,
     int             frame_rate,
@@ -169,7 +169,7 @@ private  void  display_frame_info(
 {
     static   VIO_BOOL       first = TRUE;
     static   text_struct   text;
-    static   Point         origin = { 10.0, 10.0, 0.0 };
+    static   VIO_Point         origin = { 10.0, 10.0, 0.0 };
 
     if( first )
     {

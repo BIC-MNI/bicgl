@@ -5,7 +5,7 @@
 #include  <volume_io.h>
 #include  <graphics.h>
 
-public  void  G_set_shaded_state(
+  void  G_set_shaded_state(
     Gwindow      window,
     VIO_BOOL      state )
 {
@@ -13,7 +13,7 @@ public  void  G_set_shaded_state(
         window->shaded_mode_state = state;
 }
 
-public  void  G_set_shading_type(
+  void  G_set_shading_type(
     Gwindow        window,
     Shading_types  type )
 {
@@ -35,13 +35,13 @@ public  void  G_set_shading_type(
     }
 }
 
-public  VIO_BOOL  G_get_lighting_state(
+  VIO_BOOL  G_get_lighting_state(
     Gwindow      window )
 {
     return( window->lighting_state );
 }
 
-public  void  G_set_lighting_state(
+  void  G_set_lighting_state(
     Gwindow      window,
     VIO_BOOL      state )
 {
@@ -55,7 +55,7 @@ public  void  G_set_lighting_state(
     }
 }
 
-public  void  G_backface_culling_state(
+  void  G_backface_culling_state(
     Gwindow     window,
     VIO_BOOL     state )
 {
@@ -69,14 +69,14 @@ public  void  G_backface_culling_state(
     }
 }
 
-public  void  G_set_render_lines_as_curves_state(
+  void  G_set_render_lines_as_curves_state(
     Gwindow     window,
     VIO_BOOL     state )
 {
     window->render_lines_as_curves_state = state;
 }
 
-public  void  G_set_n_curve_segments(
+  void  G_set_n_curve_segments(
     Gwindow  window,
     int      n_segments )
 {
@@ -90,7 +90,7 @@ public  void  G_set_n_curve_segments(
     }
 }
 
-public  void  G_set_markers_labels_visibility(
+  void  G_set_markers_labels_visibility(
     Gwindow    window,
     VIO_BOOL    state )
 {

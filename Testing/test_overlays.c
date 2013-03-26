@@ -10,7 +10,7 @@ main()
     status = G_create_window( "Test Window", -1, -1, -1, -1, &window );
 
     G_set_background_colour( window, DARK_SLATE_GREY );
-    G_set_automatic_clear_state( window, OFF );
+    G_set_automatic_clear_state( window, FALSE );
 
     /* ------------ define line to be drawn  ------------- */
 

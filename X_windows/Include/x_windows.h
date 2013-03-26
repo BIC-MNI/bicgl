@@ -26,15 +26,15 @@ typedef  struct
 }
 X_window_struct;
 
-#ifndef  public
-#define       public   extern
+#ifndef  
+#define          extern
 #define       public_was_defined_here
 #endif
 
 #include  <x_window_prototypes.h>
 
 #ifdef  public_was_defined_here
-#undef       public
+#undef       
 #undef       public_was_defined_here
 #endif
 

@@ -10,23 +10,23 @@
 
 #define  USING_X11
 
-private  int         n_windows_to_delete = 0;
-private  Window_id   *windows_to_delete = NULL;
+static  int         n_windows_to_delete = 0;
+static  Window_id   *windows_to_delete = NULL;
 
-private  void  set_event_callbacks_for_current_window( VIO_BOOL );
-private  void  resize_function(
+static  void  set_event_callbacks_for_current_window( VIO_BOOL );
+static  void  resize_function(
     int   width,
     int   height );
-private  int  flip_screen_y(
+static  int  flip_screen_y(
     int   screen_y );
-private  void  set_colour_map_entry(
+static  void  set_colour_map_entry(
     int               ind,
-    Colour            colour );
+    VIO_Colour            colour );
 
 #ifdef DEBUG
 
-private  int  my_glutCreateWindow(
-    STRING  title )
+static  int  my_glutCreateWindow(
+    VIO_STR  title )
 {
     (void) printf( "(void) glutCreateWindow( \"%s\" );\n", title );
 
@@ -34,7 +34,7 @@ private  int  my_glutCreateWindow(
 }
 #define  glutCreateWindow my_glutCreateWindow
 
-private  void  my_glutInit(
+static  void  my_glutInit(
     int   *argc,
     char  *argv[] )
 {
@@ -44,7 +44,7 @@ private  void  my_glutInit(
 }
 #define  glutInit my_glutInit
 
-private  void  my_glutInitWindowPosition(
+static  void  my_glutInitWindowPosition(
     int   x,
     int   y )
 {
@@ -54,7 +54,7 @@ private  void  my_glutInitWindowPosition(
 }
 #define  glutInitWindowPosition my_glutInitWindowPosition
 
-private  void  my_glutInitWindowSize(
+static  void  my_glutInitWindowSize(
     int   x,
     int   y )
 {
@@ -64,7 +64,7 @@ private  void  my_glutInitWindowSize(
 }
 #define  glutInitWindowSize my_glutInitWindowSize
 
-private  void  my_glutInitDisplayMode(
+static  void  my_glutInitDisplayMode(
     int   x )
 {
     (void) printf( "glutInitDisplayMode( %d );\n", x );
@@ -73,7 +73,7 @@ private  void  my_glutInitDisplayMode(
 }
 #define  glutInitDisplayMode my_glutInitDisplayMode
 
-private  void  my_glutUseLayer(
+static  void  my_glutUseLayer(
     GLenum   x )
 {
     (void) printf( "glutUseLayer( %d );\n", x );
@@ -82,7 +82,7 @@ private  void  my_glutUseLayer(
 }
 #define  glutUseLayer my_glutUseLayer
 
-private  void  my_glutPopWindow(
+static  void  my_glutPopWindow(
     void )
 {
     (void) printf( "glutPopWindow();\n" );
@@ -91,7 +91,7 @@ private  void  my_glutPopWindow(
 }
 #define  glutPopWindow my_glutPopWindow
 
-private  void  my_glutDestroyWindow(
+static  void  my_glutDestroyWindow(
     int   x )
 {
     (void) printf( "glutDestroyWindow( %d );\n", x );
@@ -100,7 +100,7 @@ private  void  my_glutDestroyWindow(
 }
 #define  glutDestroyWindow my_glutDestroyWindow
 
-private  void  my_glutSetWindow(
+static  void  my_glutSetWindow(
     int   x )
 {
     (void) printf( "glutSetWindow( %d );\n", x );
@@ -109,7 +109,7 @@ private  void  my_glutSetWindow(
 }
 #define  glutSetWindow my_glutSetWindow
 
-private  void  my_glutMainLoop(
+static  void  my_glutMainLoop(
     void )
 {
     (void) printf( "/* glutMainLoop(); */\n" );
@@ -118,7 +118,7 @@ private  void  my_glutMainLoop(
 }
 #define  glutMainLoop my_glutMainLoop
 
-private  void  my_glutSetColor(
+static  void  my_glutSetColor(
     int  index,
     float r,
     float g,
@@ -130,7 +130,7 @@ private  void  my_glutSetColor(
 }
 #define  glutSetColor my_glutSetColor
 
-private  void  my_glutDisplayFunc(
+static  void  my_glutDisplayFunc(
     void  (*func)( void ) )
 {
     (void) printf( "glutDisplayFunc( &display_it );\n" );
@@ -143,7 +143,7 @@ private  void  my_glutDisplayFunc(
 
 /*----------------------------------------------------- */
 
-public  void  WS_initialize( void )
+  void  WS_initialize( void )
 {
     static  VIO_BOOL  initialized = FALSE;
     int              argc = 1;
@@ -156,8 +156,8 @@ public  void  WS_initialize( void )
     }
 }
 
-private  Window_id  create_GLUT_window(
-    STRING                 title,
+static  Window_id  create_GLUT_window(
+    VIO_STR                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
     int                    initial_x_size,
@@ -222,7 +222,7 @@ private  Window_id  create_GLUT_window(
     return( window_id );
 }
 
-private  void  delete_GLUT_window(
+static  void  delete_GLUT_window(
     Window_id   window_id )
 {
 #ifdef DEBUG
@@ -237,7 +237,7 @@ private  void  delete_GLUT_window(
 #endif
 }
 
-private  void  reestablish_colour_map_in_new_window(
+static  void  reestablish_colour_map_in_new_window(
     WSwindow               window )
 {
     int   ind, n_colours, prev_n_colours;
@@ -268,13 +268,13 @@ private  void  reestablish_colour_map_in_new_window(
         window->n_colours = n_colours;
 
         for_less( ind, prev_n_colours, n_colours )
-            window->colour_map_entry_set[ind] = (Smallest_int) FALSE;
+            window->colour_map_entry_set[ind] = (VIO_SCHAR) FALSE;
     }
 
 }
 
-public  Status  WS_create_window(
-    STRING                 title,
+  VIO_Status  WS_create_window(
+    VIO_STR                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
     int                    initial_x_size,
@@ -305,7 +305,7 @@ public  Status  WS_create_window(
 
 
     if( window->window_id < 1 )
-        return( ERROR );
+        return( VIO_ERROR );
 
     glutSetWindow( window->window_id );
     window->title = create_string( title );
@@ -316,10 +316,10 @@ public  Status  WS_create_window(
 
     reestablish_colour_map_in_new_window( window );
 
-    return( OK );
+    return( VIO_OK );
 }
 
-public  VIO_BOOL  WS_set_double_buffer_state(
+  VIO_BOOL  WS_set_double_buffer_state(
     WSwindow               window,
     VIO_BOOL                double_buffer_flag )
 {
@@ -376,7 +376,7 @@ public  VIO_BOOL  WS_set_double_buffer_state(
     return( actual_double_buffer_flag );
 }
 
-public  VIO_BOOL  WS_set_colour_map_state(
+  VIO_BOOL  WS_set_colour_map_state(
     WSwindow               window,
     VIO_BOOL                colour_map_flag )
 {
@@ -430,57 +430,57 @@ public  VIO_BOOL  WS_set_colour_map_state(
     return( actual_colour_map_mode );
 }
 
-public  void  WS_set_window_title(
+  void  WS_set_window_title(
     WSwindow   window,
-    STRING     title )
+    VIO_STR     title )
 {
     glutSetWindowTitle( title );
 }
 
 
-public  void  WS_delete_window(
+  void  WS_delete_window(
     WSwindow  window )
 {
     delete_GLUT_window( window->window_id );
     delete_string( window->title );
 }
 
-private  Window_id  get_current_event_window( void )
+static  Window_id  get_current_event_window( void )
 {
     return( glutGetWindow() );
 }
 
-public  VIO_BOOL  WS_window_has_overlay_planes(
+  VIO_BOOL  WS_window_has_overlay_planes(
     WSwindow  window )
 {
     return( FALSE );
 }
 
-private  void  set_window_normal_planes(
+static  void  set_window_normal_planes(
     WSwindow  window )
 {
     glutSetWindow( window->window_id );
 }
 
-private  void  set_window_overlay_planes(
+static  void  set_window_overlay_planes(
     WSwindow  window )
 {
     glutSetWindow( window->window_id );
 }
 
-public  void  WS_set_current_window(
+  void  WS_set_current_window(
     WSwindow          window )
 {
     WS_set_bitplanes( window, NORMAL_PLANES );
 }
 
-public  Window_id   WS_get_window_id(
+  Window_id   WS_get_window_id(
     WSwindow  window )
 {
     return( window->window_id );
 }
 
-public  void  WS_set_bitplanes(
+  void  WS_set_bitplanes(
     WSwindow          window,
     Bitplane_types    bitplanes )
 {
@@ -491,12 +491,12 @@ public  void  WS_set_bitplanes(
 }
 
 
-public  int    WS_get_n_overlay_planes( void )
+  int    WS_get_n_overlay_planes( void )
 {
     return( 0 );
 }
 
-public  void  WS_get_window_position(
+  void  WS_get_window_position(
     int          *x_pos,
     int          *y_pos )
 {
@@ -505,7 +505,7 @@ public  void  WS_get_window_position(
                             glutGet( (GLenum) GLUT_WINDOW_HEIGHT ) - 1 );
 }
 
-public  void  WS_get_window_size(
+  void  WS_get_window_size(
     int          *x_size,
     int          *y_size )
 {
@@ -513,18 +513,18 @@ public  void  WS_get_window_size(
     *y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
 }
 
-public  void  glut_set_colour_entry(
+  void  glut_set_colour_entry(
     int      ind,
-    Real     r,
-    Real     g,
-    Real     b )
+    VIO_Real     r,
+    VIO_Real     g,
+    VIO_Real     b )
 {
     glutSetColor( ind, (float) r, (float) g, (float) b );
 }
 
-private  void  set_colour_map_entry(
+static  void  set_colour_map_entry(
     int               ind,
-    Colour            colour )
+    VIO_Colour            colour )
 {
     glut_set_colour_entry( ind,
                            get_Colour_r_0_1(colour),
@@ -532,25 +532,25 @@ private  void  set_colour_map_entry(
                            get_Colour_b_0_1(colour) );
 }
 
-public  void  WS_set_colour_map_entry(
+  void  WS_set_colour_map_entry(
     WSwindow          window,
     Bitplane_types    bitplane,
     int               ind,
-    Colour            colour )
+    VIO_Colour            colour )
 {
     set_colour_map_entry( ind, colour );
     window->colour_map_entry_set[ind] = TRUE;
     window->colour_map[ind] = colour;
 }
 
-public  void  WS_set_overlay_colour_map_entry(
+  void  WS_set_overlay_colour_map_entry(
     WSwindow          window,
     int               ind,
-    Colour            colour )
+    VIO_Colour            colour )
 {
 }
 
-public  void  WS_swap_buffers( void )
+  void  WS_swap_buffers( void )
 {
     if(glutGetWindow()) //VF:a hack
       glutSwapBuffers();
@@ -572,12 +572,12 @@ static  struct
               };
 
 
-private  void  *lookup_font(
+static  void  *lookup_font(
     Font_types       type,
-    Real             size,
+    VIO_Real             size,
     int              *actual_height )
 {
-    Real    diff, min_diff;
+    VIO_Real    diff, min_diff;
     int     which, best;
     void    *font;
 
@@ -593,7 +593,7 @@ private  void  *lookup_font(
         best = 0;
         for_less( which, 0, SIZEOF_STATIC_ARRAY(known_fonts) )
         {
-            diff = FABS( (Real) known_fonts[which].height - size );
+            diff = VIO_FABS( (VIO_Real) known_fonts[which].height - size );
             if( which == 0 || diff < min_diff )
             {
                 best = which;
@@ -609,10 +609,10 @@ private  void  *lookup_font(
     return( font );
 }
 
-public  void  WS_draw_text(
+  void  WS_draw_text(
     Font_types  type,
-    Real        size,
-    STRING      string )
+    VIO_Real        size,
+    VIO_STR      string )
 {
     int   i;
     void  *font;
@@ -623,21 +623,21 @@ public  void  WS_draw_text(
         glutBitmapCharacter( font, (int) string[i] );
 }
 
-public  Real  WS_get_character_height(
+  VIO_Real  WS_get_character_height(
     Font_types       type,
-    Real             size )
+    VIO_Real             size )
 {
     int   height;
 
     (void) lookup_font( type, size, &height );
 
-    return( (Real) height );
+    return( (VIO_Real) height );
 }
 
-public  Real  WS_get_text_length(
-    STRING           str,
+  VIO_Real  WS_get_text_length(
+    VIO_STR           str,
     Font_types       type,
-    Real             size )
+    VIO_Real             size )
 {
     int    i, len;
     void   *font;
@@ -648,10 +648,10 @@ public  Real  WS_get_text_length(
     for_less( i, 0, (int) strlen( str ) )
         len += glutBitmapWidth( font, (int) str[i] );
 
-    return( (Real) len );
+    return( (VIO_Real) len );
 }
 
-public  void  WS_get_screen_size(
+  void  WS_get_screen_size(
     int   *x_size, 
     int   *y_size  )
 {
@@ -659,7 +659,7 @@ public  void  WS_get_screen_size(
     *y_size = glutGet( (GLenum) GLUT_SCREEN_HEIGHT );
 }
 
-public  void  WS_set_mouse_position(
+  void  WS_set_mouse_position(
     int       x_screen,
     int       y_screen )
 {
@@ -683,109 +683,109 @@ static  void  (*enter_callback) ( Window_id );
 static  void  (*leave_callback) ( Window_id );
 static  void  (*quit_callback) ( Window_id );
 
-public  void  WS_set_update_function(
+  void  WS_set_update_function(
     void  (*func)( Window_id ) )
 {
     display_callback = func;
 }
 
-public  void  WS_set_update_overlay_function(
+  void  WS_set_update_overlay_function(
     void  (*func)( Window_id ) )
 {
     display_overlay_callback = func;
 }
 
-public  void  WS_set_resize_function(
+  void  WS_set_resize_function(
     void  (*func)( Window_id, int, int, int, int ) )
 {
     resize_callback = func;
 }
 
-public  void  WS_set_key_down_function(
+  void  WS_set_key_down_function(
     void  (*func)( Window_id, int, int, int, int ) )
 {
     key_down_callback = func;
 }
 
-public  void  WS_set_key_up_function(
+  void  WS_set_key_up_function(
     void  (*func)( Window_id, int, int, int, int ) )
 {
     key_up_callback = func;
 }
 
-public  void  WS_set_mouse_movement_function(
+  void  WS_set_mouse_movement_function(
     void  (*func)( Window_id, int, int ) )
 {
     mouse_motion_callback = func;
 }
 
-public  void  WS_set_left_mouse_down_function(
+  void  WS_set_left_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     left_down_callback = func;
 }
 
-public  void  WS_set_left_mouse_up_function(
+  void  WS_set_left_mouse_up_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     left_up_callback = func;
 }
 
-public  void  WS_set_middle_mouse_down_function(
+  void  WS_set_middle_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     middle_down_callback = func;
 }
 
-public  void  WS_set_middle_mouse_up_function(
+  void  WS_set_middle_mouse_up_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     middle_up_callback = func;
 }
 
-public  void  WS_set_right_mouse_down_function(
+  void  WS_set_right_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     right_down_callback = func;
 }
 
-public  void  WS_set_right_mouse_up_function(
+  void  WS_set_right_mouse_up_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     right_up_callback = func;
 }
 
-public  void  WS_set_iconify_function(
+  void  WS_set_iconify_function(
     void  (*func)( Window_id ) )
 {
     iconify_callback = func;
 }
 
-public  void  WS_set_deiconify_function(
+  void  WS_set_deiconify_function(
     void  (*func)( Window_id ) )
 {
     deiconify_callback = func;
 }
 
-public  void  WS_set_enter_function(
+  void  WS_set_enter_function(
     void  (*func)( Window_id ) )
 {
     enter_callback = func;
 }
 
-public  void  WS_set_leave_function(
+  void  WS_set_leave_function(
     void  (*func)( Window_id ) )
 {
     leave_callback = func;
 }
 
-public  void  WS_set_quit_function(
+  void  WS_set_quit_function(
     void  (*func)( Window_id ) )
 {
     quit_callback = func;
 }
 
-private  int  get_keyboard_modifiers( void )
+static  int  get_keyboard_modifiers( void )
 {
     int  modifier, glut_mod;
 
@@ -802,19 +802,19 @@ private  int  get_keyboard_modifiers( void )
     return( modifier );
 }
 
-private  int  flip_window_y(
+static  int  flip_window_y(
     int   window_y )
 {
     return( glutGet( (GLenum) GLUT_WINDOW_HEIGHT ) - 1 - window_y );
 }
 
-private  int  flip_screen_y(
+static  int  flip_screen_y(
     int   screen_y )
 {
     return( glutGet( (GLenum) GLUT_SCREEN_HEIGHT ) - 1 - screen_y );
 }
 
-private  void  display_function( void )
+static  void  display_function( void )
 {
     int   i, save_window_id;
 
@@ -842,12 +842,12 @@ private  void  display_function( void )
     (*display_callback) ( get_current_event_window() );
 }
 
-private  void  display_overlay_function( void )
+static  void  display_overlay_function( void )
 {
     (*display_overlay_callback) ( get_current_event_window() );
 }
 
-private  void  resize_function(
+static  void  resize_function(
     int   width,
     int   height )
 {
@@ -862,7 +862,7 @@ private  void  resize_function(
     (*resize_callback) ( window_id, x, y, width, height );
 }
 
-private  void  keyboard_function(
+static  void  keyboard_function(
     unsigned  char  key,
     int             x,
     int             y )
@@ -872,7 +872,7 @@ private  void  keyboard_function(
                            get_keyboard_modifiers() );
 }
 
-private  void  special_keyboard_function(
+static  void  special_keyboard_function(
     int     key,
     int     x,
     int     y )
@@ -896,7 +896,7 @@ private  void  special_keyboard_function(
                                x, y, get_keyboard_modifiers() );
 }
 
-private  void  mouse_button_function(
+static  void  mouse_button_function(
     int     button,
     int     state,
     int     x,
@@ -934,7 +934,7 @@ private  void  mouse_button_function(
     }
 }
 
-private  void  mouse_motion_function(
+static  void  mouse_motion_function(
     int     x,
     int     y )
 {
@@ -942,7 +942,7 @@ private  void  mouse_motion_function(
     (*mouse_motion_callback) ( get_current_event_window(), x, y );
 }
 
-private  void  entry_function(
+static  void  entry_function(
     int     state )
 {
     Window_id   window_id;
@@ -955,7 +955,7 @@ private  void  entry_function(
         (*enter_callback) ( window_id );
 }
 
-private  void  set_event_callbacks_for_current_window(
+static  void  set_event_callbacks_for_current_window(
     int        n_overlay_planes )
 {
     glutDisplayFunc( display_function );
@@ -982,7 +982,7 @@ typedef struct
 static  callback_info_struct   *timers;
 static  int                    n_timers = 0;
 
-private  void  global_timer_function(
+static  void  global_timer_function(
     int   index )
 {
     if( index < 0 || index >= n_timers )
@@ -996,8 +996,8 @@ private  void  global_timer_function(
     timers[index].active = FALSE;
 }
 
-public  void  WS_add_timer_function(
-    Real          seconds,
+  void  WS_add_timer_function(
+    VIO_Real          seconds,
     void          (*func) ( void * ),
     void          *data )
 {
@@ -1026,7 +1026,7 @@ public  void  WS_add_timer_function(
 static  callback_info_struct   *idles;
 static  int                    n_idles = 0;
 
-private  void  global_idle_function( void )
+static  void  global_idle_function( void )
 {
     int   i;
 
@@ -1036,7 +1036,7 @@ private  void  global_idle_function( void )
     }
 }
 
-public  void  WS_add_idle_function(
+  void  WS_add_idle_function(
     void  (*func) ( void * ),
     void          *data )
 {
@@ -1051,7 +1051,7 @@ public  void  WS_add_idle_function(
     ADD_ELEMENT_TO_ARRAY( idles, n_idles, info, 1 );
 }
 
-public  void  WS_remove_idle_function(
+  void  WS_remove_idle_function(
     void  (*func) ( void * ),
     void          *data )
 {
@@ -1075,12 +1075,12 @@ public  void  WS_remove_idle_function(
         glutIdleFunc( NULL );
 }
 
-public  void  WS_event_loop( void )
+  void  WS_event_loop( void )
 {
     glutMainLoop();
 }
 
-public  void  WS_set_update_flag(
+  void  WS_set_update_flag(
     WSwindow   window  )
 {
     glutPostRedisplay();

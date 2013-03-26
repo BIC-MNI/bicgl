@@ -23,16 +23,16 @@ int main(
     polygons_struct   polygons;
     pixels_struct     pixels;
     static Surfprop   spr = { 0.2, 0.5, 0.5, 20.0, 1.0 };
-    Point             point;
-    Vector            normal, light_direction;
+    VIO_Point             point;
+    VIO_Vector            normal, light_direction;
     Event_types       event_type;
     VIO_BOOL           update_required, done;
     int               key_pressed;
     int               x_position, y_position, x_size, y_size;
     int               i, j, pixels_x_size, pixels_y_size;
-    static Point      origin = { 0.0, 0.0, 2.0 };
-    static Vector     up_direction = { 0.0, 1.0, 0.0 };
-    static Vector     line_of_sight = { 0.0, 0.0, -1.0 };
+    static VIO_Point      origin = { 0.0, 0.0, 2.0 };
+    static VIO_Vector     up_direction = { 0.0, 1.0, 0.0 };
+    static VIO_Vector     line_of_sight = { 0.0, 0.0, -1.0 };
 
     /* ------- create a graphics window ------ */
 
@@ -42,7 +42,7 @@ int main(
     /*--- define the 3D view */
 
     G_set_3D_view( window, &origin, &line_of_sight,
-                   &up_direction, 0.01, 4.0, ON, 2.0,
+                   &up_direction, 0.01, 4.0, TRUE, 2.0,
                    FALSE, 0.0, 2.0, 2.0 );
 
     /* -------- define text to be drawn
@@ -123,10 +123,10 @@ int main(
 
     G_define_light( window, LIGHT_INDEX, DIRECTIONAL_LIGHT,
                     make_Colour(255,255,255),
-                    &light_direction, (Point *) 0, 0.0, 0.0 );
-    G_set_light_state( window, LIGHT_INDEX, ON );
+                    &light_direction, (VIO_Point *) 0, 0.0, 0.0 );
+    G_set_light_state( window, LIGHT_INDEX, TRUE );
 
-    G_set_lighting_state( window, ON );
+    G_set_lighting_state( window, TRUE );
 
     /* --------------------------------------- */
     /* ------------ do main loop ------------- */

@@ -14,7 +14,7 @@
  */
 #ifndef USE_COPY_X_COLOURS
 
-public void copy_X_colours(int n_colours_to_copy)
+ void copy_X_colours(int n_colours_to_copy)
 {
     /* Do nothing */
 }
@@ -23,9 +23,9 @@ public void copy_X_colours(int n_colours_to_copy)
 
 extern  void  glut_set_colour_entry(
     int     ind,
-    Real    r,
-    Real    g,
-    Real    b );
+    VIO_Real    r,
+    VIO_Real    g,
+    VIO_Real    b );
 
 /* ----------------------------------------------------
 
@@ -36,7 +36,7 @@ availability of the X display, if compiled to use X windows.
 
 extern    Display            *__glutDisplay;
 
-public  void  copy_X_colours(
+  void  copy_X_colours(
     int  n_colours_to_copy )
 {
     int                screen;
@@ -45,7 +45,7 @@ public  void  copy_X_colours(
     Colormap           cmap;
     XColor             def;
     int                ind;
-    Real               r, g, b;
+    VIO_Real               r, g, b;
 
     /*--- for some reason on SGI/OpenGL, this MIN is needed */
 
@@ -66,9 +66,9 @@ public  void  copy_X_colours(
         def.pixel = (unsigned long) ind;
         XQueryColor( __glutDisplay, cmap, &def );
 
-        r = (Real) def.red / (Real) 65535.0;
-        g = (Real) def.green / (Real) 65535.0;
-        b = (Real) def.blue / (Real) 65535.0;
+        r = (VIO_Real) def.red / (VIO_Real) 65535.0;
+        g = (VIO_Real) def.green / (VIO_Real) 65535.0;
+        b = (VIO_Real) def.blue / (VIO_Real) 65535.0;
 
         glut_set_colour_entry( ind, r, g, b );
     }

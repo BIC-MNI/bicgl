@@ -5,9 +5,9 @@
 #include  <volume_io.h>
 #include  <graphics.h>
 
-private  void  delete_viewport( viewport_struct  * );
+static  void  delete_viewport( viewport_struct  * );
 
-public  void  initialize_graphics_struct(
+  void  initialize_graphics_struct(
     graphics_struct   *graphics )
 {
     Bitplane_types   bitplane;
@@ -21,7 +21,7 @@ public  void  initialize_graphics_struct(
     }
 }
 
-public  void  delete_graphics_struct(
+  void  delete_graphics_struct(
     graphics_struct   *graphics )
 {
     int        i;
@@ -35,7 +35,7 @@ public  void  delete_graphics_struct(
         FREE( graphics->viewports );
 }
 
-private  void  initialize_viewport(
+static  void  initialize_viewport(
     viewport_struct  *viewport )
 {
     Bitplane_types   bitplane;
@@ -51,7 +51,7 @@ private  void  initialize_viewport(
     }
 }
 
-private  void  delete_viewport(
+static  void  delete_viewport(
     viewport_struct  *viewport )
 {
     int              i;
@@ -67,7 +67,7 @@ private  void  delete_viewport(
     }
 }
 
-private  void  check_viewport_exists(
+static  void  check_viewport_exists(
     graphics_struct   *graphics,
     int               viewport_index )
 {
@@ -86,7 +86,7 @@ private  void  check_viewport_exists(
     }
 }
 
-public  void  set_graphics_viewport(
+  void  set_graphics_viewport(
     graphics_struct   *graphics,
     int               viewport_index,
     int               x_min,
@@ -107,7 +107,7 @@ public  void  set_graphics_viewport(
         set_viewport_update_flag( graphics, viewport_index, bitplane );
 }
 
-public  void  get_graphics_viewport(
+  void  get_graphics_viewport(
     graphics_struct   *graphics,
     int               viewport_index,
     int               *x_min,
@@ -121,10 +121,10 @@ public  void  get_graphics_viewport(
     *y_max = graphics->viewports[viewport_index].y_max;
 }
 
-public  void  set_graphics_viewport_background(
+  void  set_graphics_viewport_background(
     graphics_struct   *graphics,
     int               viewport_index,
-    Colour            background_colour,
+    VIO_Colour            background_colour,
     int               background_colour_index )
 {
     Bitplane_types   bitplane;
@@ -139,7 +139,7 @@ public  void  set_graphics_viewport_background(
         set_viewport_update_flag( graphics, viewport_index, bitplane );
 }
 
-public  void  add_object_to_viewport(
+  void  add_object_to_viewport(
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
@@ -155,7 +155,7 @@ public  void  add_object_to_viewport(
     set_viewport_update_flag( graphics, viewport_index, bitplane );
 }
 
-public  void  remove_object_from_viewport(
+  void  remove_object_from_viewport(
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
@@ -186,7 +186,7 @@ public  void  remove_object_from_viewport(
     }
 }
 
-public  void  set_viewport_update_flag( 
+  void  set_viewport_update_flag( 
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane )
@@ -199,7 +199,7 @@ public  void  set_viewport_update_flag(
                                                            = TRUE;
 }
 
-public  VIO_BOOL  get_viewport_update_flag( 
+  VIO_BOOL  get_viewport_update_flag( 
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
@@ -211,7 +211,7 @@ public  VIO_BOOL  get_viewport_update_flag(
                     bitplanes[bitplane].update_flag[buffer] );
 }
 
-public  void  set_bitplanes_clear_flag( 
+  void  set_bitplanes_clear_flag( 
     graphics_struct   *graphics,
     Bitplane_types    bitplane )
 {
@@ -219,7 +219,7 @@ public  void  set_bitplanes_clear_flag(
     graphics->clear_bitplane_flags[bitplane][1] = TRUE;
 }
 
-public  void  set_viewport_bitplane_objects_visibility(
+  void  set_viewport_bitplane_objects_visibility(
     graphics_struct   *graphics,
     int               viewport_index,
     Bitplane_types    bitplane,
@@ -238,7 +238,7 @@ public  void  set_viewport_bitplane_objects_visibility(
         set_viewport_update_flag( graphics, viewport_index, bitplane );
 }
 
-public  void  set_viewport_objects_visibility(
+  void  set_viewport_objects_visibility(
     graphics_struct   *graphics,
     int               viewport_index,
     VIO_BOOL           visibility )
@@ -252,14 +252,14 @@ public  void  set_viewport_objects_visibility(
     }
 }
 
-private  VIO_BOOL  check_redraw_viewport(
+static  VIO_BOOL  check_redraw_viewport(
     Gwindow           window,
     viewport_struct   *viewport,
     int               current_buffer )
 {
     VIO_BOOL          drawn;
     int              i;
-    Colour           bg_colour_or_index;
+    VIO_Colour           bg_colour_or_index;
     Bitplane_types   bitplane;
 
     drawn = viewport->bitplanes[NORMAL_PLANES].update_flag[current_buffer];;
@@ -277,7 +277,7 @@ private  VIO_BOOL  check_redraw_viewport(
                             viewport->y_min, viewport->y_max );
 
             if( G_get_colour_map_state(window) )
-                bg_colour_or_index = (Colour) viewport->background_colour_index;
+                bg_colour_or_index = (VIO_Colour) viewport->background_colour_index;
             else
                 bg_colour_or_index = viewport->background_colour;
 
@@ -295,7 +295,7 @@ private  VIO_BOOL  check_redraw_viewport(
     return( drawn );
 }
 
-public  VIO_BOOL  redraw_out_of_date_viewports(
+  VIO_BOOL  redraw_out_of_date_viewports(
     graphics_struct   *graphics,
     Gwindow           window,
     int               current_buffer )

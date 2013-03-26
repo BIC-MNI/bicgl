@@ -5,22 +5,22 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-private  void  initialize_window(
+static  void  initialize_window(
     GSwindow   window );
 
-public  Window_id  GS_get_window_id(
+  Window_id  GS_get_window_id(
     GSwindow  window )
 {
     return( WS_get_window_id(&window->WS_window) );
 }
 
-public  void  GS_set_current_window(
+  void  GS_set_current_window(
     GSwindow        window )
 {
     WS_set_current_window( &window->WS_window );
 }
 
-public  void  GS_initialize( void )
+  void  GS_initialize( void )
 {
 #ifdef TO_DO
     static  Matrix   catmull_rom_matrix = {
@@ -52,16 +52,16 @@ public  void  GS_initialize( void )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  GS_terminate( void )
+  void  GS_terminate( void )
 {
 }
 
-public  VIO_BOOL  GS_can_switch_double_buffering( void )
+  VIO_BOOL  GS_can_switch_double_buffering( void )
 {
     return( TRUE );
 }
 
-public  VIO_BOOL  GS_can_switch_colour_map_mode( void )
+  VIO_BOOL  GS_can_switch_colour_map_mode( void )
 {
     return( TRUE );
 }
@@ -85,9 +85,9 @@ public  VIO_BOOL  GS_can_switch_colour_map_mode( void )
 
 /* ARGSUSED */
 
-public  Status  GS_create_window(
+  VIO_Status  GS_create_window(
     GSwindow       window,
-    STRING         title,
+    VIO_STR         title,
     int            x_pos,
     int            y_pos,
     int            width,
@@ -101,7 +101,7 @@ public  Status  GS_create_window(
     VIO_BOOL        *actual_depth_buffer_flag,
     int            *actual_n_overlay_planes )
 {
-    Status       status;
+    VIO_Status       status;
 
     status = WS_create_window( title, x_pos, y_pos, width, height,
                                colour_map_desired, double_buffer_desired,
@@ -112,14 +112,14 @@ public  Status  GS_create_window(
                                actual_n_overlay_planes, &window->WS_window);
 
 
-    if( status == OK )
+    if( status == VIO_OK )
         initialize_window( window );
 
     return( status );
 }
 
 #ifdef DEBUG
-public  void  print_info( void )
+  void  print_info( void )
 {
     int     i, j;
     double  list[4];
@@ -163,14 +163,14 @@ public  void  print_info( void )
 
 /* ARGSUSED */
 
-private  void  initialize_window(
+static  void  initialize_window(
     GSwindow   window )
 {
 }
 
-public  void  GS_set_window_title(
+  void  GS_set_window_title(
     GSwindow   window,
-    STRING     title )
+    VIO_STR     title )
 {
     WS_set_window_title( &window->WS_window, title );
 }
@@ -188,7 +188,7 @@ public  void  GS_set_window_title(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  VIO_BOOL  GS_has_transparency_mode( void )
+  VIO_BOOL  GS_has_transparency_mode( void )
 {
     GLint   blend_flag;
 
@@ -210,7 +210,7 @@ public  VIO_BOOL  GS_has_transparency_mode( void )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  VIO_BOOL  GS_has_rgb_mode( void )
+  VIO_BOOL  GS_has_rgb_mode( void )
 {
     GLint  r_bits, g_bits, b_bits;
 
@@ -220,7 +220,7 @@ public  VIO_BOOL  GS_has_rgb_mode( void )
     return( r_bits > 0 && g_bits > 0 && b_bits > 0 );
 }
 
-private  void  reinitialize_after_switching_configuration(
+static  void  reinitialize_after_switching_configuration(
     GSwindow       window )
 {
     redefine_lights( window );
@@ -228,7 +228,7 @@ private  void  reinitialize_after_switching_configuration(
 
 /* ARGSUSED */
 
-public  VIO_BOOL  GS_set_double_buffer_state(
+  VIO_BOOL  GS_set_double_buffer_state(
     GSwindow       window,
     VIO_BOOL        flag )
 {
@@ -243,7 +243,7 @@ public  VIO_BOOL  GS_set_double_buffer_state(
 
 /* ARGSUSED */
 
-public  VIO_BOOL  GS_set_colour_map_state(
+  VIO_BOOL  GS_set_colour_map_state(
     GSwindow       window,
     VIO_BOOL        flag )
 {
@@ -272,7 +272,7 @@ public  VIO_BOOL  GS_set_colour_map_state(
 
 /* ARGSUSED */
 
-public  int  GS_get_n_colour_map_entries(
+  int  GS_get_n_colour_map_entries(
     GSwindow  window,
     VIO_BOOL   double_buffer_state )
 {
@@ -304,16 +304,16 @@ public  int  GS_get_n_colour_map_entries(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  GS_set_colour_map_entry(
+  void  GS_set_colour_map_entry(
     GSwindow        window,
     Bitplane_types  bitplanes,
     int             ind,
-    Colour          colour )
+    VIO_Colour          colour )
 {
     WS_set_colour_map_entry( &window->WS_window, bitplanes, ind, colour );
 }
 
-public  VIO_BOOL  GS_is_double_buffer_supported( void )
+  VIO_BOOL  GS_is_double_buffer_supported( void )
 {
     int   available;
 
@@ -325,7 +325,7 @@ public  VIO_BOOL  GS_is_double_buffer_supported( void )
 */
 }
 
-public  VIO_BOOL  GS_is_depth_buffer_supported( void )
+  VIO_BOOL  GS_is_depth_buffer_supported( void )
 {
 /*
     VIO_BOOL   available;
@@ -341,7 +341,7 @@ public  VIO_BOOL  GS_is_depth_buffer_supported( void )
 */
 }
 
-public  void  GS_set_depth_function(
+  void  GS_set_depth_function(
     Depth_functions  func )
 {
     int   gl_depth_func;
@@ -359,7 +359,7 @@ public  void  GS_set_depth_function(
     glDepthFunc( (GLenum) gl_depth_func );
 }
 
-public  void  GS_set_depth_buffer_state(
+  void  GS_set_depth_buffer_state(
     VIO_BOOL         flag )
 {
     if( flag )
@@ -381,14 +381,14 @@ public  void  GS_set_depth_buffer_state(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  Status  GS_delete_window(
+  VIO_Status  GS_delete_window(
     GSwindow   window )
 {
     delete_lights( window );
 
     WS_delete_window( &window->WS_window );
 
-    return( OK );
+    return( VIO_OK );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -404,7 +404,7 @@ public  Status  GS_delete_window(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  int  GS_get_monitor_width( void )
+  int  GS_get_monitor_width( void )
 {
     int  x_size, y_size;
 
@@ -413,7 +413,7 @@ public  int  GS_get_monitor_width( void )
     return( x_size );
 }
 
-public  int  GS_get_monitor_height( void )
+  int  GS_get_monitor_height( void )
 {
     int  x_size, y_size;
 
@@ -422,31 +422,31 @@ public  int  GS_get_monitor_height( void )
     return( y_size );
 }
 
-public  void  GS_get_window_size(
+  void  GS_get_window_size(
     int        *x_size,
     int        *y_size )
 {
     WS_get_window_size( x_size, y_size );
 }
 
-public  void  GS_get_window_position(
+  void  GS_get_window_position(
     int        *x_position,
     int        *y_position )
 {
     WS_get_window_position( x_position, y_position );
 }
 
-public  void  GS_clear_depth_buffer( void )
+  void  GS_clear_depth_buffer( void )
 {
     glClear( GL_DEPTH_BUFFER_BIT );
 }
 
-private  void  clear_viewport(
+static  void  clear_viewport(
      GSwindow        window,
      Bitplane_types  current_bitplanes,
      VIO_BOOL         colour_map_state,
      VIO_BOOL         zbuffer_state,
-     Colour          colour )
+     VIO_Colour          colour )
 {
     if( current_bitplanes == NORMAL_PLANES )
     {
@@ -471,7 +471,7 @@ private  void  clear_viewport(
          GS_clear_overlay();
 }
 
-public  void  GS_clear_overlay( void )
+  void  GS_clear_overlay( void )
 {
     glClearIndex( 0.0f );
     glClear( GL_COLOR_BUFFER_BIT );
@@ -490,14 +490,14 @@ public  void  GS_clear_overlay( void )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  GS_clear_window(
+  void  GS_clear_window(
     GSwindow        window,
     int             x_size,
     int             y_size,
     Bitplane_types  current_bitplanes,
     VIO_BOOL         colour_map_state,
     VIO_BOOL         zbuffer_state,
-    Colour          colour )
+    VIO_Colour          colour )
 {
     clear_viewport( window, current_bitplanes, colour_map_state,
                     zbuffer_state, colour );
@@ -517,7 +517,7 @@ public  void  GS_clear_window(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  GS_clear_viewport(
+  void  GS_clear_viewport(
     GSwindow        window,
     int             x_viewport_min,
     int             x_viewport_max,
@@ -528,7 +528,7 @@ public  void  GS_clear_viewport(
     Bitplane_types  current_bitplanes,
     VIO_BOOL         colour_map_state,
     VIO_BOOL         zbuffer_state,
-    Colour          colour )
+    VIO_Colour          colour )
 {
     VIO_BOOL  scissoring;
 
@@ -553,12 +553,12 @@ public  void  GS_clear_viewport(
         glDisable( GL_SCISSOR_TEST );
 }
 
-public  void  GS_flush( void )
+  void  GS_flush( void )
 {
     glFlush();
 }
 
-public  void  GS_append_to_last_update(
+  void  GS_append_to_last_update(
     GSwindow   window,
     VIO_BOOL    zbuffer_state,
     int        x_size,
@@ -583,12 +583,12 @@ public  void  GS_append_to_last_update(
     glPopMatrix();
 }
 
-public  int  GS_get_num_overlay_planes( void )
+  int  GS_get_num_overlay_planes( void )
 {
     return( WS_get_n_overlay_planes() );
 }
 
-public  void  GS_set_bitplanes( 
+  void  GS_set_bitplanes( 
     GSwindow         window,
     Bitplane_types   bitplanes )
 {
@@ -606,15 +606,15 @@ public  void  GS_set_bitplanes(
     }
 }
 
-public  void  GS_set_overlay_colour_map(
+  void  GS_set_overlay_colour_map(
     GSwindow         window,
     int              ind,
-    Colour           colour )
+    VIO_Colour           colour )
 {
     WS_set_overlay_colour_map_entry( &window->WS_window, ind, colour );
 }
 
-public  void  GS_swap_buffers( void )
+  void  GS_swap_buffers( void )
 {
     WS_swap_buffers();
 }

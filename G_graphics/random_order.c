@@ -5,7 +5,7 @@
 #include  <volume_io.h>
 #include  <graphics.h>
 
-private  Random_mask_type  random_order_masks[] = {
+static  Random_mask_type  random_order_masks[] = {
                                                  0x00000000,
                                                  0x00000000,
                                                  0x00000006,
@@ -40,7 +40,7 @@ private  Random_mask_type  random_order_masks[] = {
                                                  0xa3000000
                                                };
 
-public  Random_mask_type  get_random_order_mask(
+  Random_mask_type  get_random_order_mask(
     int  size )
 {
     int  ind;

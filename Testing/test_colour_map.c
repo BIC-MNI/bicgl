@@ -15,7 +15,7 @@ int main(
     int               x_pixel, y_pixel;
     int               i, j, pixels_x_size, pixels_y_size;
     int               n_c;
-    Colour            colours_list[7];
+    VIO_Colour            colours_list[7];
 
     status = G_create_window( "Test Window",
                               100, 600, 300, 300,
@@ -59,8 +59,8 @@ int main(
 
     G_clear_window( window );
 
-    G_set_zbuffer_state( window, OFF );
-    G_set_lighting_state( window, OFF );
+    G_set_zbuffer_state( window, FALSE );
+    G_set_lighting_state( window, FALSE );
     G_set_view_type( window, PIXEL_VIEW );
 
     G_draw_pixels( window, &pixels );

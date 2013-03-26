@@ -15,18 +15,18 @@
 {
     int                ind, pt_index, start_index, end_index, n_polygons;
     int                *indices;
-    Point              *points;
+    VIO_Point              *points;
 #if  !defined(DEF_ONE_COLOUR) && defined(DEF_NORMALS)
-    Real               diffuse_coefficient =
-                                  (Real) Surfprop_d( polygons->surfprop );
-    Colour             scaled_colour;
+    VIO_Real               diffuse_coefficient =
+                                  (VIO_Real) Surfprop_d( polygons->surfprop );
+    VIO_Colour             scaled_colour;
 #endif
 
 
 #ifdef  DEF_NORMALS
-    Vector             *normals = polygons->normals;
+    VIO_Vector             *normals = polygons->normals;
 #endif
-    Smallest_int       *visibilities;
+    VIO_SCHAR       *visibilities;
 
     points = polygons->points;
     indices = polygons->indices;
@@ -40,7 +40,7 @@
 #ifdef  DEF_ONE_COLOUR
     SET_COLOUR( polygons->colours[0] );
 #else
-    GS_set_ambient_and_diffuse_mode( ON );
+    GS_set_ambient_and_diffuse_mode( TRUE );
 #endif
 
 #ifdef  DEF_WIREFRAME
@@ -87,7 +87,7 @@
     END_DRAW_OBJECTS
 
 #ifndef  DEF_ONE_COLOUR
-    GS_set_ambient_and_diffuse_mode( OFF );
+    GS_set_ambient_and_diffuse_mode( FALSE );
 #endif
 }
 

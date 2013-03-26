@@ -10,25 +10,25 @@
 #define  Y_MIN_VIEWPORT    10
 #define  Y_MAX_VIEWPORT   290
 
-private  void  draw_rectangle(
+static  void  draw_rectangle(
     Gwindow   window,
-    Colour    colour,
+    VIO_Colour    colour,
     int       x_min,
     int       x_max,
     int       y_min,
     int       y_max );
 
-private  void  draw_region(
+static  void  draw_region(
     Gwindow   window,
-    Colour    colour,
+    VIO_Colour    colour,
     int       x_min,
     int       x_max,
     int       y_min,
     int       y_max );
 
-private  void  draw_pixels(
+static  void  draw_pixels(
     Gwindow   window,
-    Colour    colour,
+    VIO_Colour    colour,
     int       x1,
     int       y1,
     int       x2,
@@ -44,8 +44,8 @@ int main(
                          100, 600, X_SIZE, Y_SIZE,
                          FALSE, FALSE, FALSE, 0, &window ) != OK )
         return( 1 );
-    G_set_zbuffer_state( window, OFF );
-    G_set_lighting_state( window, OFF );
+    G_set_zbuffer_state( window, FALSE );
+    G_set_lighting_state( window, FALSE );
     G_set_view_type( window, PIXEL_VIEW );
     G_set_automatic_clear_state( window, FALSE );
 
@@ -106,9 +106,9 @@ int main(
     return( 0 );
 }
 
-private  void  draw_rectangle(
+static  void  draw_rectangle(
     Gwindow   window,
-    Colour    colour,
+    VIO_Colour    colour,
     int       x_min,
     int       x_max,
     int       y_min,
@@ -120,10 +120,10 @@ private  void  draw_rectangle(
 
     lines.n_points = 4;
     ALLOC( lines.points, 4 );
-    fill_Point( lines.points[0], (Real) x_min, (Real) y_min, 0.0 );
-    fill_Point( lines.points[1], (Real) x_max, (Real) y_min, 0.0 );
-    fill_Point( lines.points[2], (Real) x_max, (Real) y_max, 0.0 );
-    fill_Point( lines.points[3], (Real) x_min, (Real) y_max, 0.0 );
+    fill_Point( lines.points[0], (VIO_Real) x_min, (VIO_Real) y_min, 0.0 );
+    fill_Point( lines.points[1], (VIO_Real) x_max, (VIO_Real) y_min, 0.0 );
+    fill_Point( lines.points[2], (VIO_Real) x_max, (VIO_Real) y_max, 0.0 );
+    fill_Point( lines.points[3], (VIO_Real) x_min, (VIO_Real) y_max, 0.0 );
 
     lines.n_items = 1;
     ALLOC( lines.end_indices, lines.n_items );
@@ -141,9 +141,9 @@ private  void  draw_rectangle(
     delete_lines( &lines );
 }
 
-private  void  draw_region(
+static  void  draw_region(
     Gwindow   window,
-    Colour    colour,
+    VIO_Colour    colour,
     int       x_min,
     int       x_max,
     int       y_min,
@@ -155,10 +155,10 @@ private  void  draw_region(
 
     polygons.n_points = 4;
     ALLOC( polygons.points, 4 );
-    fill_Point( polygons.points[0], (Real) x_min, (Real) y_min, 0.0 );
-    fill_Point( polygons.points[1], (Real) x_max, (Real) y_min, 0.0 );
-    fill_Point( polygons.points[2], (Real) x_max, (Real) y_max, 0.0 );
-    fill_Point( polygons.points[3], (Real) x_min, (Real) y_max, 0.0 );
+    fill_Point( polygons.points[0], (VIO_Real) x_min, (VIO_Real) y_min, 0.0 );
+    fill_Point( polygons.points[1], (VIO_Real) x_max, (VIO_Real) y_min, 0.0 );
+    fill_Point( polygons.points[2], (VIO_Real) x_max, (VIO_Real) y_max, 0.0 );
+    fill_Point( polygons.points[3], (VIO_Real) x_min, (VIO_Real) y_max, 0.0 );
 
     polygons.n_items = 1;
     ALLOC( polygons.end_indices, polygons.n_items );
@@ -175,11 +175,11 @@ private  void  draw_region(
     delete_polygons( &polygons );
 }
 
-private  void  draw_pixel(
+static  void  draw_pixel(
     Gwindow   window,
-    Colour    colour,
-    Real      x,
-    Real      y )
+    VIO_Colour    colour,
+    VIO_Real      x,
+    VIO_Real      y )
 {
     lines_struct  lines;
 
@@ -201,21 +201,21 @@ private  void  draw_pixel(
     delete_lines( &lines );
 }
 
-private  void  draw_pixels(
+static  void  draw_pixels(
     Gwindow   window,
-    Colour    colour,
+    VIO_Colour    colour,
     int       x1,
     int       y1,
     int       x2,
     int       y2 )
 {
     int   i;
-    Real  x;
+    VIO_Real  x;
 
     for_inclusive( i, y1, y2 )
     {
-        x = x1 + (Real) (x2 - x1) *
-            ((Real) i - (Real) y1) / ((Real) y2 - (Real) y1);
-        draw_pixel( window, colour, x, (Real) i );
+        x = x1 + (VIO_Real) (x2 - x1) *
+            ((VIO_Real) i - (VIO_Real) y1) / ((VIO_Real) y2 - (VIO_Real) y1);
+        draw_pixel( window, colour, x, (VIO_Real) i );
     }
 }

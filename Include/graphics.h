@@ -10,27 +10,27 @@ typedef  struct   window_struct
     GSwindow               GS_window;
     int                    x_origin, y_origin;          
     int                    x_size, y_size;          
-    Colour                 background_colour;
-    Colour                 background_colour_index;
+    VIO_Colour                 background_colour;
+    VIO_Colour                 background_colour_index;
     View_types             current_view_type;
-    Transform              projection_matrices[(int) N_VIEW_TYPES];
-    Transform              left_projection_matrices[(int) N_VIEW_TYPES];
-    Transform              right_projection_matrices[(int) N_VIEW_TYPES];
-    Transform              viewing_matrices[(int) N_VIEW_TYPES];
-    Transform              modeling_transform;
+    VIO_Transform              projection_matrices[(int) N_VIEW_TYPES];
+    VIO_Transform              left_projection_matrices[(int) N_VIEW_TYPES];
+    VIO_Transform              right_projection_matrices[(int) N_VIEW_TYPES];
+    VIO_Transform              viewing_matrices[(int) N_VIEW_TYPES];
+    VIO_Transform              modeling_transform;
     int                    n_overlay_planes;
     Bitplane_types         current_bitplanes;
     VIO_BOOL                automatic_clear_flag;
     VIO_BOOL                bitplanes_cleared[N_BITPLANE_TYPES];
 
-    Real                   front_clip_distance;
-    Real                   back_clip_distance;
+    VIO_Real                   front_clip_distance;
+    VIO_Real                   back_clip_distance;
     VIO_BOOL                perspective_flag;
-    Real                   perspective_distance;
+    VIO_Real                   perspective_distance;
     VIO_BOOL                stereo_flag;
-    Real                   eye_separation;
-    Real                   window_width;
-    Real                   window_height;
+    VIO_Real                   eye_separation;
+    VIO_Real                   window_width;
+    VIO_Real                   window_height;
 
     VIO_BOOL                double_buffer_available;
     VIO_BOOL                double_buffer_state;
@@ -57,22 +57,22 @@ typedef  struct   window_struct
     VIO_BOOL                continuation_flag;
     VIO_BOOL                interrupt_occurred;
     int                    interrupt_interval;
-    Real                   interrupt_time;
-    Real                   interrupt_time_interval;
+    VIO_Real                   interrupt_time;
+    VIO_Real                   interrupt_time_interval;
     int                    next_item;
     int                    n_items_done;
 
     VIO_BOOL                update_required_flag;
-    Real                   last_update_time;
+    VIO_Real                   last_update_time;
     VIO_BOOL                last_update_was_idle;
     int                    n_update_timers;
     int                    n_update_timers_to_ignore;
 
     VIO_BOOL                overlay_update_required_flag;
-    Real                   last_overlay_update_time;
+    VIO_Real                   last_overlay_update_time;
     VIO_BOOL                last_overlay_update_was_idle;
 
-    Real                   min_update_time;
+    VIO_Real                   min_update_time;
 
     void    (*update_callback) ( struct window_struct *, void * );
     void    *update_data;
@@ -137,17 +137,6 @@ typedef  struct   window_struct
 typedef  struct  window_struct   *Gwindow;
 
 #include  <graphics_struct.h>
-
-#ifndef  public
-#define       public
-#define       public_was_defined_here
-#endif
-
 #include  <graphics_prototypes.h>
-
-#ifdef  public_was_defined_here
-#undef       public
-#undef       public_was_defined_here
-#endif
 
 #endif

@@ -9,7 +9,7 @@
 #define  USE_STORED_FONT_ONLY
 #endif
 
-private  VIO_BOOL  use_stored_font_only( void )
+static  VIO_BOOL  use_stored_font_only( void )
 {
     static  VIO_BOOL  first = TRUE;
 #ifdef USE_STORED_FONT_ONLY
@@ -33,7 +33,7 @@ private  VIO_BOOL  use_stored_font_only( void )
     return( use_stored_flag );
 }
 
-private  VIO_BOOL  GLX_supported( void )
+static  VIO_BOOL  GLX_supported( void )
 {
     static  VIO_BOOL  first = TRUE;
     static  VIO_BOOL  supported = FALSE;
@@ -48,7 +48,7 @@ private  VIO_BOOL  GLX_supported( void )
     return( supported );
 }
 
-public  Status  WS_create_window(
+  Status  WS_create_window(
     STRING                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
@@ -220,7 +220,7 @@ public  Status  WS_create_window(
     return( status );
 }
 
-public  void  WS_delete_window(
+  void  WS_delete_window(
     WS_window_struct  *window )
 {
     if( window->n_fonts > 0 )
@@ -237,13 +237,13 @@ public  void  WS_delete_window(
     }
 }
 
-public  VIO_BOOL  WS_window_has_overlay_planes(
+  VIO_BOOL  WS_window_has_overlay_planes(
     WS_window_struct  *window )
 {
     return( window->overlay_present );
 }
 
-private  void  set_window_normal_planes(
+static  void  set_window_normal_planes(
     WS_window_struct  *window )
 {
     if( !glXMakeCurrent( X_get_display(), window->x_window.window_id,
@@ -253,7 +253,7 @@ private  void  set_window_normal_planes(
     }
 }
 
-private  void  set_window_overlay_planes(
+static  void  set_window_overlay_planes(
     WS_window_struct  *window )
 {
     if( !glXMakeCurrent( X_get_display(), window->overlay_window.window_id,
@@ -263,7 +263,7 @@ private  void  set_window_overlay_planes(
     }
 }
 
-public  void  WS_set_current_window(
+  void  WS_set_current_window(
     WS_window_struct  *window,
     Bitplane_types    current_bitplanes )
 {
@@ -274,7 +274,7 @@ public  void  WS_set_current_window(
 }
 
 
-public  int    WS_get_n_overlay_planes( void )
+  int    WS_get_n_overlay_planes( void )
 {
     return( 0 );
 #ifdef NOT_YET
@@ -322,7 +322,7 @@ public  int    WS_get_n_overlay_planes( void )
 #endif
 }
 
-public  VIO_BOOL  WS_get_event(
+  VIO_BOOL  WS_get_event(
     Event_types          *event_type,
     Window_id            *window,
     event_info_struct    *info )
@@ -330,7 +330,7 @@ public  VIO_BOOL  WS_get_event(
     return( X_get_event( event_type, window, info ) );
 }
 
-public  void  WS_get_window_position(
+  void  WS_get_window_position(
     WS_window_struct  *window,
     int               *x_pos,
     int               *y_pos )
@@ -340,7 +340,7 @@ public  void  WS_get_window_position(
     X_get_window_geometry( &window->x_window, x_pos, y_pos, &x_size, &y_size );
 }
 
-public  void  WS_get_window_size(
+  void  WS_get_window_size(
     WS_window_struct  *window,
     int               *x_size,
     int               *y_size )
@@ -350,10 +350,10 @@ public  void  WS_get_window_size(
     X_get_window_geometry( &window->x_window, &x_pos, &y_pos, x_size, y_size );
 }
 
-public  void  WS_set_colour_map_entry(
+  void  WS_set_colour_map_entry(
     WS_window_struct  *window,
     int               ind,
-    Colour            colour )
+    VIO_Colour            colour )
 {
     X_set_colour_map_entry( &window->x_window, ind,
                             get_Colour_r(colour),
@@ -361,10 +361,10 @@ public  void  WS_set_colour_map_entry(
                             get_Colour_b(colour) );
 }
 
-public  void  WS_set_overlay_colour_map_entry(
+  void  WS_set_overlay_colour_map_entry(
     WS_window_struct  *window,
     int               ind,
-    Colour            colour )
+    VIO_Colour            colour )
 {
     X_set_colour_map_entry( &window->overlay_window, ind,
                             get_Colour_r(colour),
@@ -372,15 +372,15 @@ public  void  WS_set_overlay_colour_map_entry(
                             get_Colour_b(colour) );
 }
 
-public  void  WS_swap_buffers(
+  void  WS_swap_buffers(
     WS_window_struct  *window )
 {
     glXSwapBuffers( X_get_display(), window->x_window.window_id );
 }
 
-public  VIO_BOOL  WS_get_font(
+  VIO_BOOL  WS_get_font(
     Font_types       type,
-    Real             size,
+    VIO_Real             size,
     WS_font_info     *font_info )
 {
     if( use_stored_font_only() )
@@ -412,7 +412,7 @@ public  VIO_BOOL  WS_get_font(
 
 /* ARGSUSED */
 
-public  void  WS_build_font_in_window(
+  void  WS_build_font_in_window(
     WS_window_struct  *window,
     int               font_index,
     WS_font_info      *font_info )
@@ -463,7 +463,7 @@ public  void  WS_build_font_in_window(
 
 /* ARGSUSED */
 
-public  void  WS_delete_font_in_window(
+  void  WS_delete_font_in_window(
     WS_window_struct     *window,
     int                  font_index,
     WS_font_info         *font_info )
@@ -485,7 +485,7 @@ public  void  WS_delete_font_in_window(
 
 /* ARGSUSED */
 
-public  VIO_BOOL  WS_set_font(
+  VIO_BOOL  WS_set_font(
     WS_window_struct     *window,
     int                  font_index )
 {
@@ -495,7 +495,7 @@ public  VIO_BOOL  WS_set_font(
     return( window->font_list_bases[font_index] > 0 );
 }
 
-public  void  WS_delete_font(
+  void  WS_delete_font(
     WS_font_info  *info )
 {
     if( !use_stored_font_only() )
@@ -505,16 +505,16 @@ public  void  WS_delete_font(
     }
 }
 
-public  Real  WS_get_character_height(
+  VIO_Real  WS_get_character_height(
     WS_font_info  *font_info )
 {
     if( use_stored_font_only() )
         return( get_fixed_font_height() );
     else
-        return( (Real) font_info->x_font_info->ascent );
+        return( (VIO_Real) font_info->x_font_info->ascent );
 }
 
-public  Real  WS_get_text_length(
+  VIO_Real  WS_get_text_length(
     WS_font_info     *font_info,
     STRING           str )
 {
@@ -546,10 +546,10 @@ public  Real  WS_get_text_length(
         }
     }
 
-    return( (Real) len );
+    return( (VIO_Real) len );
 }
 
-public  void  WS_get_screen_size(
+  void  WS_get_screen_size(
     int   *x_size, 
     int   *y_size  )
 {

@@ -1,12 +1,12 @@
 #include  <volume_io.h>
 
-public  Colour  make_rgba_Colour(
+  VIO_Colour  make_rgba_Colour(
     int    r,
     int    g,
     int    b,
     int    a )
 {
-    Colour          c;
+    VIO_Colour          c;
     unsigned  char  *byte_ptr;
 
     c = 0;     /* to avoid used-before-set compiler messages */
@@ -21,8 +21,8 @@ public  Colour  make_rgba_Colour(
     return( c );
 }
 
-public  int  get_Colour_r(
-    Colour   colour )
+  int  get_Colour_r(
+    VIO_Colour   colour )
 {
     unsigned  char  *b;
 
@@ -31,8 +31,8 @@ public  int  get_Colour_r(
     return( (int) b[3] );
 }
 
-public  int  get_Colour_g(
-    Colour   colour )
+  int  get_Colour_g(
+    VIO_Colour   colour )
 {
     unsigned  char  *b;
 
@@ -41,8 +41,8 @@ public  int  get_Colour_g(
     return( (int) b[2] );
 }
 
-public  int  get_Colour_b(
-    Colour   colour )
+  int  get_Colour_b(
+    VIO_Colour   colour )
 {
     unsigned  char  *b;
 
@@ -51,8 +51,8 @@ public  int  get_Colour_b(
     return( (int) b[1] );
 }
 
-public  int  get_Colour_a(
-    Colour   colour )
+  int  get_Colour_a(
+    VIO_Colour   colour )
 {
     unsigned  char  *b;
 

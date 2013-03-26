@@ -5,7 +5,7 @@
 #include  <volume_io.h>
 #include  <graphics.h>
 
-public  void   initialize_graphics_lights(
+  void   initialize_graphics_lights(
     Gwindow  window )
 {
     set_current_window( window );
@@ -13,24 +13,24 @@ public  void   initialize_graphics_lights(
     GS_initialize_lights( window->GS_window );
 }
 
-public  void  G_set_ambient_light(
+  void  G_set_ambient_light(
     Gwindow        window,
-    Colour         colour )
+    VIO_Colour         colour )
 {
     set_current_window( window );
 
     GS_set_ambient_light( window->GS_window, colour );
 }
 
-public  void  G_define_light(
+  void  G_define_light(
     Gwindow         window,
     int             light_index,
     Light_types     type,
-    Colour          colour,
-    Vector          *direction,
-    Point           *position,
-    Real            spot_exponent,
-    Real            spot_angle )
+    VIO_Colour          colour,
+    VIO_Vector          *direction,
+    VIO_Point           *position,
+    VIO_Real            spot_exponent,
+    VIO_Real            spot_angle )
 {
     set_current_window( window );
 
@@ -38,7 +38,7 @@ public  void  G_define_light(
                      direction, position, spot_exponent, spot_angle );
 }
 
-public  void  G_set_light_state(
+  void  G_set_light_state(
     Gwindow         window,
     int             light_index,
     VIO_BOOL         state )

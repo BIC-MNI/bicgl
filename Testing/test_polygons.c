@@ -1,8 +1,8 @@
 #include  <internal_volume_io.h>
 #include  <graphics.h>
 
-private  void  process_polygons( polygons_struct * );
-private  void  display_polygons( polygons_struct * );
+static  void  process_polygons( polygons_struct * );
+static  void  display_polygons( polygons_struct * );
 
 int  main(
     int  argc,
@@ -43,10 +43,10 @@ int  main(
     return( status );
 }
 
-private  void  process_polygons( polygons_struct *polygons )
+static  void  process_polygons( polygons_struct *polygons )
 {
     int    poly_index, polygon_size, vertex, point_index;
-    Point  point;
+    VIO_Point  point;
 
     print( "Number of points = %d\n", polygons->n_points );
 
@@ -70,28 +70,28 @@ private  void  process_polygons( polygons_struct *polygons )
     }
 }
 
-private  void  display_polygons( polygons_struct *polygons )
+static  void  display_polygons( polygons_struct *polygons )
 {
     window_struct     *window;
-    static Point      origin = { 0.0, 0.0, 3.0 };
-    static Vector     up_direction = { 0.0, 1.0, 0.0 };
-    static Vector     line_of_sight = { 0.0, 0.0, -1.0 };
-    Vector            light_direction;
+    static VIO_Point      origin = { 0.0, 0.0, 3.0 };
+    static VIO_Vector     up_direction = { 0.0, 1.0, 0.0 };
+    static VIO_Vector     line_of_sight = { 0.0, 0.0, -1.0 };
+    VIO_Vector            light_direction;
 
     (void) G_create_window( "Polygons", -1, -1, -1, -1, &window );
 
     G_set_3D_view( window, &origin, &line_of_sight, &up_direction,
-                   0.01, 6.0, ON, 2.0, FALSE, 0.0, 2.0, 2.0 );
+                   0.01, 6.0, TRUE, 2.0, FALSE, 0.0, 2.0, 2.0 );
 
     G_set_background_colour( window, PINK );
 
     fill_Vector( light_direction, 1.0, -1.0, -1.0 );/* from over left shoulder */
 
     G_define_light( window, 1, DIRECTIONAL_LIGHT, WHITE,
-                    &light_direction, (Point *) 0, 0.0, 0.0 );
-    G_set_light_state( window, 1, ON );
+                    &light_direction, (VIO_Point *) 0, 0.0, 0.0 );
+    G_set_light_state( window, 1, TRUE );
 
-    G_set_lighting_state( window, ON );
+    G_set_lighting_state( window, TRUE );
 
     G_set_view_type( window, MODEL_VIEW );
     G_draw_polygons( window, polygons );

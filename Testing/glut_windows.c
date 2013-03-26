@@ -4,12 +4,12 @@
 #define  DEFAULT_WINDOW_X_SIZE    300
 #define  DEFAULT_WINDOW_Y_SIZE    300
 
-private  void  display_function( void )
+static  void  display_function( void )
 {
     print( "Display callback\n" );
 }
 
-private  Window_id  create_GLUT_window(
+static  Window_id  create_GLUT_window(
     STRING                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
@@ -162,7 +162,7 @@ private  Window_id  create_GLUT_window(
 }
 
 
-public  Status  WS_create_window(
+  Status  WS_create_window(
     STRING                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,

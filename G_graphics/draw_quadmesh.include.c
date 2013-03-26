@@ -21,26 +21,26 @@
     int           colour_index;
 #endif
 #endif
-    Colour        *colours;
+    VIO_Colour        *colours;
     int           n_size, used_j;
 #ifdef  DEF_WIREFRAME
     int           used_i;
     int           i;
-    Point         *ptr;
+    VIO_Point         *ptr;
 #else
-    Point         *left_points, *right_points;
+    VIO_Point         *left_points, *right_points;
 #endif
 #ifdef  DEF_NORMALS
 #ifdef DEF_WIREFRAME
-    Vector        *normals;
+    VIO_Vector        *normals;
 #else
-    Vector        *left_normals, *right_normals;
+    VIO_Vector        *left_normals, *right_normals;
 #endif
 #endif
 #if  !defined(DEF_ONE_COLOUR) && defined(DEF_NORMALS)
-    Real               diffuse_coefficient =
-                                     (Real) Surfprop_d( quadmesh->surfprop );
-    Colour             scaled_colour;
+    VIO_Real               diffuse_coefficient =
+                                     (VIO_Real) Surfprop_d( quadmesh->surfprop );
+    VIO_Colour             scaled_colour;
 #endif
 
     m = quadmesh->m;
@@ -73,7 +73,7 @@
 #ifdef  DEF_ONE_COLOUR
     SET_COLOUR( colours[0] );
 #else
-    GS_set_ambient_and_diffuse_mode( ON );
+    GS_set_ambient_and_diffuse_mode( TRUE );
 #endif
 
 #ifdef  DEF_WIREFRAME
@@ -195,7 +195,7 @@
     END_DRAW_OBJECTS
 
 #ifndef  DEF_ONE_COLOUR
-    GS_set_ambient_and_diffuse_mode( OFF );
+    GS_set_ambient_and_diffuse_mode( FALSE );
 #endif
 }
 

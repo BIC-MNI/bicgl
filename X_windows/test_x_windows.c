@@ -123,8 +123,8 @@ int  main(
 
     for_less( i, min_colour, max_colour )
     {
-        intensity = ((Real) i - (Real) min_colour) /
-                    ((Real) max_colour - (Real) min_colour) * 255.0;
+        intensity = ((VIO_Real) i - (VIO_Real) min_colour) /
+                    ((VIO_Real) max_colour - (VIO_Real) min_colour) * 255.0;
 
         X_set_colour_map_entry( &window, i, intensity, intensity, intensity );
     }
@@ -137,7 +137,7 @@ int  main(
         for_less( j, 0, SIZE )
         {
             intensity = min_colour + (max_colour - min_colour) *
-                        (Real) i * (Real) j / (Real) SIZE / (Real) SIZE;
+                        (VIO_Real) i * (VIO_Real) j / (VIO_Real) SIZE / (VIO_Real) SIZE;
         }
     }
 

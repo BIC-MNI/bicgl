@@ -2,31 +2,31 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-public  void  GS_set_point(
-    Point  *point )
+  void  GS_set_point(
+    VIO_Point  *point )
 {
     v3f( point->coords );
 }
 
-public  void  GS_set_normal(
-    Vector  *normal )
+  void  GS_set_normal(
+    VIO_Vector  *normal )
 {
     n3f( normal->coords );
 }
 
-public  void  GS_set_colour(
-    Colour  colour )
+  void  GS_set_colour(
+    VIO_Colour  colour )
 {
     cpack( colour );
 }
 
-public  void  GS_set_colour_index(
-    Colour  colour )
+  void  GS_set_colour_index(
+    VIO_Colour  colour )
 {
     color( (Colorindex) colour );
 }
 
-public  void  GS_set_ambient_and_diffuse_mode(
+  void  GS_set_ambient_and_diffuse_mode(
     VIO_BOOL  state )
 {
     if( state )
@@ -35,7 +35,7 @@ public  void  GS_set_ambient_and_diffuse_mode(
         lmcolor( LMC_COLOR );
 }
 
-private  long  get_unique_lmdef_id( void )
+static  long  get_unique_lmdef_id( void )
 {
     static  long   unique_lmdef_id = 1;
 
@@ -46,7 +46,7 @@ private  long  get_unique_lmdef_id( void )
     return( unique_lmdef_id );
 }
 
-public  void  GS_initialize_surface_property(
+  void  GS_initialize_surface_property(
     GSwindow        window )
 {
     static  Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
@@ -55,9 +55,9 @@ public  void  GS_initialize_surface_property(
     GS_set_surface_property( window, WHITE, &spr );
 }
 
-public  void  GS_set_surface_property(
+  void  GS_set_surface_property(
     GSwindow       window,
-    Colour         col,
+    VIO_Colour         col,
     Surfprop       *surfprop )
 {
     static  float  props[] = { (float) AMBIENT, 0.0f, 0.0f, 0.0f,
@@ -67,13 +67,13 @@ public  void  GS_set_surface_property(
                                (float) ALPHA, 0.0f,
                                (float) LMNULL };
 
-    props[1] = (float) ((Real) Surfprop_a( *surfprop )*get_Colour_r_0_1( col ));
-    props[2] = (float) ((Real) Surfprop_a( *surfprop )*get_Colour_g_0_1( col ));
-    props[3] = (float) ((Real) Surfprop_a( *surfprop )*get_Colour_b_0_1( col ));
+    props[1] = (float) ((VIO_Real) Surfprop_a( *surfprop )*get_Colour_r_0_1( col ));
+    props[2] = (float) ((VIO_Real) Surfprop_a( *surfprop )*get_Colour_g_0_1( col ));
+    props[3] = (float) ((VIO_Real) Surfprop_a( *surfprop )*get_Colour_b_0_1( col ));
 
-    props[5] = (float) ((Real) Surfprop_d( *surfprop )*get_Colour_r_0_1( col ));
-    props[6] = (float) ((Real) Surfprop_d( *surfprop )*get_Colour_g_0_1( col ));
-    props[7] = (float) ((Real) Surfprop_d( *surfprop )*get_Colour_b_0_1( col ));
+    props[5] = (float) ((VIO_Real) Surfprop_d( *surfprop )*get_Colour_r_0_1( col ));
+    props[6] = (float) ((VIO_Real) Surfprop_d( *surfprop )*get_Colour_g_0_1( col ));
+    props[7] = (float) ((VIO_Real) Surfprop_d( *surfprop )*get_Colour_b_0_1( col ));
 
     props[9] = Surfprop_s( *surfprop );
     props[10] = Surfprop_s( *surfprop );
@@ -87,83 +87,83 @@ public  void  GS_set_surface_property(
            SIZEOF_STATIC_ARRAY(props), props );
 }
 
-public  void  GS_set_line_width(
-    Real  line_width )
+  void  GS_set_line_width(
+    VIO_Real  line_width )
 {
     linewidth( (short) line_width );
 }
 
-public  void  GS_curve(
+  void  GS_curve(
     float  geom[4][3] )
 {
     crv( geom );
 }
 
-public  void  GS_begin_point( void )
+  void  GS_begin_point( void )
 {
     bgnpoint();
 }
 
-public  void  GS_end_point( void )
+  void  GS_end_point( void )
 {
     endpoint();
 }
 
-public  void  GS_begin_line( void )
+  void  GS_begin_line( void )
 {
     bgnline();
 }
 
-public  void  GS_end_line( void )
+  void  GS_end_line( void )
 {
     endline();
 }
 
-public  void  GS_begin_closed_line( void )
+  void  GS_begin_closed_line( void )
 {
     bgnclosedline();
 }
 
-public  void  GS_end_closed_line( void )
+  void  GS_end_closed_line( void )
 {
     endclosedline();
 }
 
-public  void  GS_begin_polygon( void )
+  void  GS_begin_polygon( void )
 {
     bgnpolygon();
 }
 
-public  void  GS_end_polygon( void )
+  void  GS_end_polygon( void )
 {
     endpolygon();
 }
-public  void  GS_begin_quad_strip( void )
+  void  GS_begin_quad_strip( void )
 {
     bgnqstrip();
 }
 
-public  void  GS_end_quad_strip( void )
+  void  GS_end_quad_strip( void )
 {
     endqstrip();
 }
 
-public  void  GS_set_raster_position(
-    Real  x,
-    Real  y,
-    Real  z )
+  void  GS_set_raster_position(
+    VIO_Real  x,
+    VIO_Real  y,
+    VIO_Real  z )
 {
     cmov( (Coord) x, (Coord) y, (Coord) z );
 }
 
-public  void  GS_set_pixel_zoom(
-    Real  x_zoom,
-    Real  y_zoom )
+  void  GS_set_pixel_zoom(
+    VIO_Real  x_zoom,
+    VIO_Real  y_zoom )
 {
     rectzoom( (float) x_zoom, (float) y_zoom );
 }
 
-public  void  GS_draw_colour_map_pixels(
+  void  GS_draw_colour_map_pixels(
     int             x_viewport_min,
     int             y_viewport_min,
     pixels_struct   *pixels )
@@ -198,7 +198,7 @@ public  void  GS_draw_colour_map_pixels(
     }
 }
 
-public  void  GS_draw_rgb_pixels(
+  void  GS_draw_rgb_pixels(
     int             x_viewport_min,
     int             y_viewport_min,
     pixels_struct   *pixels )
@@ -218,13 +218,13 @@ public  void  GS_draw_rgb_pixels(
 
 /* ARGSUSED */
 
-public  void  GS_read_pixels(
+  void  GS_read_pixels(
     VIO_BOOL         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,
     int             y_max,
-    Colour          pixels[] )
+    VIO_Colour          pixels[] )
 {
     int   i, n_pixels;
 
@@ -247,28 +247,28 @@ public  void  GS_read_pixels(
     }
 }
 
-private  const  STRING  font_name = "Helvetica";
+static  const  STRING  font_name = "Helvetica";
 
-private  fmfonthandle   base_font_handle = 0;
+static  fmfonthandle   base_font_handle = 0;
 
-private  struct
+static  struct
 {
-    Real           size;
+    VIO_Real           size;
     fmfonthandle   font;
 }
 *fonts = NULL;
 
-private  int  n_fonts = 0;
-private  int  current_font_index = 0;
+static  int  n_fonts = 0;
+static  int  current_font_index = 0;
 
-private  VIO_BOOL  fonts_present( void )
+static  VIO_BOOL  fonts_present( void )
 {
     return( base_font_handle != (fmfonthandle) 0 );
 }
 
-private  fmfonthandle  lookup_font(
+static  fmfonthandle  lookup_font(
     Font_types    font_type,
-    Real          size )
+    VIO_Real          size )
 {
     static  VIO_BOOL  first = TRUE;
 
@@ -303,30 +303,30 @@ private  fmfonthandle  lookup_font(
     return( fonts[current_font_index].font );
 }
 
-public  Real  GS_get_text_length(
+  VIO_Real  GS_get_text_length(
     STRING          str,
     Font_types      font_type,
-    Real            font_size )
+    VIO_Real            font_size )
 {
     fmfonthandle   font;
-    Real           width;
+    VIO_Real           width;
 
     font = lookup_font( font_type, font_size );
 
     if( font != 0 )
-        width = (Real) fmgetstrwidth( font, str );
+        width = (VIO_Real) fmgetstrwidth( font, str );
     else
-        width = (Real) strwidth( str );
+        width = (VIO_Real) strwidth( str );
 
     return( width );
 }
 
-public  Real  GS_get_character_height(
+  VIO_Real  GS_get_character_height(
     Font_types      font_type,
-    Real            font_size )
+    VIO_Real            font_size )
 {
     fmfonthandle   font;
-    Real           height;
+    VIO_Real           height;
 
     font = lookup_font( font_type, font_size );
 
@@ -338,9 +338,9 @@ public  Real  GS_get_character_height(
     return( height );
 }
 
-public  void   GS_draw_text(
+  void   GS_draw_text(
     Font_types   font_type,
-    Real         font_size,
+    VIO_Real         font_size,
     STRING       string )
 {
     fmfonthandle   font;

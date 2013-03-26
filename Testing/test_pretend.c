@@ -9,12 +9,12 @@ main()
     text_struct       text;
     lines_struct      lines;
     polygons_struct   polygons;
-    Point             point;
+    VIO_Point             point;
     int               i, j, x_position, y_position;
 
     status = G_create_window( "Test Window1", -1, -1, -1, -1, &window );
 
-    G_set_pretend_colour_map_state( window, ON );
+    G_set_pretend_colour_map_state( window, TRUE );
     G_set_pretend_colour_map( window, line_colour_index, RED );
     G_set_pretend_colour_map( window, polygon_colour_index,
                               GREEN );
@@ -51,13 +51,13 @@ main()
     initialize_polygons( &polygons, polygon_colour_index, (Surfprop *) NULL );
 
     fill_Point( point, 10.0, 10.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
     fill_Point( point, 90.0, 10.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
     fill_Point( point, 90.0, 90.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
     fill_Point( point, 10.0, 90.0, 0.0 );
-    add_point_to_polygon( &polygons, &point, (Vector *) 0 );
+    add_point_to_polygon( &polygons, &point, (VIO_Vector *) 0 );
 
     G_set_bitplanes( window, NORMAL_PLANES );
 
@@ -67,11 +67,11 @@ main()
 
         if( G_get_colour_map_state(window) )
         {
-            G_set_colour_map_state( window, OFF );
+            G_set_colour_map_state( window, FALSE );
         }
         else
         {
-            G_set_colour_map_state( window, ON );
+            G_set_colour_map_state( window, TRUE );
             G_set_colour_map_entry( window, line_colour_index, RED );
             G_set_colour_map_entry( window, polygon_colour_index, GREEN );
         }

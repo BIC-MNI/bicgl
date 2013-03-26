@@ -1,7 +1,7 @@
 #include  <internal_volume_io.h>
 #include  <graphics.h>
 
-public  Status  G_create_window(
+  Status  G_create_window(
     STRING         title,
     int            x_pos,
     int            y_pos,

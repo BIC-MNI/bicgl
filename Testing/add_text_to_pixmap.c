@@ -3,7 +3,7 @@
 #include  <graphics.h>
 #include  <images.h>
 
-private  void  usage(
+static  void  usage(
     char   executable[] )
 {
     char   message[] = "\n\
@@ -22,9 +22,9 @@ int main(
     Font_types        font_type;
     pixels_struct     pixels;
     STRING            input_filename, output_filename, colour_name, string;
-    Colour            colour;
+    VIO_Colour            colour;
     int               x, y, font_size, x_size, y_size;
-    Point             point;
+    VIO_Point             point;
 
     initialize_argument_processing( argc, argv );
 
@@ -49,8 +49,8 @@ int main(
 
     G_clear_window( window );
 
-    G_set_zbuffer_state( window, OFF );
-    G_set_lighting_state( window, OFF );
+    G_set_zbuffer_state( window, FALSE );
+    G_set_lighting_state( window, FALSE );
     G_set_view_type( window, PIXEL_VIEW );
     G_draw_pixels( window, &pixels );
 
@@ -63,13 +63,13 @@ int main(
         if( !lookup_colour( colour_name, &colour ) )
             print_error( "Invalid colour: %s\n", colour_name );
 
-        fill_Point( point, (Real) x, (Real) y, 0.0 );
+        fill_Point( point, (VIO_Real) x, (VIO_Real) y, 0.0 );
         if( font_size <= 0 )
             font_type = FIXED_FONT;
         else
             font_type = SIZED_FONT;
 
-        initialize_text( &text, &point, colour, font_type, (Real) font_size );
+        initialize_text( &text, &point, colour, font_type, (VIO_Real) font_size );
         text.string = create_string( string );
 
         G_draw_text( window, &text );

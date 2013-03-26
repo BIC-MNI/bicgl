@@ -14,11 +14,11 @@ typedef  struct
 {
     int             light_index;
     Light_types     type;
-    Colour          colour;
-    Vector          direction;
-    Point           position;
-    Real            spot_exponent;
-    Real            spot_angle;
+    VIO_Colour          colour;
+    VIO_Vector          direction;
+    VIO_Point           position;
+    VIO_Real            spot_exponent;
+    VIO_Real            spot_angle;
 } light_info_struct;
 
 typedef  struct
@@ -26,7 +26,7 @@ typedef  struct
     WS_window_struct   WS_window;
 
     VIO_BOOL            ambient_set;
-    Real               ambient[3];
+    VIO_Real               ambient[3];
 
     int                n_lights_defined;
     light_info_struct  *lights;
@@ -39,16 +39,6 @@ GS_window_struct;
 
 typedef  GS_window_struct   *GSwindow;
 
-#ifndef  public
-#define       public
-#define       public_was_defined_here
-#endif
-
 #include  <opengl_graphics_prototypes.h>
-
-#ifdef  public_was_defined_here
-#undef       public
-#undef       public_was_defined_here
-#endif
 
 #endif

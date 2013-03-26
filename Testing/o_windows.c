@@ -21,7 +21,7 @@
 
 /* ARGSUSED */
 
-public  Status  GS_create_window(
+  Status  GS_create_window(
     GSwindow       window,
     STRING         title,
     int            x_pos,

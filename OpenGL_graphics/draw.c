@@ -5,31 +5,31 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-public  void  GS_set_point(
-    Point  *point )
+  void  GS_set_point(
+    VIO_Point  *point )
 {
     glVertex3fv( point->coords );
 }
 
-public  void  GS_set_normal(
-    Vector  *normal )
+  void  GS_set_normal(
+    VIO_Vector  *normal )
 {
     glNormal3fv( normal->coords );
 }
 
-public  void  GS_set_colour(
-    Colour  colour )
+  void  GS_set_colour(
+    VIO_Colour  colour )
 {
     glColor4ubv( (GLubyte*) &colour );
 }
 
-public  void  GS_set_colour_index(
-    Colour  colour )
+  void  GS_set_colour_index(
+    VIO_Colour  colour )
 {
     glIndexi( (GLint) colour );
 }
 
-public  void  GS_set_ambient_and_diffuse_mode(
+  void  GS_set_ambient_and_diffuse_mode(
     VIO_BOOL  state )
 {
     if( state )
@@ -43,24 +43,24 @@ public  void  GS_set_ambient_and_diffuse_mode(
 
 /* ARGSUSED */
 
-public  void  GS_initialize_surface_property(
+  void  GS_initialize_surface_property(
     GSwindow        window )
 {
 }
 
 /* ARGSUSED */
 
-public  void  GS_set_surface_property(
+  void  GS_set_surface_property(
     GSwindow       window,
-    Colour         col,
-    Surfprop       *surfprop )
+    VIO_Colour         col,
+    VIO_Surfprop       *surfprop )
 {
     float  props[4];
-    Real   a, d, s;
+    VIO_Real   a, d, s;
 
-    a = (Real) Surfprop_a( *surfprop );
-    d = (Real) Surfprop_d( *surfprop );
-    s = (Real) Surfprop_s( *surfprop );
+    a = (VIO_Real) Surfprop_a( *surfprop );
+    d = (VIO_Real) Surfprop_d( *surfprop );
+    s = (VIO_Real) Surfprop_s( *surfprop );
 
     props[0] = (float) (a * get_Colour_r_0_1( col ));
     props[1] = (float) (a * get_Colour_g_0_1( col ));
@@ -84,87 +84,87 @@ public  void  GS_set_surface_property(
     glMaterialfv( GL_FRONT_AND_BACK, GL_SHININESS, props );
 }
 
-public  void  GS_set_line_width(
-    Real  line_width )
+  void  GS_set_line_width(
+    VIO_Real  line_width )
 {
     glLineWidth( (GLfloat) line_width );
 }
 
 /* ARGSUSED */
 
-public  void  GS_curve(
+  void  GS_curve(
     float  geom[4][3] )
 {
 }
 
-public  void  GS_begin_point( void )
+  void  GS_begin_point( void )
 {
     glBegin( GL_POINTS );
 }
 
-public  void  GS_end_point( void )
+  void  GS_end_point( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_line( void )
+  void  GS_begin_line( void )
 {
     glBegin( GL_LINE_STRIP );
 }
 
-public  void  GS_end_line( void )
+  void  GS_end_line( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_closed_line( void )
+  void  GS_begin_closed_line( void )
 {
     glBegin( GL_LINE_LOOP );
 }
 
-public  void  GS_end_closed_line( void )
+  void  GS_end_closed_line( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_polygon( void )
+  void  GS_begin_polygon( void )
 {
     glBegin( GL_POLYGON );
 }
 
-public  void  GS_end_polygon( void )
+  void  GS_end_polygon( void )
 {
     glEnd();
 }
 
-public  void  GS_begin_quad_strip( void )
+  void  GS_begin_quad_strip( void )
 {
     glBegin( GL_QUAD_STRIP );
 }
 
-public  void  GS_end_quad_strip( void )
+  void  GS_end_quad_strip( void )
 {
     glEnd();
 }
 
-public  void  GS_set_raster_position(
-    Real  x,
-    Real  y,
-    Real  z )
+  void  GS_set_raster_position(
+    VIO_Real  x,
+    VIO_Real  y,
+    VIO_Real  z )
 {
     glRasterPos3d( (double) x, (double) y, (double) z );
 }
 
-public  void  GS_set_pixel_zoom(
-    Real  x_zoom,
-    Real  y_zoom )
+  void  GS_set_pixel_zoom(
+    VIO_Real  x_zoom,
+    VIO_Real  y_zoom )
 {
     glPixelZoom( (GLfloat) x_zoom, (GLfloat) y_zoom );
 }
 
 /* ARGSUSED */
 
-public  void  GS_draw_colour_map_pixels(
+  void  GS_draw_colour_map_pixels(
     int             x_viewport_min,
     int             y_viewport_min,
     pixels_struct   *pixels )
@@ -176,7 +176,7 @@ public  void  GS_draw_colour_map_pixels(
     x_size = pixels->x_size;
     y_size = pixels->y_size;
 
-    GS_set_raster_position( (Real) x, (Real) y, 0.0 );
+    GS_set_raster_position( (VIO_Real) x, (VIO_Real) y, 0.0 );
 
     switch( pixels->pixel_type )
     {
@@ -200,7 +200,7 @@ public  void  GS_draw_colour_map_pixels(
 
 /* ARGSUSED */
 
-public  void  GS_draw_rgb_pixels(
+  void  GS_draw_rgb_pixels(
     int             x_viewport_min,
     int             y_viewport_min,
     pixels_struct   *pixels )
@@ -213,20 +213,20 @@ public  void  GS_draw_rgb_pixels(
     x_size = pixels->x_size;
     y_size = pixels->y_size;
 
-    GS_set_raster_position( (Real) x, (Real) y, 0.0 );
+    GS_set_raster_position( (VIO_Real) x, (VIO_Real) y, 0.0 );
 
     void_ptr = (void *) &PIXEL_RGB_COLOUR(*pixels,0,0);
     glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
     glDrawPixels( x_size, y_size, GL_RGBA, GL_UNSIGNED_BYTE, void_ptr );
 }
 
-public  void  GS_read_pixels(
+  void  GS_read_pixels(
     VIO_BOOL         colour_map_state,
     int             x_min,
     int             x_max,
     int             y_min,
     int             y_max,
-    Colour          pixels[] )
+    VIO_Colour          pixels[] )
 {
     glReadBuffer( GL_FRONT );
 
@@ -242,27 +242,27 @@ public  void  GS_read_pixels(
     }
 }
 
-public  Real  GS_get_character_height(
+  VIO_Real  GS_get_character_height(
     Font_types       type,
-    Real             size )
+    VIO_Real             size )
 {
     return( WS_get_character_height( type, size ) );
 }
 
 /* ARGSUSED */
 
-public  void  GS_draw_text(
+  void  GS_draw_text(
     Font_types   type,
-    Real         size,
-    STRING       string )
+    VIO_Real         size,
+    VIO_STR       string )
 {
     WS_draw_text( type, size, string );
 }
 
-public  Real  GS_get_text_length(
-    STRING           str,
+  VIO_Real  GS_get_text_length(
+    VIO_STR           str,
     Font_types       type,
-    Real             size )
+    VIO_Real             size )
 {
     return( WS_get_text_length( str, type, size ) );
 }

@@ -2,7 +2,7 @@
 #include  <volume_io.h>
 #include  <GS_graphics.h>
 
-public  void  GS_set_shade_model(
+  void  GS_set_shade_model(
     Shading_types  type )
 {
     if( type == GOURAUD_SHADING )
@@ -11,17 +11,17 @@ public  void  GS_set_shade_model(
         shademodel( FLAT );
 }
 
-public  void  GS_turn_off_blend_function( void )
+  void  GS_turn_off_blend_function( void )
 {
     blendfunction( BF_ONE, BF_ZERO );
 }
 
-public  void  GS_turn_on_blend_function( void )
+  void  GS_turn_on_blend_function( void )
 {
     blendfunction( BF_SA, BF_MSA );
 }
 
-public  void  GS_set_lighting_state(
+  void  GS_set_lighting_state(
     GSwindow     window,
     VIO_BOOL      state )
 {
@@ -31,13 +31,13 @@ public  void  GS_set_lighting_state(
         lmbind( MATERIAL, 0 );
 }
 
-public  void  GS_backface_culling_state(
+  void  GS_backface_culling_state(
     VIO_BOOL     state )
 {
     backface( (Boolean) state );
 }
 
-public  void  GS_set_n_curve_segments(
+  void  GS_set_n_curve_segments(
     int      n_segments )
 {
     curveprecision( (short) n_segments );

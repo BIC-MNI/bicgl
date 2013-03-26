@@ -24,9 +24,9 @@ main()
     Pixel_types       pixel_type = COLOUR_INDEX_16BIT_PIXEL;
 #endif
     int               i, j, pixels_x_size, pixels_y_size;
-    Real              start, end;
+    VIO_Real              start, end;
 #ifndef  COLOUR_MAP_MODE
-    Colour            colour_table[256];
+    VIO_Colour            colour_table[256];
 #endif
 
     status = G_create_window( "Test Pixels", -1, -1, 500, 500, &window );
@@ -37,7 +37,7 @@ main()
     pixels_y_size = 256;
 
 #ifdef COLOUR_MAP_MODE
-    G_set_colour_map_state( window, ON );
+    G_set_colour_map_state( window, TRUE );
 
     G_set_background_colour( window, BACKGROUND_INDEX );
 
@@ -72,7 +72,7 @@ main()
 
     end = current_realtime_seconds();
 
-    print( "%g seconds\n", (end - start) / (Real) N_ITER );
+    print( "%g seconds\n", (end - start) / (VIO_Real) N_ITER );
 
 #else
     initialize_pixels( &pixels, 10, 10, pixels_x_size, pixels_y_size,
@@ -95,7 +95,7 @@ main()
     }
     end = current_realtime_seconds();
 
-    print( "%g seconds\n", (end - start) / (Real) N_ITER );
+    print( "%g seconds\n", (end - start) / (VIO_Real) N_ITER );
 #endif
 
     start = current_realtime_seconds();
@@ -107,7 +107,7 @@ main()
 
     G_update_window( window );
 
-    print( "%g seconds\n", (end - start) / (Real) N_ITER );
+    print( "%g seconds\n", (end - start) / (VIO_Real) N_ITER );
 
     (void) getchar();
 

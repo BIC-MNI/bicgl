@@ -5,135 +5,135 @@
 
 #define  SLEEP_WHEN_IDLE_IN_EVENT_LOOP   0.02    /* 20 milliseconds */
  
-private  void  (*display_callback) ( Window_id );
-private  void  (*display_overlay_callback) ( Window_id );
-private  void  (*resize_callback) ( Window_id, int, int, int, int );
-private  void  (*key_down_callback) ( Window_id, int, int, int, int );
-private  void  (*key_up_callback) ( Window_id, int, int, int, int );
-private  void  (*mouse_motion_callback) ( Window_id, int, int );
-private  void  (*left_down_callback) ( Window_id, int, int, int );
-private  void  (*left_up_callback) ( Window_id, int, int, int );
-private  void  (*middle_down_callback) ( Window_id, int, int, int );
-private  void  (*middle_up_callback) ( Window_id, int, int, int );
-private  void  (*right_down_callback) ( Window_id, int, int, int );
-private  void  (*right_up_callback) ( Window_id, int, int, int );
-private  void  (*iconify_callback) ( Window_id );
-private  void  (*deiconify_callback) ( Window_id );
-private  void  (*enter_callback) ( Window_id );
-private  void  (*leave_callback) ( Window_id );
-private  void  (*quit_callback) ( Window_id );
+static  void  (*display_callback) ( Window_id );
+static  void  (*display_overlay_callback) ( Window_id );
+static  void  (*resize_callback) ( Window_id, int, int, int, int );
+static  void  (*key_down_callback) ( Window_id, int, int, int, int );
+static  void  (*key_up_callback) ( Window_id, int, int, int, int );
+static  void  (*mouse_motion_callback) ( Window_id, int, int );
+static  void  (*left_down_callback) ( Window_id, int, int, int );
+static  void  (*left_up_callback) ( Window_id, int, int, int );
+static  void  (*middle_down_callback) ( Window_id, int, int, int );
+static  void  (*middle_up_callback) ( Window_id, int, int, int );
+static  void  (*right_down_callback) ( Window_id, int, int, int );
+static  void  (*right_up_callback) ( Window_id, int, int, int );
+static  void  (*iconify_callback) ( Window_id );
+static  void  (*deiconify_callback) ( Window_id );
+static  void  (*enter_callback) ( Window_id );
+static  void  (*leave_callback) ( Window_id );
+static  void  (*quit_callback) ( Window_id );
 
-private  int        current_modifier = 0;
-private  int        current_mouse_x = 0;
-private  int        current_mouse_y = 0;
-private  Window_id  event_window = 0;
+static  int        current_modifier = 0;
+static  int        current_mouse_x = 0;
+static  int        current_mouse_y = 0;
+static  Window_id  event_window = 0;
 
-private  GSwindow   *windows = NULL;
-private  int        n_windows;
+static  GSwindow   *windows = NULL;
+static  int        n_windows;
 
-public  void  GS_set_update_function(
+  void  GS_set_update_function(
     void  (*func)( Window_id ) )
 {
     display_callback = func;
 }
 
-public  void  GS_set_update_overlay_function(
+  void  GS_set_update_overlay_function(
     void  (*func)( Window_id ) )
 {
     display_overlay_callback = func;
 }
 
-public  void  GS_set_resize_function(
+  void  GS_set_resize_function(
     void  (*func)( Window_id, int, int, int, int ) )
 {
     resize_callback = func;
 }
 
-public  void  GS_set_key_down_function(
+  void  GS_set_key_down_function(
     void  (*func)( Window_id, int, int, int, int ) )
 {
     key_down_callback = func;
 }
 
-public  void  GS_set_key_up_function(
+  void  GS_set_key_up_function(
     void  (*func)( Window_id, int, int, int, int ) )
 {
     key_up_callback = func;
 }
 
-public  void  GS_set_mouse_movement_function(
+  void  GS_set_mouse_movement_function(
     void  (*func)( Window_id, int, int ) )
 {
     mouse_motion_callback = func;
 }
 
-public  void  GS_set_left_mouse_down_function(
+  void  GS_set_left_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     left_down_callback = func;
 }
 
-public  void  GS_set_left_mouse_up_function(
+  void  GS_set_left_mouse_up_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     left_up_callback = func;
 }
 
-public  void  GS_set_middle_mouse_down_function(
+  void  GS_set_middle_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     middle_down_callback = func;
 }
 
-public  void  GS_set_middle_mouse_up_function(
+  void  GS_set_middle_mouse_up_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     middle_up_callback = func;
 }
 
-public  void  GS_set_right_mouse_down_function(
+  void  GS_set_right_mouse_down_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     right_down_callback = func;
 }
 
-public  void  GS_set_right_mouse_up_function(
+  void  GS_set_right_mouse_up_function(
     void  (*func)( Window_id, int, int, int ) )
 {
     right_up_callback = func;
 }
 
-public  void  GS_set_iconify_function(
+  void  GS_set_iconify_function(
     void  (*func)( Window_id ) )
 {
     iconify_callback = func;
 }
 
-public  void  GS_set_deiconify_function(
+  void  GS_set_deiconify_function(
     void  (*func)( Window_id ) )
 {
     deiconify_callback = func;
 }
 
-public  void  GS_set_enter_function(
+  void  GS_set_enter_function(
     void  (*func)( Window_id ) )
 {
     enter_callback = func;
 }
 
-public  void  GS_set_leave_function(
+  void  GS_set_leave_function(
     void  (*func)( Window_id ) )
 {
     leave_callback = func;
 }
 
-public  void  GS_set_quit_function(
+  void  GS_set_quit_function(
     void  (*func)( Window_id ) )
 {
     quit_callback = func;
 }
 
-public  void  GS_set_update_flag(
+  void  GS_set_update_flag(
     GSwindow   window  )
 {
     window->update_required = TRUE;
@@ -143,14 +143,14 @@ typedef struct
 {
     void  (*function) ( void * );
     void              *data;
-    Real              alarm_time;
+    VIO_Real              alarm_time;
 } timer_info_struct;
 
-private  timer_info_struct   *timers;
-private  int                 n_timers = 0;
-private  Real                min_time;
+static  timer_info_struct   *timers;
+static  int                 n_timers = 0;
+static  VIO_Real                min_time;
 
-private  void   recompute_min_time( void )
+static  void   recompute_min_time( void )
 {
     int   i;
 
@@ -163,8 +163,8 @@ private  void   recompute_min_time( void )
     }
 }
 
-public  void  GS_add_timer_function(
-    Real          seconds,
+  void  GS_add_timer_function(
+    VIO_Real          seconds,
     void          (*func) ( void * ),
     void          *data )
 {
@@ -185,10 +185,10 @@ typedef struct
     void              *data;
 } idle_info_struct;
 
-private  idle_info_struct   *idles;
-private  int                n_idles = 0;
+static  idle_info_struct   *idles;
+static  int                n_idles = 0;
 
-public  void  GS_add_idle_function(
+  void  GS_add_idle_function(
     void          (*func) ( void * ),
     void          *data )
 {
@@ -200,7 +200,7 @@ public  void  GS_add_idle_function(
     ADD_ELEMENT_TO_ARRAY( idles, n_idles, info, 1 );
 }
 
-public  void  GS_remove_idle_function(
+  void  GS_remove_idle_function(
     void          (*func) ( void * ),
     void          *data )
 {
@@ -221,13 +221,13 @@ public  void  GS_remove_idle_function(
     DELETE_ELEMENT_FROM_ARRAY( idles, n_idles, i, 1 );
 }
 
-public  void  GS_event_loop( void )
+  void  GS_event_loop( void )
 {
     Window_id  save_win;
     long       dev, x_pos, y_pos, x_size, y_size;
     short      val;
     int        i;
-    Real       current_time;
+    VIO_Real       current_time;
     VIO_BOOL    idle;
 
     while( TRUE )
@@ -478,7 +478,7 @@ public  void  GS_event_loop( void )
     }   
 }
 
-public  void  initialize_window_events(
+  void  initialize_window_events(
     GSwindow   window )
 {
     window->update_required = TRUE;
@@ -517,7 +517,7 @@ public  void  initialize_window_events(
     ADD_ELEMENT_TO_ARRAY( windows, n_windows, window, 1 );
 }
 
-public  void  delete_window_events(
+  void  delete_window_events(
     GSwindow   window )
 {
     int  i;
@@ -551,7 +551,7 @@ public  void  delete_window_events(
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-public  void  GS_set_mouse_position(
+  void  GS_set_mouse_position(
     int   x_screen,
     int   y_screen )
 {
@@ -559,7 +559,7 @@ public  void  GS_set_mouse_position(
     setvaluator( MOUSEY, (short) y_screen, 0, 10000 );
 }
 
-public  VIO_BOOL  GS_are_mouse_coordinates_in_screen_space( void )
+  VIO_BOOL  GS_are_mouse_coordinates_in_screen_space( void )
 {
     return( TRUE );
 }

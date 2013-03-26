@@ -22,7 +22,7 @@ GLX_WINDOW_PROTOTYPE_FILE = Include/glx_window_prototypes.h
 $(GLX_WINDOW_PROTOTYPE_FILE): $(OBJECTS:.o=.c)
 	@echo "#ifndef  DEF_GLX_WINDOW_PROTOTYPES"         >  $@
 	@echo "#define  DEF_GLX_WINDOW_PROTOTYPES"         >> $@
-	@extract_functions -public $(OBJECTS:.o=.c) >> $@
+	@extract_functions - $(OBJECTS:.o=.c) >> $@
 	@echo "#endif"                                      >> $@
 
 #-----------------------------------------------------------------------------

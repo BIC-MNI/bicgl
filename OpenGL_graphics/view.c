@@ -7,8 +7,8 @@
 
 typedef  double  Matrix[16];
 
-private  void  make_matrix(
-    Transform  *trans,
+static  void  make_matrix(
+    VIO_Transform  *trans,
     Matrix  gl_trans )
 {
     int      i, j;
@@ -20,8 +20,8 @@ private  void  make_matrix(
     }
 }
 
-public  void  GS_load_transform(
-    Transform  *transform )
+  void  GS_load_transform(
+    VIO_Transform  *transform )
 {
     Matrix  gl_trans;
 
@@ -30,8 +30,8 @@ public  void  GS_load_transform(
     glLoadMatrixd( gl_trans );
 }
 
-public  void  GS_mult_transform(
-    Transform  *transform )
+  void  GS_mult_transform(
+    VIO_Transform  *transform )
 {
     Matrix  gl_trans;
 
@@ -40,8 +40,8 @@ public  void  GS_mult_transform(
     glMultMatrixd( gl_trans );
 }
 
-public  void  GS_get_transform(
-    Transform  *trans )
+  void  GS_get_transform(
+    VIO_Transform  *trans )
 {
     int         i, j, type;
     Matrix   gl_trans;
@@ -62,19 +62,19 @@ public  void  GS_get_transform(
     }
 }
 
-public  void  GS_ortho(
-    Real   x_min,
-    Real   x_max,
-    Real   y_min,
-    Real   y_max,
-    Real   z_min,
-    Real   z_max )
+  void  GS_ortho(
+    VIO_Real   x_min,
+    VIO_Real   x_max,
+    VIO_Real   y_min,
+    VIO_Real   y_max,
+    VIO_Real   z_min,
+    VIO_Real   z_max )
 {
     glLoadIdentity();
     glOrtho( x_min, x_max, y_min, y_max, z_min, z_max );
 }
 
-public  void  GS_ortho_2d(
+  void  GS_ortho_2d(
     int   x_min,
     int   x_max,
     int   y_min,
@@ -88,7 +88,7 @@ public  void  GS_ortho_2d(
 #ifdef NOT_NEEDED
 {
     static  VIO_BOOL  first = TRUE;
-    static  Real     start, end;
+    static  VIO_Real     start, end;
 
     if( first )
     {
@@ -101,33 +101,33 @@ public  void  GS_ortho_2d(
             end = 1.0;
     }
 
-    glOrtho( (Real) x_min + start, (Real) x_max + end,
-             (Real) y_min + start, (Real) y_max + end, -1.0, 1.0 );
+    glOrtho( (VIO_Real) x_min + start, (VIO_Real) x_max + end,
+             (VIO_Real) y_min + start, (VIO_Real) y_max + end, -1.0, 1.0 );
 }
 #endif
 
-    glOrtho( (Real) x_min, (Real) x_max + 1.0,
-             (Real) y_min, (Real) y_max + 1.0, -1.0, 1.0 );
+    glOrtho( (VIO_Real) x_min, (VIO_Real) x_max + 1.0,
+             (VIO_Real) y_min, (VIO_Real) y_max + 1.0, -1.0, 1.0 );
 #else
 
 #ifdef __alpha
-    glOrtho( (Real) x_min - 0.5, (Real) x_max + 1.0,
-             (Real) y_min - 0.5, (Real) y_max + 1.0, -1.0, 1.0 );
+    glOrtho( (VIO_Real) x_min - 0.5, (VIO_Real) x_max + 1.0,
+             (VIO_Real) y_min - 0.5, (VIO_Real) y_max + 1.0, -1.0, 1.0 );
 #else
-    glOrtho( (Real) x_min, (Real) x_max + 1.0,
-             (Real) y_min, (Real) y_max + 1.0, -1.0, 1.0 );
+    glOrtho( (VIO_Real) x_min, (VIO_Real) x_max + 1.0,
+             (VIO_Real) y_min, (VIO_Real) y_max + 1.0, -1.0, 1.0 );
 #endif
 
 #endif
 }
 
-public  void  GS_frustum(
-    Real   x_min,
-    Real   x_max,
-    Real   y_min,
-    Real   y_max,
-    Real   z_min,
-    Real   z_max )
+  void  GS_frustum(
+    VIO_Real   x_min,
+    VIO_Real   x_max,
+    VIO_Real   y_min,
+    VIO_Real   y_max,
+    VIO_Real   z_min,
+    VIO_Real   z_max )
 {
     glLoadIdentity();
     glFrustum( x_min, x_max, y_min, y_max, z_min, z_max );
@@ -148,22 +148,22 @@ public  void  GS_frustum(
 
 /* ARGSUSED */
 
-public  void  GS_initialize_window_view(
+  void  GS_initialize_window_view(
     GSwindow   window )
 {
 }
 
-public  void  GS_push_transform( void )
+  void  GS_push_transform( void )
 {
     glPushMatrix();
 }
 
-public  void  GS_pop_transform( void )
+  void  GS_pop_transform( void )
 {
     glPopMatrix();
 }
 
-public  void  GS_set_viewport(
+  void  GS_set_viewport(
     int            x_min,
     int            x_max,
     int            y_min,
@@ -172,13 +172,13 @@ public  void  GS_set_viewport(
     glViewport( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1 );
 }
 
-public  void  clear_overlay_planes( void )
+  void  clear_overlay_planes( void )
 {
 #ifdef TO_DO
 #endif
 }
 
-public  void  GS_set_matrix_mode(
+  void  GS_set_matrix_mode(
     Matrix_modes   mode )
 {
     int  gl_mode;
