@@ -49,7 +49,7 @@ int  main( argc, argv )
     {
         strip_off_directories( argv[i+1], filenames[i] );
 
-        if( input_rgb_file( argv[i+1], &pixels[i] ) != OK )
+        if( input_rgb_file( argv[i+1], &pixels[i] ) != VIO_OK )
             return( 1 );
 
         if( pixels[i].x_size > x_size )

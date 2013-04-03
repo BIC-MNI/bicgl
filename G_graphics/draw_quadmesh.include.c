@@ -94,19 +94,19 @@
 
             GS_begin_line();
 
-                ptr = &quadmesh->points[IJ(item_index,0,n)];
+                ptr = &quadmesh->points[VIO_IJ(item_index,0,n)];
 #ifdef DEF_NORMALS
-                normals = &quadmesh->normals[IJ(item_index,0,n)];
+                normals = &quadmesh->normals[VIO_IJ(item_index,0,n)];
 #endif
 
                 for_inclusive( j, 0, n_size )
                 {
                     used_j = j % n;
 #ifdef  DEF_PER_ITEM_COLOURS
-                    SET_COLOUR( colours[IJ(colour_index,used_j,n_size)] );
+                    SET_COLOUR( colours[VIO_IJ(colour_index,used_j,n_size)] );
 #endif
 #ifdef  DEF_PER_VERTEX_COLOURS
-                    SET_COLOUR( colours[IJ(item_index,used_j,n)] );
+                    SET_COLOUR( colours[VIO_IJ(item_index,used_j,n)] );
 #endif
 
 #ifdef DEF_NORMALS
@@ -130,19 +130,19 @@
 
             GS_begin_line();
 
-                ptr = &quadmesh->points[IJ(0,item_index,n)];
+                ptr = &quadmesh->points[VIO_IJ(0,item_index,n)];
 #ifdef DEF_NORMALS
-                normals = &quadmesh->normals[IJ(0,item_index,n)];
+                normals = &quadmesh->normals[VIO_IJ(0,item_index,n)];
 #endif
 
                 for_inclusive( i, 0, m_size )
                 {
                     used_i = i % m;
 #ifdef  PER_ITEM_COLOURS
-                    SET_COLOUR( colours[IJ(used_i,colour_index,n_size)] );
+                    SET_COLOUR( colours[VIO_IJ(used_i,colour_index,n_size)] );
 #endif
 #ifdef  PER_VERTEX_COLOURS
-                    SET_COLOUR( colours[IJ(used_i,item_index,n)] );
+                    SET_COLOUR( colours[VIO_IJ(used_i,item_index,n)] );
 #endif
 #ifdef DEF_NORMALS
                     GS_set_normal( &normals[used_i*n] );
@@ -158,21 +158,21 @@
 
         GS_begin_quad_strip();
 
-        left_points = &quadmesh->points[ IJ(item_index,0,n) ];
-        right_points = &quadmesh->points[ IJ((item_index+1)%m,0,n) ];
+        left_points = &quadmesh->points[ VIO_IJ(item_index,0,n) ];
+        right_points = &quadmesh->points[ VIO_IJ((item_index+1)%m,0,n) ];
 #ifdef  DEF_NORMALS
-        left_normals = &quadmesh->normals[ IJ(item_index,0,n) ];
-        right_normals = &quadmesh->normals[ IJ((item_index+1)%m,0,n) ];
+        left_normals = &quadmesh->normals[ VIO_IJ(item_index,0,n) ];
+        right_normals = &quadmesh->normals[ VIO_IJ((item_index+1)%m,0,n) ];
 #endif
 
         for_inclusive( j, 0, n_size )
         {
             used_j = j % n;
 #ifdef  DEF_PER_ITEM_COLOURS
-            SET_COLOUR( colours[IJ(item_index,used_j,n_size)] );
+            SET_COLOUR( colours[VIO_IJ(item_index,used_j,n_size)] );
 #endif
 #ifdef  DEF_PER_VERTEX_COLOURS
-            SET_COLOUR( colours[IJ(item_index,used_j,n)] );
+            SET_COLOUR( colours[VIO_IJ(item_index,used_j,n)] );
 #endif
 #ifdef  DEF_NORMALS
             GS_set_normal( &left_normals[used_j] );
@@ -180,7 +180,7 @@
             GS_set_point( &left_points[used_j] );
 
 #ifdef  DEF_PER_VERTEX_COLOURS
-            SET_COLOUR( colours[IJ((item_index+1)%m,used_j,n)] );
+            SET_COLOUR( colours[VIO_IJ((item_index+1)%m,used_j,n)] );
 #endif
 #ifdef  DEF_NORMALS
             GS_set_normal( &right_normals[used_j] );

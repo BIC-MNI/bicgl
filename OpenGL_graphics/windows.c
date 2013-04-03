@@ -133,7 +133,7 @@ static  void  initialize_window(
     for_less( i, 0, 4 )
     {
         for_less( j, 0, 4 )
-            print( " %15.10g", trans[IJ(i,j,4)] );
+            print( " %15.10g", trans[VIO_IJ(i,j,4)] );
         print( "\n" );
     }
 
@@ -142,7 +142,7 @@ static  void  initialize_window(
     for_less( i, 0, 4 )
     {
         for_less( j, 0, 4 )
-            print( " %15.10g", trans[IJ(i,j,4)] );
+            print( " %15.10g", trans[VIO_IJ(i,j,4)] );
         print( "\n" );
     }
 }

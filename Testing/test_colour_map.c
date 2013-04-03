@@ -34,7 +34,7 @@ int main(
                        1.0, 1.0, COLOUR_INDEX_16BIT_PIXEL );
 
     n_colours = G_get_n_colour_map_entries( window );
-    n_c = SIZEOF_STATIC_ARRAY( colours_list );
+    n_c = VIO_SIZEOF_STATIC_ARRAY( colours_list );
     colours_list[0] = RED;
     colours_list[1] = GREEN;
     colours_list[2] = BLUE;

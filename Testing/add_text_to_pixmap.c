@@ -35,7 +35,7 @@ int main(
         return( 1 );
     }
 
-    if( input_rgb_file( input_filename, &pixels ) != OK )
+    if( input_rgb_file( input_filename, &pixels ) != VIO_OK )
         return( 1 );
 
     x_size = pixels.x_size;
@@ -43,7 +43,7 @@ int main(
 
     if( G_create_window( "Add Text To Pixmap",
                          100, 100, x_size, y_size,
-                         FALSE, FALSE, FALSE, 0, &window ) != OK )
+                         FALSE, FALSE, FALSE, 0, &window ) != VIO_OK )
         return( 1 );
 
 
@@ -81,7 +81,7 @@ int main(
     G_read_pixels( window, 0, x_size-1, 0, y_size-1,
                    &PIXEL_RGB_COLOUR(pixels,0,0) );
 
-    if( output_rgb_file( output_filename, &pixels ) != OK )
+    if( output_rgb_file( output_filename, &pixels ) != VIO_OK )
         return( 1 );
 
     delete_pixels( &pixels );

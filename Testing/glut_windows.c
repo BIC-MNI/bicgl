@@ -192,5 +192,5 @@ static  Window_id  create_GLUT_window(
                                             actual_depth_buffer_flag,
                                             actual_n_overlay_planes );
 
-    return( OK );
+    return( VIO_OK );
 }

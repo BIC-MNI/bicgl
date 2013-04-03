@@ -174,10 +174,10 @@ static  long     zdepth_clear;
                            double_buffer_desired,
                            depth_buffer_desired,
                            n_overlay_planes_desired );
-        status = OK;
+        status = VIO_OK;
     }
     else
-        status = ERROR;
+        status = VIO_ERROR;
 
     if( save_window_id >= 0 )
         winset( save_window_id );
@@ -483,12 +483,12 @@ static  void  initialize_window(
         delete_window_events( window );
         winclose( GS_get_window_id(window) );
 
-        status = OK;
+        status = VIO_OK;
     }
     else
     {
         print_error( "Error:  tried to delete invalid window.\n" );
-        status = ERROR;
+        status = VIO_ERROR;
     }
 
     return( status );

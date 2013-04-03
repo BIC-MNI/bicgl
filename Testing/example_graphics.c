@@ -231,5 +231,5 @@ int main(
 
     G_terminate();
 
-    return( status != OK );
+    return( status != VIO_OK );
 }

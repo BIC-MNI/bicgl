@@ -11,7 +11,7 @@
                                  (float) LMNULL };
 
     lmdef( DEFLMODEL, (short) window->unique_lmdef_id,
-           SIZEOF_STATIC_ARRAY(data), data );
+           VIO_SIZEOF_STATIC_ARRAY(data), data );
 
     lmbind( LMODEL, (short) window->unique_lmdef_id );
 
@@ -37,7 +37,7 @@
     data[3] = (float) get_Colour_b_0_1(colour);
 
     lmdef( DEFLMODEL, (short) window->unique_lmdef_id,
-           SIZEOF_STATIC_ARRAY(data), data );
+           VIO_SIZEOF_STATIC_ARRAY(data), data );
 }
 
   void  GS_define_light(

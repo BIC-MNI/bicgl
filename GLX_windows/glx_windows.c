@@ -72,7 +72,7 @@ static  VIO_BOOL  GLX_supported( void )
 
     if( !GLX_supported() )
     {
-        return( ERROR );
+        return( VIO_ERROR );
     }
 
     n_attrib = 0;
@@ -142,7 +142,7 @@ static  VIO_BOOL  GLX_supported( void )
     if( visual == NULL )
     {
         print_error( "Cannot find matching visual.\n" );
-        return( ERROR );
+        return( VIO_ERROR );
     }
 
     glXGetConfig( X_get_display(), visual, GLX_RGBA, &flag );
@@ -168,7 +168,7 @@ static  VIO_BOOL  GLX_supported( void )
                               colour_map_mode, visual, cmap,
                               &window->x_window );
 
-    if( status == OK )
+    if( status == VIO_OK )
     {
         window->graphics_context = glXCreateContext( X_get_display(),
                                                      visual, NULL, TRUE );
@@ -201,7 +201,7 @@ static  VIO_BOOL  GLX_supported( void )
             } 
 
             if( X_create_overlay_window( &window->x_window,
-                                         visual, &window->overlay_window ) ==OK)
+                                         visual, &window->overlay_window ) ==VIO_OK)
             {
                 window->overlay_present = TRUE;
                 window->overlay_context = glXCreateContext( X_get_display(),

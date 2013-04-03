@@ -84,7 +84,7 @@ static  long  get_unique_lmdef_id( void )
     props[15] = Surfprop_t( *surfprop );
 
     lmdef( DEFMATERIAL, (short) window->unique_lmdef_id,
-           SIZEOF_STATIC_ARRAY(props), props );
+           VIO_SIZEOF_STATIC_ARRAY(props), props );
 }
 
   void  GS_set_line_width(

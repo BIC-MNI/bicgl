@@ -493,7 +493,7 @@ static  void  reestablish_colour_map_in_new_window(
 
 
     if( window->window_id < 1 )
-        return( ERROR );
+        return( VIO_ERROR );
 
     glutSetWindow( window->window_id );
     window->title = create_string( title );
@@ -504,7 +504,7 @@ static  void  reestablish_colour_map_in_new_window(
 
     reestablish_colour_map_in_new_window( window );
 
-    return( OK );
+    return( VIO_OK );
 }
 
   VIO_BOOL  WS_set_double_buffer_state(
@@ -779,7 +779,7 @@ static  void  *lookup_font(
     {
         min_diff = 0.0;
         best = 0;
-        for_less( which, 0, SIZEOF_STATIC_ARRAY(known_fonts) )
+        for_less( which, 0, VIO_SIZEOF_STATIC_ARRAY(known_fonts) )
         {
             diff = FABS( (VIO_Real) known_fonts[which].height - size );
             if( which == 0 || diff < min_diff )

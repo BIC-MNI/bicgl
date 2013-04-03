@@ -153,7 +153,7 @@ static   int   wait_for_window(
         window->colour_map = cmap;
     }
 
-    return( OK );
+    return( VIO_OK );
 }
 
   Status  X_create_overlay_window(
@@ -195,7 +195,7 @@ static   int   wait_for_window(
     XSetWMColormapWindows( X_get_display(), window->window_id,
                            &overlay_window->window_id, 1 );
 
-    return( OK );
+    return( VIO_OK );
 }
 
   void  X_delete_window(
@@ -485,7 +485,7 @@ static  void  bind_special_keys( void )
 
     first = FALSE;
 
-    for_less( i, 0, SIZEOF_STATIC_ARRAY(table) )
+    for_less( i, 0, VIO_SIZEOF_STATIC_ARRAY(table) )
         bind_key( table[i].keysym, table[i].character );
 }
 
@@ -517,15 +517,15 @@ static  VIO_BOOL  find_font(
 
     found = FALSE;
 
-    for_less( dpi, 0, SIZEOF_STATIC_ARRAY(dpis) )
+    for_less( dpi, 0, VIO_SIZEOF_STATIC_ARRAY(dpis) )
     {
-        for_less( family, 0, SIZEOF_STATIC_ARRAY(families) )
+        for_less( family, 0, VIO_SIZEOF_STATIC_ARRAY(families) )
         {
-            for_less( width, 0, SIZEOF_STATIC_ARRAY(widths) )
+            for_less( width, 0, VIO_SIZEOF_STATIC_ARRAY(widths) )
             {
-                for_less( slant, 0, SIZEOF_STATIC_ARRAY(slants) )
+                for_less( slant, 0, VIO_SIZEOF_STATIC_ARRAY(slants) )
                 {
-                    for_less( weight, 0, SIZEOF_STATIC_ARRAY(weights) )
+                    for_less( weight, 0, VIO_SIZEOF_STATIC_ARRAY(weights) )
                     {
                         if( type == FIXED_FONT )
                         {

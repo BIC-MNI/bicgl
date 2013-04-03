@@ -16,7 +16,7 @@ static  void  make_matrix(
     for_less( i, 0, 4 )
     {
         for_less( j, 0, 4 )
-            gl_trans[IJ(j,i,4)] = Transform_elem( *trans, i, j );
+            gl_trans[VIO_IJ(j,i,4)] = Transform_elem( *trans, i, j );
     }
 }
 
@@ -58,7 +58,7 @@ static  void  make_matrix(
     for_less( i, 0, 4 )
     {
         for_less( j, 0, 4 )
-            Transform_elem( *trans, i, j ) = gl_trans[IJ(j,i,4)];
+            Transform_elem( *trans, i, j ) = gl_trans[VIO_IJ(j,i,4)];
     }
 }
 
