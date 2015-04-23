@@ -157,33 +157,32 @@ static  void  my_glutDisplayFunc(
 }
 
 static  Window_id  create_GLUT_window(
-    VIO_STR                 title,
+    VIO_STR                title,
     int                    initial_x_pos,
     int                    initial_y_pos,
     int                    initial_x_size,
     int                    initial_y_size,
-    VIO_BOOL                colour_map_mode,
-    VIO_BOOL                double_buffer_flag,
-    VIO_BOOL                depth_buffer_flag,
+    VIO_BOOL               colour_map_mode,
+    VIO_BOOL               double_buffer_flag,
+    VIO_BOOL               depth_buffer_flag,
     int                    n_overlay_planes,
-    VIO_BOOL                *actual_colour_map_mode_ptr,
-    VIO_BOOL                *actual_double_buffer_flag_ptr,
-    VIO_BOOL                *actual_depth_buffer_flag_ptr,
+    VIO_BOOL               *actual_colour_map_mode_ptr,
+    VIO_BOOL               *actual_double_buffer_flag_ptr,
+    VIO_BOOL               *actual_depth_buffer_flag_ptr,
     int                    *actual_n_overlay_planes_ptr )
 {
-    int                rgba, doub, depth;
     unsigned  int      mode;
     int                used_size;
     Window_id          window_id;
-    VIO_BOOL            actual_colour_map_mode;
-    VIO_BOOL            actual_double_buffer_flag;
-    VIO_BOOL            actual_depth_buffer_flag;
+    VIO_BOOL           actual_colour_map_mode;
+    VIO_BOOL           actual_double_buffer_flag;
+    VIO_BOOL           actual_depth_buffer_flag;
     int                actual_n_overlay_planes;
     
     if( initial_x_pos >= 0 && initial_y_pos >= 0 )
     {
         if( initial_y_size <= 0 )
-            used_size = glutGet( (GLenum) GLUT_INIT_WINDOW_HEIGHT );
+            used_size = glutGet( GLUT_INIT_WINDOW_HEIGHT );
         else
             used_size = initial_y_size;
 
@@ -198,9 +197,17 @@ static  Window_id  create_GLUT_window(
     else
         glutInitWindowSize( DEFAULT_WINDOW_X_SIZE, DEFAULT_WINDOW_Y_SIZE );
 
-    // Forget being clever, lets just always go for double buffered
-    // Andrew Janke - 23/8/2010
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+    // Set up the mode.
+    mode = GLUT_RGB;
+    if (double_buffer_flag)
+    {
+      mode |= GLUT_DOUBLE;
+    }
+    if (depth_buffer_flag)
+    {
+      mode |= GLUT_DEPTH;
+    }
+    glutInitDisplayMode(mode);
     
     window_id = glutCreateWindow( title );
     if( window_id < 1 )
@@ -211,14 +218,19 @@ static  Window_id  create_GLUT_window(
 
     glutPopWindow();
 
-     actual_n_overlay_planes = 0;
-     set_event_callbacks_for_current_window( actual_n_overlay_planes );
+    /* Freeglut does not support overlays.
+     */
+    actual_n_overlay_planes = 0;
+    set_event_callbacks_for_current_window( actual_n_overlay_planes );
 
-    *actual_colour_map_mode_ptr = FALSE;
-    *actual_double_buffer_flag_ptr = TRUE;
-    *actual_depth_buffer_flag_ptr = TRUE;
-    *actual_n_overlay_planes_ptr = 0;
-
+    if (actual_colour_map_mode_ptr != NULL)
+      *actual_colour_map_mode_ptr = !glutGet(GLUT_WINDOW_RGBA);
+    if (actual_double_buffer_flag_ptr != NULL)
+      *actual_double_buffer_flag_ptr = glutGet(GLUT_WINDOW_DOUBLEBUFFER);
+    if (actual_depth_buffer_flag_ptr != NULL)
+      *actual_depth_buffer_flag_ptr = glutGet(GLUT_WINDOW_DEPTH_SIZE) > 0;
+    if (actual_n_overlay_planes_ptr != NULL)
+      *actual_n_overlay_planes_ptr = actual_n_overlay_planes;
     return( window_id );
 }
 
@@ -242,11 +254,11 @@ static  void  reestablish_colour_map_in_new_window(
 {
     int   ind, n_colours, prev_n_colours;
 
-    if( ! glutGet((GLenum) GLUT_WINDOW_RGBA) )
+    if( ! glutGet(GLUT_WINDOW_RGBA) )
     {
         prev_n_colours = window->n_colours;
 
-        n_colours = glutGet( (GLenum) GLUT_WINDOW_COLORMAP_SIZE );
+        n_colours = glutGet( GLUT_WINDOW_COLORMAP_SIZE );
 
         for_less( ind, 0, MIN(n_colours,prev_n_colours) )
         {
@@ -552,7 +564,7 @@ static  void  set_colour_map_entry(
 
   void  WS_swap_buffers( void )
 {
-    if(glutGetWindow()) //VF:a hack
+  if(glutGetWindow()) //VF:a hack
       glutSwapBuffers();
 }
 
