@@ -223,8 +223,11 @@ static  Window_id  create_GLUT_window(
     actual_n_overlay_planes = 0;
     set_event_callbacks_for_current_window( actual_n_overlay_planes );
 
+    /* Some NVIDIA systems lie about RGBA mode, so we have to 
+     * ignore the value returned by GLUT_WINDOW_RGBA.
+     */
     if (actual_colour_map_mode_ptr != NULL)
-      *actual_colour_map_mode_ptr = !glutGet(GLUT_WINDOW_RGBA);
+      *actual_colour_map_mode_ptr = FALSE;
     if (actual_double_buffer_flag_ptr != NULL)
       *actual_double_buffer_flag_ptr = glutGet(GLUT_WINDOW_DOUBLEBUFFER);
     if (actual_depth_buffer_flag_ptr != NULL)

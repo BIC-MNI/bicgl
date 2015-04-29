@@ -1,3 +1,6 @@
+2015-04-23  Robert Vincent <robert.d.vincent@mcgill.ca
+	* Make create_GLUT_window() obey the double_buffer_flag again.
+
 2006-05-05  Claude Lepage <claude@bic.mni.mcgill.ca>
 	* dirty hack to add Include/GL/*.h to enable compilation on BIC SGI
 
