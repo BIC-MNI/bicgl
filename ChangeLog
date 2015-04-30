@@ -1,4 +1,7 @@
-2015-04-23  Robert Vincent <robert.d.vincent@mcgill.ca
+2015-04-30  Robert Vincent <robert.d.vincent@mcgill.ca>
+	* Added support for mouse wheel/trackpad scrolling.
+	
+2015-04-23  Robert Vincent <robert.d.vincent@mcgill.ca>
 	* Make create_GLUT_window() obey the double_buffer_flag again.
 
 2006-05-05  Claude Lepage <claude@bic.mni.mcgill.ca>
