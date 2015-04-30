@@ -77,6 +77,18 @@
     WS_set_right_mouse_up_function( func );
 }
 
+  void  GS_set_scroll_down_function(
+    void  (*func)( Window_id, int, int, int ) )
+{
+    WS_set_scroll_down_function( func );
+}
+
+  void  GS_set_scroll_up_function(
+    void  (*func)( Window_id, int, int, int ) )
+{
+    WS_set_scroll_up_function( func );
+}
+
   void  GS_set_iconify_function(
     void  (*func)( Window_id ) )
 {

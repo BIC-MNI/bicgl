@@ -387,6 +387,40 @@ static  void  global_right_mouse_up_function(
                                             window->right_mouse_up_data );
 }
 
+static  void  global_scroll_up_function(
+    Window_id  window_id,
+    int        x,
+    int        y,
+    int        modifier )
+{
+    Gwindow     window;
+
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+
+    if( window == NULL )
+        return;
+
+    if (window->scroll_up_callback != NULL)
+      (*window->scroll_up_callback)(window, x, y, window->scroll_up_data);
+}
+
+static  void  global_scroll_down_function(
+    Window_id  window_id,
+    int        x,
+    int        y,
+    int        modifier )
+{
+    Gwindow     window;
+
+    window = get_key_or_mouse_event_window( window_id, x, y, modifier );
+
+    if( window == NULL )
+        return;
+
+    if (window->scroll_down_callback != NULL)
+      (*window->scroll_down_callback)(window, x, y, window->scroll_down_data);
+}
+
 static  void  global_iconify_function(
     Window_id  window_id )
 {
@@ -466,6 +500,8 @@ static  void  initialize_callbacks( void )
     GS_set_middle_mouse_up_function( global_middle_mouse_up_function );
     GS_set_right_mouse_down_function( global_right_mouse_down_function );
     GS_set_right_mouse_up_function( global_right_mouse_up_function );
+    GS_set_scroll_down_function( global_scroll_down_function );
+    GS_set_scroll_up_function( global_scroll_up_function );
     GS_set_iconify_function( global_iconify_function );
     GS_set_deiconify_function( global_deiconify_function );
     GS_set_enter_function( global_enter_function );
@@ -579,6 +615,24 @@ static  void  initialize_callbacks( void )
 {
     window->right_mouse_up_callback = func;
     window->right_mouse_up_data = func_data;
+}
+
+  void  G_set_scroll_down_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->scroll_down_callback = func;
+    window->scroll_down_data = func_data;
+}
+
+  void  G_set_scroll_up_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data )
+{
+    window->scroll_up_callback = func;
+    window->scroll_up_data = func_data;
 }
 
   void  G_set_iconify_function(

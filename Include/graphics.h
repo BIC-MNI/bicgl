@@ -118,6 +118,12 @@ typedef  struct   window_struct
                                           void * );
     void    *right_mouse_up_data;
 
+    void    (*scroll_down_callback)(struct window_struct *, int, int, void *);
+    void    *scroll_down_data;
+
+    void    (*scroll_up_callback)(struct window_struct *, int, int, void *);
+    void    *scroll_up_data;
+
     void    (*iconify_callback) ( struct window_struct *, void * );
     void    *iconify_data;
 

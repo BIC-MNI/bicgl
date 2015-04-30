@@ -329,7 +329,10 @@ static  void  reestablish_colour_map_in_new_window(
     window->colour_map_entry_set = NULL;
     window->colour_map = NULL;
 
-    reestablish_colour_map_in_new_window( window );
+    if (*actual_colour_map_mode)
+    {
+        reestablish_colour_map_in_new_window( window );
+    }
 
     return( VIO_OK );
 }
@@ -697,6 +700,8 @@ static  void  (*deiconify_callback) ( Window_id );
 static  void  (*enter_callback) ( Window_id );
 static  void  (*leave_callback) ( Window_id );
 static  void  (*quit_callback) ( Window_id );
+static  void  (*scroll_up_callback)(Window_id, int, int, int);
+static  void  (*scroll_down_callback)(Window_id, int, int, int);
 
   void  WS_set_update_function(
     void  (*func)( Window_id ) )
@@ -770,6 +775,18 @@ static  void  (*quit_callback) ( Window_id );
     right_up_callback = func;
 }
 
+void WS_set_scroll_up_function(
+   void (*func)(Window_id, int, int, int) )
+{
+    scroll_up_callback = func;
+}
+
+void WS_set_scroll_down_function(
+   void (*func)(Window_id, int, int, int) )
+{
+    scroll_down_callback = func;
+}
+                    
   void  WS_set_iconify_function(
     void  (*func)( Window_id ) )
 {
@@ -946,6 +963,16 @@ static  void  mouse_button_function(
         else
             (*right_up_callback) ( window_id, x, y, modifiers );
         break;
+
+    case 3:
+      if (state == GLUT_DOWN)
+          (*scroll_up_callback)(window_id, x, y, modifiers);
+      break;
+
+    case 4:
+      if (state == GLUT_DOWN)
+          (*scroll_down_callback)(window_id, x, y, modifiers);
+      break;
     }
 }
 

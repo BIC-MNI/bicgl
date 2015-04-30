@@ -155,6 +155,16 @@
     void                    (*func) ( Gwindow, int, int, void * ),
     void                    *func_data );
 
+  void  G_set_scroll_down_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data );
+
+  void  G_set_scroll_up_function(
+    Gwindow                 window,
+    void                    (*func) ( Gwindow, int, int, void * ),
+    void                    *func_data );
+
   void  G_set_iconify_function(
     Gwindow                 window,
     void                    (*func) ( Gwindow, void * ),
