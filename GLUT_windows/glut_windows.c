@@ -192,10 +192,30 @@ static  Window_id  create_GLUT_window(
     else
         glutInitWindowPosition( -1, -1 );
 
-    if( initial_x_size > 0 && initial_y_size > 0 )
-        glutInitWindowSize( initial_x_size, initial_y_size );
-    else
-        glutInitWindowSize( DEFAULT_WINDOW_X_SIZE, DEFAULT_WINDOW_Y_SIZE );
+    /*
+     * Set the initial window size. If the specified value is 
+     * less than or equal to zero, we use a value derived from
+     * the screen size.
+     */
+    if( initial_x_size <= 0 || initial_y_size <= 0 )
+    {
+        int screen_x = glutGet(GLUT_SCREEN_WIDTH);
+        int screen_y = glutGet(GLUT_SCREEN_HEIGHT);
+        if (screen_x <= 0 || screen_y <= 0)
+        {
+            initial_x_size = DEFAULT_WINDOW_X_SIZE;
+            initial_y_size = DEFAULT_WINDOW_Y_SIZE;
+        }
+        else if (screen_x > screen_y)
+        {
+            initial_x_size = initial_y_size = screen_y / 2;
+        }
+        else
+        {
+            initial_x_size = initial_y_size = screen_x / 2;
+        }
+    }
+    glutInitWindowSize( initial_x_size, initial_y_size );
 
     // Set up the mode.
     mode = GLUT_RGB;

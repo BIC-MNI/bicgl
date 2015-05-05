@@ -1,3 +1,6 @@
+2015-05-05  Robert Vincent <robert.d.vincent@mcgill.ca>
+	* GLUT_windows/glut_windows.c: Change initial window size calculation.
+
 2015-04-30  Robert Vincent <robert.d.vincent@mcgill.ca>
 	* Added support for mouse wheel/trackpad scrolling.
 	
