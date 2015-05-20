@@ -1,3 +1,16 @@
+2015-05-20  Robert Vincent <robert.d.vincent@mcgill.ca>
+	* GLUT_windows/Include/WS_graphics.h:
+	* GLUT_windows/Include/glut_window_prototypes.h:
+	* GLUT_windows/glut_windows.c
+	* G_graphics/windows.c
+	* Include/graphics_prototypes.h
+	* OpenGL_graphics/Include/opengl_graphics_prototypes.h
+	* OpenGL_graphics/windows.c: Add visibility control for windows.
+
+2015-05-20  Robert Vincent <robert.d.vincent@mcgill.ca>
+	* GLUT_windows/glut_windows.c:
+	* Include/graphics_base.h: Add support for more special keys.
+
 2015-05-05  Robert Vincent <robert.d.vincent@mcgill.ca>
 	* GLUT_windows/glut_windows.c: Change initial window size calculation.
 

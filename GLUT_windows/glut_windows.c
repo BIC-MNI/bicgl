@@ -345,6 +345,7 @@ static  void  reestablish_colour_map_in_new_window(
     glutSetWindow( window->window_id );
     window->title = create_string( title );
 
+    window->is_visible = TRUE;
     window->n_colours = 0;
     window->colour_map_entry_set = NULL;
     window->colour_map = NULL;
@@ -498,6 +499,8 @@ static  void  set_window_normal_planes(
     WSwindow  window )
 {
     glutSetWindow( window->window_id );
+    if (!window->is_visible) 
+        glutHideWindow();
 }
 
 static  void  set_window_overlay_planes(
@@ -929,23 +932,42 @@ static  void  special_keyboard_function(
     int     x,
     int     y )
 {
-    int   translated;
+    int   translated = -1;
 
     y = flip_window_y( y );
 
-    translated = -1000;
-
+    /* Glut's special key codes overlap with normal ASCII codes. We
+     * translate them into codes > 128 so that they can be dealt with
+     * using a single keyboard handler.
+     */
     switch( key )
     {
+    case GLUT_KEY_F1:       translated = BICGL_F1_KEY; break;
+    case GLUT_KEY_F2:       translated = BICGL_F2_KEY; break;
+    case GLUT_KEY_F3:       translated = BICGL_F3_KEY; break;
+    case GLUT_KEY_F4:       translated = BICGL_F4_KEY; break;
+    case GLUT_KEY_F5:       translated = BICGL_F5_KEY; break;
+    case GLUT_KEY_F6:       translated = BICGL_F6_KEY; break;
+    case GLUT_KEY_F7:       translated = BICGL_F7_KEY; break;
+    case GLUT_KEY_F8:       translated = BICGL_F8_KEY; break;
+    case GLUT_KEY_F9:       translated = BICGL_F9_KEY; break;
+    case GLUT_KEY_F10:      translated = BICGL_F10_KEY; break;
+    case GLUT_KEY_F11:      translated = BICGL_F11_KEY; break;
+    case GLUT_KEY_F12:      translated = BICGL_F12_KEY; break;
     case GLUT_KEY_LEFT:     translated = LEFT_ARROW_KEY;  break;
-    case GLUT_KEY_RIGHT:    translated = RIGHT_ARROW_KEY;  break;
     case GLUT_KEY_UP:       translated = UP_ARROW_KEY;  break;
+    case GLUT_KEY_RIGHT:    translated = RIGHT_ARROW_KEY;  break;
     case GLUT_KEY_DOWN:     translated = DOWN_ARROW_KEY;  break;
+    case GLUT_KEY_PAGE_UP:  translated = BICGL_PGUP_KEY; break;
+    case GLUT_KEY_PAGE_DOWN:translated = BICGL_PGDN_KEY; break;
+    case GLUT_KEY_HOME:     translated = BICGL_HOME_KEY; break;
+    case GLUT_KEY_END:      translated = BICGL_END_KEY; break;
+    case GLUT_KEY_INSERT:   translated = BICGL_INSERT_KEY; break;
+    default:
+      return;
     }
-
-    if( translated != -1000 )
-        (*key_down_callback) ( get_current_event_window(), translated,
-                               x, y, get_keyboard_modifiers() );
+    (*key_down_callback) ( get_current_event_window(), translated,
+                           x, y, get_keyboard_modifiers() );
 }
 
 static  void  mouse_button_function(
@@ -1146,4 +1168,19 @@ static  void  global_idle_function( void )
     WSwindow   window  )
 {
     glutPostRedisplay();
+}
+
+void WS_set_visibility(WSwindow window, VIO_BOOL is_visible)
+{
+  window->is_visible = is_visible;
+
+  glutSetWindow( window->window_id );
+  if (is_visible)
+  {
+    glutShowWindow();
+  }
+  else
+  {
+    glutHideWindow();
+  }
 }

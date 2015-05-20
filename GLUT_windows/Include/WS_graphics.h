@@ -13,13 +13,13 @@ typedef  int  Window_id;
 
 typedef  struct
 {
-    Window_id         window_id;
-    VIO_STR            title;
-    VIO_BOOL           overlay_present;
-    void              *current_font;
-    int               n_colours;
-    VIO_SCHAR      *colour_map_entry_set;
-    VIO_Colour            *colour_map;
+    Window_id    window_id;
+    VIO_STR      title;
+    VIO_BOOL     overlay_present;
+    VIO_BOOL     is_visible;
+    int          n_colours;
+    VIO_SCHAR    *colour_map_entry_set;
+    VIO_Colour   *colour_map;
 }
 WS_window_struct;
 

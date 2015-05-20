@@ -618,3 +618,8 @@ static  void  clear_viewport(
 {
     WS_swap_buffers();
 }
+
+void GS_set_visibility(GSwindow window, VIO_BOOL is_visible)
+{
+    WS_set_visibility(&window->WS_window, is_visible);
+}

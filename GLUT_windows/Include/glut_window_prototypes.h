@@ -173,6 +173,8 @@
   void  WS_set_update_flag(
     WSwindow   window  );
 
+  void  WS_set_visibility(WSwindow window, VIO_BOOL is_visible);
+
   void  copy_X_colours(
     int  n_colours_to_copy );
 #endif

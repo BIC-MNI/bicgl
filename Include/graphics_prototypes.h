@@ -564,4 +564,9 @@
   void  G_set_transparency_state(
     Gwindow        window,
     VIO_BOOL        state );
+
+  void  G_set_visibility(
+    Gwindow        window,
+    VIO_BOOL       is_visible );
+    
 #endif

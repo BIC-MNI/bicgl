@@ -843,3 +843,8 @@ static  void  update_blend_function(
         update_blend_function( window, window->current_bitplanes );
     }
 }
+
+void G_set_visibility(Gwindow window, VIO_BOOL is_visible)
+{
+    GS_set_visibility(window->GS_window, is_visible);
+}

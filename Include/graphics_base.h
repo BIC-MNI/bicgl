@@ -6,7 +6,25 @@
 #define  RETURN_KEY    ((char) 13)
 #define  DELETE_KEY    ((char) 127)
 #define  BACKSPACE_KEY ((char) 8)
+#define  ESCAPE_KEY     ((char) 27)
 
+#define  BICGL_INSERT_KEY 228
+#define  BICGL_HOME_KEY   229
+#define  BICGL_END_KEY    230
+#define  BICGL_F1_KEY     231
+#define  BICGL_F2_KEY     232
+#define  BICGL_F3_KEY     233
+#define  BICGL_F4_KEY     234
+#define  BICGL_F5_KEY     235
+#define  BICGL_F6_KEY     236
+#define  BICGL_F7_KEY     237
+#define  BICGL_F8_KEY     238
+#define  BICGL_F9_KEY     239
+#define  BICGL_F10_KEY    240
+#define  BICGL_F11_KEY    241
+#define  BICGL_F12_KEY    242
+#define  BICGL_PGUP_KEY   243
+#define  BICGL_PGDN_KEY   244
 #define  LEFT_ARROW_KEY   245
 #define  RIGHT_ARROW_KEY  246
 #define  DOWN_ARROW_KEY   247

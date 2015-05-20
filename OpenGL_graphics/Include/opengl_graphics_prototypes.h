@@ -413,4 +413,6 @@
     VIO_Colour           colour );
 
   void  GS_swap_buffers( void );
+
+  void  GS_set_visibility(GSwindow window, VIO_BOOL is_visible);
 #endif
