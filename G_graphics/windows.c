@@ -553,13 +553,13 @@ static  void  initialize_window(
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
 
-  void  G_get_window_position(
+void  G_get_window_position(
     Gwindow        window,
     int            *x_pos,
     int            *y_pos )
 {
-    *x_pos = (int) window->x_origin;
-    *y_pos = (int) window->y_origin;
+  set_current_window(window);
+  GS_get_window_position(x_pos, y_pos);
 }
 
 /* ----------------------------- MNI Header -----------------------------------
