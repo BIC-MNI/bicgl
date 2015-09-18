@@ -6,6 +6,21 @@
 #include  <graphics.h>
 #include  <random_order.h>
 
+#include <assert.h>
+
+#define DISALLOW_DRAWING_INTERRUPT 1
+#define PARANOID 1
+
+#if PARANOID
+#define GLCHECK {GLint _temp = glGetError(); if (_temp != GL_NO_ERROR) { fprintf(stderr, "OpenGL reporting error 0x%x at line %d.\n", _temp, __LINE__); } }
+#else
+#define GLCHECK
+#endif
+
+#undef GL_GLEXT_LEGACY
+#define GL_GLEXT_PROTOTYPES 1
+#include <GL/gl.h>
+
 #define  MAX_LINE_WIDTH  1000.0f
 
 static  void     draw_marker_as_cube( Gwindow, VIO_Colour );
@@ -304,6 +319,30 @@ static  void  about_to_draw_graphics( Gwindow        window )
     check_window_cleared( window );
 }
 
+#define N_DIM 3
+#define N_VTX_PER_TRIANGLE 3
+/**
+ * Check whether a polygons_struct is (most likely) a triangular mesh.
+ */
+static VIO_BOOL
+is_triangular(polygons_struct *polygons)
+{
+  int start_index = 0;
+  int end_index = 0;
+  int i;
+
+  for (i = 0; i < polygons->n_items; i++)
+  {
+    start_index = end_index;
+    end_index = polygons->end_indices[i];
+    if ((end_index - start_index) != N_VTX_PER_TRIANGLE)
+    {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : draw_polygons_one_colour
 @INPUT      : window
@@ -319,46 +358,254 @@ static  void  about_to_draw_graphics( Gwindow        window )
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
 
-static  void  draw_polygons_one_colour(
-    Gwindow         window,
-    polygons_struct *polygons )
+/**
+ * Draws a polygonal object (non-triangular) using glDrawElements.
+ * Supports either single colour or per-item colours. This relies on
+ * glDrawElements supporting GL_POLYGON as a mode argument -
+ * apparently this is deprecated behavior.
+ *
+ * \param window The window in which we are drawing.
+ * \param polygons The polygons_struct to draw.
+ */
+static void
+draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
 {
-#define     DEF_ONE_COLOUR
+  GLuint vbo_points;
+  GLuint vbo_normals;
+  GLint loc_position;
+  GLint loc_normal;
+  GLint program;
+  int start_index = 0;
+  int end_index = 0;
+  int i;
 
-    if( window->shaded_mode_state )
+#if DEBUG
+  printf("dp_one_colour %d %d (normals %lx points %d items %d)\n", 
+         window->shaded_mode_state, window->lighting_state, 
+         (uintptr_t)polygons->normals, polygons->n_points, polygons->n_items);
+#endif
+
+  if (polygons->normals != NULL)
+  {
+    /*
+     * We have surface normals, so use the standard program for
+     * vertex+attribute shading.
+     */
+    program = window->GS_window->programs[PROGRAM_SINGLE];
+
+    /*
+     * Set up nondefault surface properties.
+     */
+    set_surface_property( window, polygons->colours[0], &polygons->surfprop );
+  }
+  else
+  {
+    program = window->GS_window->programs[PROGRAM_TRIVIAL];
+  }
+  
+  set_colour( window, polygons->colours[0] );
+  if( window->shaded_mode_state )
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+  }
+  else
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  }
+  glUseProgram(program);
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
+               polygons->points, GL_STATIC_DRAW);
+
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
+  if (polygons->normals != NULL)
+  {
+    glGenBuffers(1, &vbo_normals);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+    glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
+                 polygons->normals, GL_STATIC_DRAW);
+
+    loc_normal = glGetAttribLocation(program, "normal");
+    glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(loc_normal);
+  }
+
+  if (polygons->colour_flag == PER_ITEM_COLOURS)
+  {
+    for (i = 0; i < polygons->n_items; i++)
     {
-        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
+      start_index = end_index;
+      end_index = polygons->end_indices[i];
+      if (polygons->visibilities == NULL || polygons->visibilities[i])
+      {
+        set_colour(window, polygons->colours[i]);
+        if (polygons->normals != NULL)
         {
-#define     DEF_NORMALS
-#include    "draw_polygons.include.c"
-#undef      DEF_NORMALS
+          set_surface_property( window, polygons->colours[i],
+                                &polygons->surfprop);
         }
-        else
-        {
-#include    "draw_polygons.include.c"
-        }
+        glDrawElements(GL_POLYGON, end_index - start_index, GL_UNSIGNED_INT,
+                       &polygons->indices[start_index]);
+      }
     }
-    else
+  }
+  else
+  {
+    for (i = 0; i < polygons->n_items; i++)
     {
-#define  DEF_WIREFRAME
-        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_polygons.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_polygons.include.c"
-        }
-#undef   DEF_WIREFRAME
+      start_index = end_index;
+      end_index = polygons->end_indices[i];
+      if (polygons->visibilities == NULL || polygons->visibilities[i])
+      {
+        glDrawElements(GL_POLYGON, end_index - start_index, GL_UNSIGNED_INT,
+                       &polygons->indices[start_index]);
+      }
+    }
+  }
+
+  /* Clean up.
+   */
+  if (polygons->normals != NULL)
+  {
+    glDisableVertexAttribArray(loc_normal);
+    glDeleteBuffers(1, &vbo_normals);
+  }
+
+  glDisableVertexAttribArray(loc_position);
+  glDeleteBuffers(1, &vbo_points);
+
+  glUseProgram(0);
+}
+
+/**
+ * Draw a triangular mesh in a single colour.
+ */
+static void
+draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
+{
+  GLuint vbo_points;
+  GLuint vbo_normals;
+  GLuint ebo;
+  GLint loc_position;
+  GLint loc_normal;
+  int *eboBuffer = NULL;  /* Temporary storage for visible indices. */
+  int n_indices = 0;
+  GLenum mode = GL_TRIANGLES;
+  GLint program;
+
+  n_indices = NUMBER_INDICES(*polygons);
+
+  /* If the visibilities field is set, we need to copy the visible
+   * indices to a new buffer. I don't know of any other way to control
+   * visibility on a per-polygon basis (perhaps we could set the
+   * colour to a transparent value in the fragment shader?).
+   */
+  if (polygons->visibilities != NULL)
+  {
+    int i, k = 0;
+
+    eboBuffer = malloc(n_indices * sizeof(int));
+    if (eboBuffer == NULL)
+    {
+      return;
     }
 
-#undef  DEF_ONE_COLOUR
+    for (i = 0; i < polygons->n_items; i++)
+    {
+      if (polygons->visibilities[i])
+      {
+        int start_index = START_INDEX( polygons->end_indices, i );
+        int end_index = polygons->end_indices[i];
+        int j;
+        for (j = start_index; j < end_index; j++)
+        {
+          eboBuffer[k++] = polygons->indices[j];
+        }
+      }
+    }
+    n_indices = k;
+  }
+
+  if (polygons->normals != NULL)
+  {
+    program = window->GS_window->programs[PROGRAM_SINGLE];
+
+    /*
+     * Set up nondefault surface properties.
+     */
+    set_surface_property( window, polygons->colours[0], &polygons->surfprop );
+  }
+  else
+  {
+    program = window->GS_window->programs[PROGRAM_TRIVIAL];
+  }
+  
+  set_colour( window, polygons->colours[0] );
+  GLCHECK;
+  if( window->shaded_mode_state )
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+  }
+  else
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  }
+
+  glUseProgram(program);
+
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
+               polygons->points, GL_STATIC_DRAW);
+
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
+
+  if (polygons->normals != NULL)
+  {
+    glGenBuffers(1, &vbo_normals);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+    glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
+                 polygons->normals, GL_STATIC_DRAW);
+
+    loc_normal = glGetAttribLocation(program, "normal");
+    glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(loc_normal);
+  }
+
+  glGenBuffers(1, &ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               n_indices * sizeof(int),
+               (eboBuffer != NULL) ? eboBuffer : polygons->indices,
+               GL_STATIC_DRAW);
+
+  glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+
+  glDeleteBuffers(1, &ebo);
+
+  if (polygons->normals != NULL)
+  {
+    glDisableVertexAttribArray(loc_normal);
+    glDeleteBuffers(1, &vbo_normals);
+  }
+
+  glDisableVertexAttribArray(loc_position);
+  glDeleteBuffers(1, &vbo_points);
+
+  if (eboBuffer != NULL)
+  {
+    free(eboBuffer);
+  }
+  glUseProgram(0);
 }
 
 /* ----------------------------- MNI Header -----------------------------------
-@NAME       : draw_polygons_per_item_colours
+@NAME       : draw_triangles_per_item_colours
 @INPUT      : window
               polygons
 @OUTPUT     : 
@@ -371,43 +618,122 @@ static  void  draw_polygons_one_colour(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
-
-static  void  draw_polygons_per_item_colours(
-    Gwindow         window,
-    polygons_struct *polygons )
+static void 
+draw_triangles_per_item_colours(Gwindow window,
+                                polygons_struct *polygons)
 {
-#define DEF_PER_ITEM_COLOURS
+  GLuint vbo_points;
+  GLuint vbo_normals;
+  GLuint vbo_colours;
+  GLint loc_position;
+  GLint loc_normal;
+  GLint loc_colour;
+  GLint loc_surfprop;
+  float *bufPoints = NULL; /* Temporary storage for visible vertices. */
+  float *bufNormals = NULL;
+  GLuint *bufColours = NULL;
+  int i, k = 0;
+  int start_index = 0;
+  int end_index = 0;
+  int n_items;
+  GLuint program;
 
-    if( window->shaded_mode_state )
-    {
-        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_polygons.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_polygons.include.c"
-        }
-    }
-    else
-    {
-#define  DEF_WIREFRAME
-        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_polygons.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_polygons.include.c"
-        }
-#undef   DEF_WIREFRAME
-    }
+  printf("tri_per_item: %d %d %d\n", polygons->n_points, polygons->n_items);
 
-#undef DEF_PER_ITEM_COLOURS
+  /* To save a little space and time, allocate all of the memory we 
+   * will need in one go...
+   */
+  bufPoints = malloc(polygons->n_items * sizeof(float) * N_VTX_PER_TRIANGLE * N_DIM +
+                     polygons->n_items * sizeof(float) * N_VTX_PER_TRIANGLE * N_DIM +
+                     polygons->n_items * sizeof(GLuint) * N_VTX_PER_TRIANGLE);
+  if (bufPoints == NULL)
+  {
+    return;
+  }
+  bufNormals = &bufPoints[polygons->n_items * N_VTX_PER_TRIANGLE * N_DIM];
+  bufColours = (GLuint *)&bufNormals[polygons->n_items * N_VTX_PER_TRIANGLE * N_DIM];
+
+  for (i = 0; i < polygons->n_items; i++)
+  {
+    start_index = end_index;
+    end_index = polygons->end_indices[i];
+    if (polygons->visibilities == NULL || polygons->visibilities[i])
+    {
+      int j;
+      for (j = start_index; j < end_index; j++)
+      {
+        int c = polygons->indices[j];
+        int nk = k * N_DIM;
+        bufPoints[nk + VIO_X] = Point_x(polygons->points[c]);
+        bufPoints[nk + VIO_Y] = Point_y(polygons->points[c]);
+        bufPoints[nk + VIO_Z] = Point_z(polygons->points[c]);
+        bufNormals[nk + VIO_X] = Vector_x(polygons->normals[c]);
+        bufNormals[nk + VIO_Y] = Vector_y(polygons->normals[c]);
+        bufNormals[nk + VIO_Z] = Vector_z(polygons->normals[c]);
+        bufColours[k] = polygons->colours[i];
+        k++;
+      }
+    }
+  }
+  n_items = k;
+
+  program = window->GS_window->programs[PROGRAM_VERTEX];
+
+  if( window->shaded_mode_state )
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+  }
+  else
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  }
+
+  glUseProgram(program);
+
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(float) * N_VTX_PER_TRIANGLE,
+               bufPoints, GL_STATIC_DRAW);
+
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
+
+  loc_surfprop = glGetUniformLocation(program, "surfprop");
+  /* sets the crucial 4 parameters for surface properties:
+     ambient, diffuse, specular, shininess
+  */
+  glUniform4fv(loc_surfprop, 1, &polygons->surfprop);
+
+  glGenBuffers(1, &vbo_normals);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(float) * N_VTX_PER_TRIANGLE,
+               bufNormals, GL_STATIC_DRAW);
+
+  loc_normal = glGetAttribLocation(program, "normal");
+  glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_normal);
+
+  glGenBuffers(1, &vbo_colours);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_colours);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(GLuint),
+               bufColours, GL_STATIC_DRAW);
+
+  loc_colour = glGetAttribLocation(program, "colour");
+  glVertexAttribPointer(loc_colour, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
+  glEnableVertexAttribArray(loc_colour);
+
+  glDrawArrays(GL_TRIANGLES, 0, n_items);
+
+  glDisableVertexAttribArray(loc_position);
+  glDisableVertexAttribArray(loc_normal);
+  glDisableVertexAttribArray(loc_colour);
+
+  glDeleteBuffers(1, &vbo_colours);
+  glDeleteBuffers(1, &vbo_normals);
+  glDeleteBuffers(1, &vbo_points);
+  free(bufPoints);
+  glUseProgram(0);
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -424,43 +750,134 @@ static  void  draw_polygons_per_item_colours(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
-
-static  void  draw_polygons_per_vertex_colours(
-    Gwindow         window,
-    polygons_struct *polygons )
+static void 
+draw_polygons_per_vertex_colours(Gwindow window,
+                                 polygons_struct *polygons)
 {
-#define DEF_PER_VERTEX_COLOURS
+  GLuint vbo_points;
+  GLuint vbo_normals;
+  GLuint vbo_colours;
+  GLuint ebo;
+  GLint loc_position;
+  GLint loc_normal;
+  GLint loc_colour;
+  GLint loc_surfprop;
+  int *eboBuffer = NULL;        /* Temporary storage for visible indices. */
+  int n_indices = 0;
+  GLenum mode;
+  GLuint program;
 
-    if( window->shaded_mode_state )
+  if (!is_triangular(polygons))
+  {
+    mode = GL_POLYGON;
+  }
+  else
+  {
+    mode = GL_TRIANGLES;
+  }
+
+  n_indices = NUMBER_INDICES(*polygons);
+
+  /* If the visibilities field is set, we need to copy the visible
+   * indices to a new buffer. I don't know of any other way to control
+   * visibility on a per-polygon basis (perhaps we could set the
+   * colour to a transparent value in the fragment shader?).
+   */
+  if (polygons->visibilities != NULL)
+  {
+    int i, k = 0;
+
+    eboBuffer = malloc(n_indices * sizeof(int));
+    if (eboBuffer == NULL)
     {
-        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_polygons.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_polygons.include.c"
-        }
-    }
-    else
-    {
-#define  DEF_WIREFRAME
-        if( window->lighting_state && polygons->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_polygons.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_polygons.include.c"
-        }
-#undef   DEF_WIREFRAME
+      return;
     }
 
-#undef      DEF_PER_VERTEX_COLOURS
+    for (i = 0; i < polygons->n_items; i++)
+    {
+      if (polygons->visibilities[i])
+      {
+        int start_index = START_INDEX( polygons->end_indices, i );
+        int end_index = polygons->end_indices[i];
+        int j;
+        for (j = start_index; j < end_index; j++)
+        {
+          eboBuffer[k++] = polygons->indices[j];
+        }
+      }
+    }
+    n_indices = k;
+    printf("Displaying only %d/%d indices\n", n_indices, NUMBER_INDICES(*polygons));
+  }
+
+  program = window->GS_window->programs[PROGRAM_VERTEX];
+
+  if( window->shaded_mode_state )
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+  }
+  else
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  }
+
+  glUseProgram(program);
+
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
+               polygons->points, GL_STATIC_DRAW);
+
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
+
+  loc_surfprop = glGetUniformLocation(program, "surfprop");
+  /* sets the crucial 4 parameters for surface properties:
+     ambient, diffuse, specular, shininess
+  */
+  glUniform4fv(loc_surfprop, 1, &polygons->surfprop);
+
+  glGenBuffers(1, &vbo_normals);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+  glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
+               polygons->normals, GL_STATIC_DRAW);
+
+  loc_normal = glGetAttribLocation(program, "normal");
+  glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_normal);
+
+  glGenBuffers(1, &vbo_colours);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_colours);
+  glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Colour),
+               polygons->colours, GL_STATIC_DRAW);
+
+  loc_colour = glGetAttribLocation(program, "colour");
+  glVertexAttribPointer(loc_colour, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
+  glEnableVertexAttribArray(loc_colour);
+
+  glGenBuffers(1, &ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               n_indices * sizeof(int),
+               (eboBuffer != NULL) ? eboBuffer : polygons->indices,
+               GL_STATIC_DRAW);
+
+  glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+
+  glDisableVertexAttribArray(loc_position);
+  glDisableVertexAttribArray(loc_normal);
+  glDisableVertexAttribArray(loc_colour);
+
+  glDeleteBuffers(1, &ebo);
+  glDeleteBuffers(1, &vbo_colours);
+  glDeleteBuffers(1, &vbo_normals);
+  glDeleteBuffers(1, &vbo_points);
+  if (eboBuffer != NULL)
+  {
+    free(eboBuffer);
+  }
+  glUseProgram(0);
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -490,17 +907,31 @@ static  void  draw_polygons(
 
     switch( polygons->colour_flag )
     {
-    case  ONE_COLOUR:
+    case ONE_COLOUR:
+      if (!is_triangular(polygons))
+      {
         draw_polygons_one_colour( window, polygons );
-        break;
+      }
+      else
+      {
+        draw_triangles_one_colour( window, polygons );
+      }
+      break;
 
-    case  PER_ITEM_COLOURS:
-        draw_polygons_per_item_colours( window, polygons );
-        break;
+    case PER_ITEM_COLOURS:
+      if (!is_triangular(polygons))
+      {
+        draw_polygons_one_colour( window, polygons );
+      }
+      else
+      {
+        draw_triangles_per_item_colours( window, polygons );
+      }
+      break;
 
     case  PER_VERTEX_COLOURS:
-        draw_polygons_per_vertex_colours( window, polygons );
-        break;
+      draw_polygons_per_vertex_colours( window, polygons );
+      break;
     }
 
     if( !window->shaded_mode_state &&
@@ -545,11 +976,160 @@ static  void  draw_polygons(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
+/*
+void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
+{
+  VIO_Point *left_points, *right_points;
+  VIO_Vector *left_normals, *right_normals;
+  int item_index;
+  int m_size, n_size;
+  int j;
+  int m = quadmesh->m;
+  int n = quadmesh->n;
+  int used_j;
+  
+  printf("!!!\n");
 
+  get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
+  set_colour( window, quadmesh->colours[0] );
+
+  for_less(item_index, 0, m_size)
+  {
+    GS_begin_quad_strip();
+
+    for_inclusive( j, 0, n_size )
+    {
+      used_j = j % n;
+      GS_set_normal( &quadmesh->normals[VIO_IJ(item_index,used_j,n)] );
+      GS_set_point( &quadmesh->points[VIO_IJ(item_index,used_j,n)] );
+
+      GS_set_normal( &quadmesh->normals[VIO_IJ((item_index+1)%m,used_j,n)] );
+      GS_set_point( &quadmesh->points[VIO_IJ((item_index+1)%m,used_j,n)] );
+    }
+
+    GS_end_quad_strip();
+  }
+}
+*/
+#if 1
+void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
+{
+  GLuint vbo_points;
+  GLuint vbo_normals;
+  GLuint ebo;
+  GLint loc_position;
+  GLint loc_normal;
+  int n_items = 0;
+  GLint program;
+  int m_size, n_size;
+  int i, j;
+  VIO_Vector *temp_normals;
+
+  printf("draw_quadmesh_one_colour %d %d %d %d %d %p (NEW)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag, quadmesh->normals);
+
+  get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
+  n_items = quadmesh->m * quadmesh->n;
+
+  if (quadmesh->normals != NULL)
+  {
+    program = window->GS_window->programs[PROGRAM_SINGLE];
+
+    temp_normals = malloc(sizeof(VIO_Vector) * n_items);
+    for (i = 0; i < n_items; i++) {
+      temp_normals[i] = quadmesh->normals[i];
+      VIO_Real temp = temp_normals[i].coords[VIO_Y];
+      temp_normals[i].coords[VIO_Y] = -temp_normals[i].coords[VIO_X];
+      temp_normals[i].coords[VIO_X] = temp;
+    }
+
+    /*
+     * Set up nondefault surface properties.
+     */
+    set_surface_property( window, quadmesh->colours[0], &quadmesh->surfprop );
+  }
+  else
+  {
+    program = window->GS_window->programs[PROGRAM_TRIVIAL];
+  }
+  
+  set_colour( window, quadmesh->colours[0] );
+  if( window->shaded_mode_state )
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+  }
+  else
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  }
+  glUseProgram(program);
+
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Point),
+               quadmesh->points, GL_STATIC_DRAW);
+
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
+  GLCHECK;
+
+  if (quadmesh->normals != NULL)
+  {
+    glGenBuffers(1, &vbo_normals);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+    glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Vector),
+                 temp_normals, GL_STATIC_DRAW);
+
+    loc_normal = glGetAttribLocation(program, "normal");
+    glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(loc_normal);
+    GLCHECK;
+  }
+
+  GLint indices[(n_size + 1) * 2];
+
+  glGenBuffers(1, &ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+  for (i = 0; i < m_size; i++) {
+    int k = 0;
+    
+    for (j = n_size; j >= 0; j--) {
+      int used_j = j % quadmesh->n;
+      indices[k++] = VIO_IJ(i, used_j, quadmesh->n);
+      indices[k++] = VIO_IJ((i + 1) % quadmesh->m, used_j, quadmesh->n);
+    }
+    assert(k == (n_size + 1) * 2);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 (n_size + 1) * 2 * sizeof(GLint),
+                 indices,
+                 GL_DYNAMIC_DRAW);
+    glDrawElements(GL_TRIANGLE_STRIP, k, GL_UNSIGNED_INT, 0);
+    GLCHECK;
+  }
+
+  if (quadmesh->normals != NULL)
+  {
+    glDisableVertexAttribArray(loc_normal);
+    glDeleteBuffers(1, &vbo_normals);
+    GLCHECK;
+    free(temp_normals);
+  }
+
+  glDeleteBuffers(1, &ebo);
+  glDisableVertexAttribArray(loc_position);
+  glDeleteBuffers(1, &vbo_points);
+  GLCHECK;
+
+  glUseProgram(0);
+}
+#else
 static  void  draw_quadmesh_one_colour(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
+    printf("draw_quadmesh_one_colour %d %d %d %d %d (OLD)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag);
+
 #define DEF_ONE_COLOUR
 
     if( window->shaded_mode_state )
@@ -583,7 +1163,7 @@ static  void  draw_quadmesh_one_colour(
 
 #undef  DEF_ONE_COLOUR
 }
-
+#endif
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : draw_quadmesh_per_item_colours
 @INPUT      : window
@@ -737,122 +1317,97 @@ static  void  draw_quadmesh_per_vertex_colours(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   : 
 ---------------------------------------------------------------------------- */
-
-  void  G_draw_lines(
-    Gwindow         window,
-    lines_struct    *lines )
+void 
+G_draw_lines(Gwindow window, lines_struct *lines )
 {
-    int      n_lines, i, pt_index, start_index, end_index;
-    float    geom[4][3];
-    VIO_BOOL  wrap_around;
-    VIO_BOOL  lines_as_curves, save_lights;
+  GLuint vbo_points;            /* OpenGL vertex buffer object */
+  GLint loc_position;           /* Location of the "position" attribute. */
+  GLint program;
+  int save_lights;
+  int lines_as_curves = window->render_lines_as_curves_state;
+  int i;
 
-    about_to_draw_graphics( window );
+  if (lines->n_points == 0 || lines->n_items == 0)
+  {
+    /* Nothing to do! */
+    return;
+  }
 
-    save_lights = G_get_lighting_state( window );
-    G_set_lighting_state( window, FALSE );
+  if (lines->colour_flag == PER_VERTEX_COLOURS)
+  {
+    fprintf(stderr, "G_draw_lines does not handle per-vertex colours yet.\n");
+    return;
+  }
 
-    if( lines->line_thickness > 1.0f && lines->line_thickness < MAX_LINE_WIDTH )
-        GS_set_line_width( (VIO_Real) lines->line_thickness );
+  about_to_draw_graphics( window );
 
-    n_lines = lines->n_items;
+  save_lights = G_get_lighting_state( window );
+  G_set_lighting_state( window, FALSE );
 
-    lines_as_curves = window->render_lines_as_curves_state;
+  if( lines->line_thickness > 1.0 && lines->line_thickness < MAX_LINE_WIDTH )
+    GS_set_line_width( lines->line_thickness );
 
-    if( lines->colour_flag == ONE_COLOUR )
-        set_colour( window, lines->colours[0] );
+  if( lines->colour_flag == ONE_COLOUR )
+    set_colour( window, lines->colours[0] );
 
-    BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, n_lines, TRUE )
+  program = window->GS_window->programs[PROGRAM_TRIVIAL];
 
-        if( lines->colour_flag == PER_ITEM_COLOURS )
-            set_colour( window, lines->colours[OBJECT_INDEX] );
+  /* Set up the buffer for our vertex data.
+   */
+  glUseProgram(program);
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, lines->n_points * sizeof(VIO_Point),
+               lines->points, GL_STATIC_DRAW);
 
-        start_index = START_INDEX( lines->end_indices, OBJECT_INDEX );
-        end_index = lines->end_indices[OBJECT_INDEX];
+  /* Assign our vertex data to the "position" value in the shader.
+   */
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
 
-        if( start_index == end_index-1 )
-        {
-            GS_begin_point();
-                pt_index = lines->indices[start_index];
-                if( lines->colour_flag == PER_VERTEX_COLOURS )
-                    set_colour( window, lines->colours[pt_index] );
-                GS_set_point( &lines->points[pt_index] );
-            GS_end_point();
-        }
-        else if( lines_as_curves )
-        {
-            wrap_around = ( lines->indices[start_index] ==
-                            lines->indices[end_index-1] );
+  /* Now start sending the line segments.
+   */
+  if (lines->colour_flag == PER_ITEM_COLOURS)
+  {
+    int start_index = 0;
+    int end_index = 0;
 
-            for_less( i, start_index, end_index-1 )
-            {
-                if( i == start_index )
-                {
-                    if( wrap_around && end_index - 2 >= start_index )
-                        pt_index = end_index-2;
-                    else
-                        pt_index = start_index;
-                }
-                else
-                    pt_index = i - 1;
+    for (i = 0; i < lines->n_items; i++)
+    {
+      start_index = end_index;
+      end_index = lines->end_indices[i];
+      set_colour(window, lines->colours[i]);
+      glDrawElements(GL_LINE_STRIP, end_index - start_index,
+                     GL_UNSIGNED_INT,
+                     &lines->indices[start_index]);
+    }
+  }
+  else
+  {
+    int start_index = 0;
+    int end_index = 0;
 
-                pt_index = lines->indices[pt_index];
-                geom[0][0] = Point_x(lines->points[pt_index]);
-                geom[0][1] = Point_y(lines->points[pt_index]);
-                geom[0][2] = Point_z(lines->points[pt_index]);
+    for (i = 0; i < lines->n_items; i++)
+    {
+      start_index = end_index;
+      end_index = lines->end_indices[i];
+      glDrawElements(GL_LINE_STRIP, end_index - start_index,
+                     GL_UNSIGNED_INT,
+                     &lines->indices[start_index]);
+    }
+  }
 
-                if( lines->colour_flag == PER_VERTEX_COLOURS )
-                    set_colour( window, lines->colours[pt_index] );
+  /* Clean up after ourselves.
+   */
+  glDisableVertexAttribArray(loc_position);
+  glDeleteBuffers(1, &vbo_points);
+  glUseProgram(0);
 
-                pt_index = lines->indices[i];
-                geom[1][0] = Point_x(lines->points[pt_index]);
-                geom[1][1] = Point_y(lines->points[pt_index]);
-                geom[1][2] = Point_z(lines->points[pt_index]);
+  if( lines->line_thickness > 1.0 && lines->line_thickness < MAX_LINE_WIDTH )
+    GS_set_line_width( 1.0 );
 
-                pt_index = lines->indices[i+1];
-                geom[2][0] = Point_x(lines->points[pt_index]);
-                geom[2][1] = Point_y(lines->points[pt_index]);
-                geom[2][2] = Point_z(lines->points[pt_index]);
-
-                if( i == end_index-2 )
-                {
-                    if( wrap_around && start_index + 1 < end_index )
-                        pt_index = start_index + 1;
-                    else
-                        pt_index = end_index-1;
-                }
-                else
-                    pt_index = i + 2;
-
-                pt_index = lines->indices[pt_index];
-                geom[3][0] = Point_x(lines->points[pt_index]);
-                geom[3][1] = Point_y(lines->points[pt_index]);
-                geom[3][2] = Point_z(lines->points[pt_index]);
-
-                GS_curve( geom );
-            }
-        }
-        else
-        {
-            GS_begin_line();
-
-                for_less( i, start_index, end_index )
-                {
-                    pt_index = lines->indices[i];
-                    if( lines->colour_flag == PER_VERTEX_COLOURS )
-                        set_colour( window, lines->colours[pt_index] );
-                    GS_set_point( &lines->points[pt_index] );
-                }
-
-            GS_end_line();
-        }
-
-    END_DRAW_OBJECTS
-
-    if( lines->line_thickness > 1.0f && lines->line_thickness < MAX_LINE_WIDTH )
-        GS_set_line_width( 1.0 );
-
-    G_set_lighting_state( window, save_lights );
+  G_set_lighting_state( window, save_lights );
 }
 
 /* ------------------------------ text and fonts ------------------- */
@@ -964,6 +1519,10 @@ static  void  draw_quadmesh_per_vertex_colours(
             case  SPHERE_MARKER:
                 draw_marker_as_cube( window, marker->colour );
                 break;
+
+            default:
+                print_error("G_draw_marker(): unknown marker type.");
+                break;
             }
 
             GS_pop_transform();
@@ -984,93 +1543,101 @@ static  void  draw_quadmesh_per_vertex_colours(
     G_set_lighting_state( window, save_lights );
 }
 
-static  void  draw_marker_as_cube( Gwindow         window, VIO_Colour colour )
+#define N_POINTS_CUBE 24
+#define N_FACES_CUBE 6
+
+static void
+draw_marker_as_cube( Gwindow window, VIO_Colour colour )
 {
-    static  VIO_Colour           colours[1];
-    static  VIO_Point            points[24] = {
-                                   { -0.5f, -0.5f, -0.5f },
-                                   { -0.5f, -0.5f,  0.5f },
-                                   { -0.5f,  0.5f,  0.5f },
-                                   { -0.5f,  0.5f, -0.5f },
+    static VIO_Colour colours[1];
+    static VIO_Point  points[N_POINTS_CUBE] = {
+      { { -0.5f, -0.5f, -0.5f } },
+      { { -0.5f, -0.5f,  0.5f } },
+      { { -0.5f,  0.5f,  0.5f } },
+      { { -0.5f,  0.5f, -0.5f } },
 
-                                   {  0.5f, -0.5f, -0.5f },
-                                   {  0.5f,  0.5f, -0.5f },
-                                   {  0.5f,  0.5f,  0.5f },
-                                   {  0.5f, -0.5f,  0.5f },
+      { {  0.5f, -0.5f, -0.5f } },
+      { {  0.5f,  0.5f, -0.5f } },
+      { {  0.5f,  0.5f,  0.5f } },
+      { {  0.5f, -0.5f,  0.5f } },
 
-                                   { -0.5f, -0.5f, -0.5f },
-                                   {  0.5f, -0.5f, -0.5f },
-                                   {  0.5f, -0.5f,  0.5f },
-                                   { -0.5f, -0.5f,  0.5f },
+      { { -0.5f, -0.5f, -0.5f } },
+      { {  0.5f, -0.5f, -0.5f } },
+      { {  0.5f, -0.5f,  0.5f } },
+      { { -0.5f, -0.5f,  0.5f } },
 
-                                   { -0.5f,  0.5f, -0.5f },
-                                   { -0.5f,  0.5f,  0.5f },
-                                   {  0.5f,  0.5f,  0.5f },
-                                   {  0.5f,  0.5f, -0.5f },
+      { { -0.5f,  0.5f, -0.5f } },
+      { { -0.5f,  0.5f,  0.5f } },
+      { {  0.5f,  0.5f,  0.5f } },
+      { {  0.5f,  0.5f, -0.5f } },
 
-                                   { -0.5f, -0.5f, -0.5f },
-                                   { -0.5f,  0.5f, -0.5f },
-                                   {  0.5f,  0.5f, -0.5f },
-                                   {  0.5f, -0.5f, -0.5f },
+      { { -0.5f, -0.5f, -0.5f } },
+      { { -0.5f,  0.5f, -0.5f } },
+      { {  0.5f,  0.5f, -0.5f } },
+      { {  0.5f, -0.5f, -0.5f } },
 
-                                   { -0.5f, -0.5f,  0.5f },
-                                   {  0.5f, -0.5f,  0.5f },
-                                   {  0.5f,  0.5f,  0.5f },
-                                   { -0.5f,  0.5f,  0.5f } };
+      { { -0.5f, -0.5f,  0.5f } },
+      { {  0.5f, -0.5f,  0.5f } },
+      { {  0.5f,  0.5f,  0.5f } },
+      { { -0.5f,  0.5f,  0.5f } } };
 
 
-    static  VIO_Vector           normals[24] = {
+    static VIO_Vector normals[N_POINTS_CUBE] = {
 
-                                   { -1.0f,  0.0f,  0.0f },
-                                   { -1.0f,  0.0f,  0.0f },
-                                   { -1.0f,  0.0f,  0.0f },
-                                   { -1.0f,  0.0f,  0.0f },
+      { { -1.0f,  0.0f,  0.0f } },
+      { { -1.0f,  0.0f,  0.0f } },
+      { { -1.0f,  0.0f,  0.0f } },
+      { { -1.0f,  0.0f,  0.0f } },
 
-                                   {  1.0f,  0.0f,  0.0f },
-                                   {  1.0f,  0.0f,  0.0f },
-                                   {  1.0f,  0.0f,  0.0f },
-                                   {  1.0f,  0.0f,  0.0f },
+      { {  1.0f,  0.0f,  0.0f } },
+      { {  1.0f,  0.0f,  0.0f } },
+      { {  1.0f,  0.0f,  0.0f } },
+      { {  1.0f,  0.0f,  0.0f } },
 
-                                   {  0.0f, -1.0f,  0.0f },
-                                   {  0.0f, -1.0f,  0.0f },
-                                   {  0.0f, -1.0f,  0.0f },
-                                   {  0.0f, -1.0f,  0.0f },
+      { {  0.0f, -1.0f,  0.0f } },
+      { {  0.0f, -1.0f,  0.0f } },
+      { {  0.0f, -1.0f,  0.0f } },
+      { {  0.0f, -1.0f,  0.0f } },
 
-                                   {  0.0f,  1.0f,  0.0f },
-                                   {  0.0f,  1.0f,  0.0f },
-                                   {  0.0f,  1.0f,  0.0f },
-                                   {  0.0f,  1.0f,  0.0f },
+      { {  0.0f,  1.0f,  0.0f } },
+      { {  0.0f,  1.0f,  0.0f } },
+      { {  0.0f,  1.0f,  0.0f } },
+      { {  0.0f,  1.0f,  0.0f } },
 
-                                   {  0.0f,  0.0f, -1.0f },
-                                   {  0.0f,  0.0f, -1.0f },
-                                   {  0.0f,  0.0f, -1.0f },
-                                   {  0.0f,  0.0f, -1.0f },
+      { {  0.0f,  0.0f, -1.0f } },
+      { {  0.0f,  0.0f, -1.0f } },
+      { {  0.0f,  0.0f, -1.0f } },
+      { {  0.0f,  0.0f, -1.0f } },
 
-                                   {  0.0f,  0.0f,  1.0f },
-                                   {  0.0f,  0.0f,  1.0f },
-                                   {  0.0f,  0.0f,  1.0f },
-                                   {  0.0f,  0.0f,  1.0f }
-                                           };
-    static  int              end_indices[6] = { 4, 8, 12, 16, 20, 24 };
-    static  int              indices[24] = {  0,  1,  2,  3,  4,  5,  6,  7,
-                                              8,  9, 10, 11, 12, 13, 14, 15,
-                                             16, 17, 18, 19, 20, 21, 22, 23 };
+      { {  0.0f,  0.0f,  1.0f } },
+      { {  0.0f,  0.0f,  1.0f } },
+      { {  0.0f,  0.0f,  1.0f } },
+      { {  0.0f,  0.0f,  1.0f } }
+     };
+     static int end_indices[N_FACES_CUBE] = {
+       4, 8, 12, 16, 20, 24
+     };
+     static int indices[N_POINTS_CUBE] = {
+       0,  1,  2,  3,  4,  5,  6,  7,
+       8,  9, 10, 11, 12, 13, 14, 15,
+       16, 17, 18, 19, 20, 21, 22, 23 
+     };
 
-    static  polygons_struct  polygons = {
-                                            ONE_COLOUR,
-                                            colours,
-                                            { 0.4f, 0.6f, 0.6f, 30.0f, 1.0f },
-                                            1.0f,
-                                            24,
-                                            points,
-                                            normals,
-                                            6,
-                                            end_indices,
-                                            indices,
-                                            (VIO_SCHAR *) NULL,
-                                            (int *) NULL,
-                                            (bintree_struct_ptr) NULL
-                                        };
+     static  polygons_struct  polygons = {
+       ONE_COLOUR,
+       colours,
+       { 0.4, 0.6, 0.6, 30.0, 1.0 },
+       1.0,
+       N_POINTS_CUBE,
+       points,
+       normals,
+       N_FACES_CUBE,
+       end_indices,
+       indices,
+       (VIO_SCHAR *) NULL,
+       (int *) NULL,
+       (bintree_struct_ptr) NULL
+     };
 
     polygons.colours[0] = colour;
     draw_polygons( window, &polygons );

@@ -95,6 +95,7 @@
   void  GS_curve(
     float  geom[4][3] )
 {
+  fprintf(stderr, "Curves are not implemented in bicgl.\n");
 }
 
   void  GS_begin_point( void )

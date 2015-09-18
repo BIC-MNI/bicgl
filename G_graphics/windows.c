@@ -830,7 +830,7 @@ void G_set_current_window( Gwindow window )
 
   VIO_BOOL  G_has_rgb_mode( void )
 {
-    return( GS_has_transparency_mode() );
+    return( GS_has_rgb_mode() );
 }
 
   int  G_get_n_overlay_planes( void )

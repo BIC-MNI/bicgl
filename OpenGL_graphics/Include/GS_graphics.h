@@ -21,19 +21,29 @@ typedef  struct
     VIO_Real            spot_angle;
 } light_info_struct;
 
+enum opengl_programs
+{
+  PROGRAM_TRIVIAL,              /* Trivial */
+  PROGRAM_SINGLE,               /* Single colour */
+  PROGRAM_VERTEX,               /* Per-vertex colours */
+  N_PROGRAMS
+};
+
 typedef  struct
 {
     WS_window_struct   WS_window;
 
-    VIO_BOOL            ambient_set;
-    VIO_Real               ambient[3];
+    VIO_BOOL           ambient_set;
+    VIO_Real           ambient[3];
 
     int                n_lights_defined;
     light_info_struct  *lights;
 
     int                n_light_states;
-    VIO_BOOL            *light_indices;
-    VIO_BOOL            *light_states;
+    VIO_BOOL           *light_indices;
+    VIO_BOOL           *light_states;
+
+    GLuint             programs[N_PROGRAMS];
 }
 GS_window_struct;
 

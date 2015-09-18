@@ -151,6 +151,125 @@ static  void  initialize_window(
 }
 #endif
 
+/* Simplest possible vertex shader for the really easy cases with no
+ * surface normals or properties.
+ */
+static char *vertex_shader_trivial[] = {
+"#version 130 \n\
+attribute vec3 position;\n\
+void main() {\n\
+\n\
+    gl_FrontColor = gl_Color;\n\
+    gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+}"
+};
+
+/* Code for this vertex shader is taken almost verbatim from:
+ * http://www.lighthouse3d.com/tutorials/glsl-tutorial/lighting/
+ * It has been modifed to take the position and normal from a bound array.
+ */
+static char *vertex_shader_single[] = {
+"#version 130 \n\
+attribute vec3 position;\n\
+attribute vec3 normal;\n\
+void main() {\n\
+\n\
+    vec3 n, l;\n\
+    vec4 diffuse, ambient, globalAmbient, specular = vec4(0.0);\n\
+    float NdotL, NdotHV;\n\
+    n = normalize(gl_NormalMatrix * normal);\n\
+    l = normalize(vec3(gl_LightSource[0].position));\n\
+    NdotL = max(dot(n, l), 0.0);\n\
+    diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;\n\
+    ambient = gl_FrontMaterial.ambient * gl_LightSource[0].ambient;\n\
+    globalAmbient = gl_LightModel.ambient * gl_FrontMaterial.ambient;\n\
+    if (NdotL > 0.0) {\n\
+       NdotHV = max(dot(n, gl_LightSource[0].halfVector.xyz),0.0);\n\
+       specular = gl_FrontMaterial.specular * gl_LightSource[0].specular *\n\
+                pow(NdotHV,gl_FrontMaterial.shininess);\n\
+    }\n\
+    gl_FrontColor = globalAmbient + NdotL * diffuse + ambient + specular;\n\
+    gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+}"
+};
+
+static char *vertex_shader_vertex[] = {
+"#version 130 \n\
+attribute vec3 position;\n\
+attribute vec3 normal;\n\
+attribute vec4 colour;\n\
+uniform vec4 surfprop;\n\
+void main() {\n\
+\n\
+    vec3 n, l;\n\
+    vec4 colDiffuse, colAmbient, colSpecular;\n\
+    vec4 diffuse, ambient, globalAmbient, specular = vec4(0.0);\n\
+    float NdotL, NdotHV;\n\
+    float a = surfprop.x;\n\
+    float d = surfprop.y;\n\
+    float s = surfprop.z;\n\
+    float shininess = surfprop.w;\n\
+    n = normalize(gl_NormalMatrix * normal);\n\
+    l = normalize(vec3(gl_LightSource[0].position));\n\
+    NdotL = max(dot(n, l), 0.0);\n\
+    colAmbient = vec4(colour.r * a, colour.g * a, colour.b * a, colour.a); \n\
+    colDiffuse = vec4(colour.r * d, colour.g * d, colour.b * d, colour.a); \n\
+    colSpecular = vec4(s, s, s, 1.0);\n\
+    diffuse = colDiffuse * gl_LightSource[0].diffuse;\n\
+    ambient = colAmbient * gl_LightSource[0].ambient;\n\
+    globalAmbient = gl_LightModel.ambient * colAmbient;\n\
+    if (NdotL > 0.0) {\n\
+       NdotHV = max(dot(n, gl_LightSource[0].halfVector.xyz),0.0);\n\
+       specular = colSpecular * gl_LightSource[0].specular *\n\
+                pow(NdotHV, shininess);\n\
+    }\n\
+    gl_FrontColor = globalAmbient + NdotL * diffuse + ambient + specular;\n\
+    gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+}"
+};
+
+static char *fragment_shader[] = {
+"#version 130\n\
+\n\
+void main()\n\
+{\n\
+      gl_FragColor = gl_Color;\n\
+}\n"
+};
+
+static GLuint
+create_program(char *vertex_shader[], char *fragment_shader[])
+{
+  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  GLuint shaderProgram = glCreateProgram();
+  GLint status;
+  char buffer[512];
+
+  glShaderSource(vertexShader, 1, vertex_shader, NULL);
+  glCompileShader(vertexShader);
+  glShaderSource(fragmentShader, 1, fragment_shader, NULL);
+  glCompileShader(fragmentShader);
+  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE)
+  {
+    printf("Failed to compile vertex shader: ");
+    glGetShaderInfoLog(vertexShader, 512, NULL, buffer);
+    printf("%s\n", buffer);
+  }
+  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE)
+  {
+    printf("Failed to compile fragment shader: ");
+    glGetShaderInfoLog(fragmentShader, 512, NULL, buffer);
+    printf("%s\n", buffer);
+  }
+  glAttachShader(shaderProgram, vertexShader);
+  glAttachShader(shaderProgram, fragmentShader);
+  glLinkProgram(shaderProgram);
+  return shaderProgram;
+}
+
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : initialize_window
 @INPUT      : window
@@ -166,9 +285,15 @@ static  void  initialize_window(
 
 /* ARGSUSED */
 
-static  void  initialize_window(
-    GSwindow   window )
+static void
+initialize_window( GSwindow  window )
 {
+  window->programs[PROGRAM_TRIVIAL] = create_program(vertex_shader_trivial,
+                                                     fragment_shader);
+  window->programs[PROGRAM_SINGLE] = create_program(vertex_shader_single,
+                                                    fragment_shader);
+  window->programs[PROGRAM_VERTEX] = create_program(vertex_shader_vertex,
+                                                    fragment_shader);
 }
 
   void  GS_set_window_title(
