@@ -1,3 +1,9 @@
+2015-10-18  Robert D. Vincent <robert.d.vincent@mcgill.ca>
+	* G_graphics/graphics_structs.c, G_graphics/windows.c,
+	Include/graphics_prototypes.h: Add G_set_current_window()
+	function, and use it in redraw_out_of_date_viewports() to
+	establish the current window when painting in Register.
+
 2015-05-20  Robert Vincent <robert.d.vincent@mcgill.ca>
 	* GLUT_windows/Include/WS_graphics.h:
 	* GLUT_windows/Include/glut_window_prototypes.h:
@@ -16,7 +22,7 @@
 
 2015-04-30  Robert Vincent <robert.d.vincent@mcgill.ca>
 	* Added support for mouse wheel/trackpad scrolling.
-	
+
 2015-04-23  Robert Vincent <robert.d.vincent@mcgill.ca>
 	* Make create_GLUT_window() obey the double_buffer_flag again.
 

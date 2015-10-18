@@ -738,6 +738,25 @@ static  void  update_blend_function(
 }
 
 /* ----------------------------- MNI Header -----------------------------------
+@NAME       : G_set_current_window
+@INPUT      : window
+@OUTPUT     :
+@RETURNS    :
+@DESCRIPTION: Sets the current window.
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
+@CREATED    : 2015            Robert D. Vincent
+@MODIFIED   :
+---------------------------------------------------------------------------- */
+
+void G_set_current_window( Gwindow window )
+{
+    GS_set_current_window( window->GS_window );
+}
+
+
+/* ----------------------------- MNI Header -----------------------------------
 @NAME       : G_set_bitplanes
 @INPUT      : window
               bitplanes

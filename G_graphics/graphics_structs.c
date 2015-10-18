@@ -300,9 +300,11 @@ static  VIO_BOOL  check_redraw_viewport(
     Gwindow           window,
     int               current_buffer )
 {
-    VIO_BOOL          something_drawn;
+    VIO_BOOL         something_drawn;
     int              viewport_index;
     Bitplane_types   bitplane;
+
+    G_set_current_window(window); /* Be sure we draw in the right window! */
 
     for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
     {

@@ -533,6 +533,8 @@
   VIO_BOOL  G_window_has_overlay_planes(
     Gwindow   window );
 
+void G_set_current_window(Gwindow window);
+
   void  G_set_bitplanes(
     Gwindow          window,
     Bitplane_types   bitplanes );
