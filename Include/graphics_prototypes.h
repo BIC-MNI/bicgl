@@ -432,16 +432,29 @@
   Gwindow  get_current_window( void );
 
   VIO_Status  G_create_window(
-    VIO_STR         title,
+    VIO_STR        title,
     int            x_pos,
     int            y_pos,
     int            width,
     int            height,
-    VIO_BOOL        colour_map_desired,
-    VIO_BOOL        double_buffer_desired,
-    VIO_BOOL        depth_buffer_desired,
+    VIO_BOOL       colour_map_desired,
+    VIO_BOOL       double_buffer_desired,
+    VIO_BOOL       depth_buffer_desired,
     int            n_overlay_planes_desired,
     Gwindow        *window );
+
+  VIO_Status  G_create_child_window(
+    VIO_STR        title,
+    int            x_pos,
+    int            y_pos,
+    int            width,
+    int            height,
+    VIO_BOOL       colour_map_desired,
+    VIO_BOOL       double_buffer_desired,
+    VIO_BOOL       depth_buffer_desired,
+    int            n_overlay_planes_desired,
+    Gwindow        *window,
+    Gwindow        parent);
 
   VIO_Status  G_delete_window(
     Gwindow   window );
@@ -570,5 +583,7 @@ void G_set_current_window(Gwindow window);
   void  G_set_visibility(
     Gwindow        window,
     VIO_BOOL       is_visible );
+
+void G_set_geometry(Gwindow window, int x, int y, int width, int height);
     
 #endif

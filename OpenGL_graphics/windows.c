@@ -99,7 +99,8 @@ static  void  initialize_window(
     VIO_BOOL        *actual_colour_map_flag,
     VIO_BOOL        *actual_double_buffer_flag,
     VIO_BOOL        *actual_depth_buffer_flag,
-    int            *actual_n_overlay_planes )
+    int            *actual_n_overlay_planes,
+    GSwindow       parent)
 {
     VIO_Status       status;
 
@@ -109,7 +110,9 @@ static  void  initialize_window(
                                0, actual_colour_map_flag,
                                actual_double_buffer_flag,
                                actual_depth_buffer_flag,
-                               actual_n_overlay_planes, &window->WS_window);
+                               actual_n_overlay_planes, 
+                               &window->WS_window,
+                               (parent != NULL) ? &parent->WS_window : NULL);
 
 
     if( status == VIO_OK )
@@ -622,4 +625,9 @@ static  void  clear_viewport(
 void GS_set_visibility(GSwindow window, VIO_BOOL is_visible)
 {
     WS_set_visibility(&window->WS_window, is_visible);
+}
+
+void GS_set_geometry(GSwindow window, int x, int y, int width, int height)
+{
+    WS_set_geometry(&window->WS_window, x, y, width, height);
 }

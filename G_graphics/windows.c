@@ -1,6 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif //HAVE_CONFIG_H  
+#endif //HAVE_CONFIG_H
 
 #include  <volume_io.h>
 #include  <graphics.h>
@@ -193,17 +193,18 @@ static  void  initialize_window(
     initialize_callbacks_for_window( window );
 }
 
-  VIO_Status  G_create_window(
-    VIO_STR         title,
+VIO_Status  G_create_child_window(
+    VIO_STR        title,
     int            x_pos,
     int            y_pos,
     int            width,
     int            height,
-    VIO_BOOL        colour_map_desired,
-    VIO_BOOL        double_buffer_desired,
-    VIO_BOOL        depth_buffer_desired,
+    VIO_BOOL       colour_map_desired,
+    VIO_BOOL       double_buffer_desired,
+    VIO_BOOL       depth_buffer_desired,
     int            n_overlay_planes_desired,
-    Gwindow        *window )
+    Gwindow        *window,
+    Gwindow        parent)
 {
     VIO_Status   status;
     VIO_BOOL  actual_colour_map_flag;
@@ -227,7 +228,8 @@ static  void  initialize_window(
                                &actual_colour_map_flag,
                                &actual_double_buffer_flag,
                                &actual_depth_buffer_flag,
-                               &actual_n_overlay_planes );
+                               &actual_n_overlay_planes,
+                               parent != NULL ? parent->GS_window : NULL );
 
     if( status != VIO_OK )
     {
@@ -247,6 +249,28 @@ static  void  initialize_window(
     }
 
     return( status );
+}
+
+VIO_Status G_create_window(
+    VIO_STR         title,
+    int            x_pos,
+    int            y_pos,
+    int            width,
+    int            height,
+    VIO_BOOL        colour_map_desired,
+    VIO_BOOL        double_buffer_desired,
+    VIO_BOOL        depth_buffer_desired,
+    int            n_overlay_planes_desired,
+    Gwindow        *window )
+{
+    return G_create_child_window(title,
+                                 x_pos, y_pos,
+                                 width, height,
+                                 colour_map_desired,
+                                 double_buffer_desired,
+                                 depth_buffer_desired,
+                                 n_overlay_planes_desired,
+                                 window, NULL);
 }
 
   VIO_Status  G_delete_window(
@@ -545,7 +569,7 @@ static  void  initialize_window(
 @INPUT      : window
 @OUTPUT     : x_pos
               y_pos
-@RETURNS    : 
+@RETURNS    :
 @DESCRIPTION: Passes back the position of the window in pixels from bottom left.@METHOD     :
 @GLOBALS    :
 @CALLS      :
@@ -566,7 +590,7 @@ void  G_get_window_position(
 @NAME       : G_set_background_colour
 @INPUT      : window
               colour
-@OUTPUT     : 
+@OUTPUT     :
 @RETURNS    :
 @DESCRIPTION: Sets the background colour of the window.
 @METHOD     :
@@ -866,4 +890,9 @@ void G_set_current_window( Gwindow window )
 void G_set_visibility(Gwindow window, VIO_BOOL is_visible)
 {
     GS_set_visibility(window->GS_window, is_visible);
+}
+
+void G_set_geometry(Gwindow window, int x, int y, int width, int height)
+{
+    GS_set_geometry(window->GS_window, x, y, width, height);
 }

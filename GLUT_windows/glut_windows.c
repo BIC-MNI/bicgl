@@ -47,7 +47,8 @@ static  Window_id  create_GLUT_window(
     VIO_BOOL               *actual_colour_map_mode_ptr,
     VIO_BOOL               *actual_double_buffer_flag_ptr,
     VIO_BOOL               *actual_depth_buffer_flag_ptr,
-    int                    *actual_n_overlay_planes_ptr )
+    int                    *actual_n_overlay_planes_ptr,
+    Window_id              parent_id)
 {
     unsigned  int      mode;
     Window_id          window_id;
@@ -93,15 +94,23 @@ static  Window_id  create_GLUT_window(
       mode |= GLUT_DEPTH;
     }
     glutInitDisplayMode(mode);
-    
-    window_id = glutCreateWindow( title );
+
+    if (parent_id > 0)
+    {
+      window_id = glutCreateSubWindow( parent_id, initial_x_pos, initial_y_pos,
+                                       initial_x_size, initial_y_size );
+    }
+    else
+    {
+      window_id = glutCreateWindow( title );
+      glutPopWindow();
+    }
+
     if( window_id < 1 )
     { 
         print_error( "Could not open GLUT window for OpenGL\n" );
         return( -1 );
     }
-
-    glutPopWindow();
 
     /* Freeglut does not support overlays.
      */
@@ -141,7 +150,8 @@ VIO_Status  WS_create_window(
     VIO_BOOL               *actual_double_buffer_flag,
     VIO_BOOL               *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
-    WSwindow               window )
+    WSwindow               window,
+    WSwindow               parent )
 {
     window->window_id = create_GLUT_window( title, 
                                             initial_x_pos,
@@ -155,7 +165,8 @@ VIO_Status  WS_create_window(
                                             actual_colour_map_mode,
                                             actual_double_buffer_flag,
                                             actual_depth_buffer_flag,
-                                            actual_n_overlay_planes );
+                                            actual_n_overlay_planes,
+                                            (parent != NULL) ? parent->window_id : 0);
 
 
     if( window->window_id < 1 )
@@ -765,6 +776,7 @@ static  void  entry_function(
         (*enter_callback) ( window_id );
 }
 
+
 static  void  set_event_callbacks_for_current_window(void)
 {
     glutDisplayFunc( display_function );
@@ -889,6 +901,15 @@ static  void  global_idle_function( void )
     WSwindow   window  )
 {
     glutPostRedisplay();
+}
+
+void WS_set_geometry(WSwindow window, int x, int y, int cx, int cy)
+{
+    glutSetWindow( window->window_id );
+    if (x >= 0 && y >= 0)
+      glutPositionWindow(x, y);
+    if (cx > 0 && cy > 0)
+      glutReshapeWindow(cx, cy);
 }
 
 void WS_set_visibility(WSwindow window, VIO_BOOL is_visible)

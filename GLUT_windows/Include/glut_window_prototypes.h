@@ -17,7 +17,8 @@
     VIO_BOOL                *actual_double_buffer_flag,
     VIO_BOOL                *actual_depth_buffer_flag,
     int                    *actual_n_overlay_planes,
-    WSwindow               window );
+    WSwindow               window,
+    WSwindow               parent );
 
   VIO_BOOL  WS_set_double_buffer_state(
     WSwindow               window,
@@ -174,6 +175,8 @@
     WSwindow   window  );
 
   void  WS_set_visibility(WSwindow window, VIO_BOOL is_visible);
+
+void  WS_set_geometry(WSwindow window, int x, int y, int width, int height);
 
   void  copy_X_colours(
     int  n_colours_to_copy );

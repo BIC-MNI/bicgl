@@ -312,7 +312,8 @@
     VIO_BOOL        *actual_colour_map_flag,
     VIO_BOOL        *actual_double_buffer_flag,
     VIO_BOOL        *actual_depth_buffer_flag,
-    int            *actual_n_overlay_planes );
+    int            *actual_n_overlay_planes,
+    GSwindow       parent);
 
   void  print_info( void );
 
@@ -415,4 +416,7 @@
   void  GS_swap_buffers( void );
 
   void  GS_set_visibility(GSwindow window, VIO_BOOL is_visible);
+
+void GS_set_geometry(GSwindow window, int x, int y, int width, int height);
+
 #endif
