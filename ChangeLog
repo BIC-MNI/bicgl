@@ -1,3 +1,11 @@
+2015-11-13  Robert D. Vincnet <robert.d.vincent@mcgill.ca>
+	* Include/graphics_prototypes.h, G_graphics/windows.c,
+	GLUT_windows/windows.c, GLUT_windows/Include/glut_window_prototypes.h,
+	OpenGL_graphics/windows.c,
+	OpenGL_graphics/Include/opengl_graphics_prototypes.h:
+	Added G_set_geometry() and G_create_child_window() calls to
+	accomodate placement and creation of child windows.
+
 2015-10-18  Robert D. Vincent <robert.d.vincent@mcgill.ca>
 	* G_graphics/graphics_structs.c, G_graphics/windows.c,
 	Include/graphics_prototypes.h: Add G_set_current_window()
