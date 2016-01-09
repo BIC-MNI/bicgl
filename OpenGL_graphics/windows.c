@@ -1,3 +1,5 @@
+#define GL_GLEXT_PROTOTYPES 1
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif //HAVE_CONFIG_H  
@@ -154,7 +156,7 @@ static  void  initialize_window(
 /* Simplest possible vertex shader for the really easy cases with no
  * surface normals or properties.
  */
-static char *vertex_shader_trivial[] = {
+static const char *vertex_shader_trivial[] = {
 "#version 130 \n\
 attribute vec3 position;\n\
 void main() {\n\
@@ -168,7 +170,7 @@ void main() {\n\
  * http://www.lighthouse3d.com/tutorials/glsl-tutorial/lighting/
  * It has been modifed to take the position and normal from a bound array.
  */
-static char *vertex_shader_single[] = {
+static const char *vertex_shader_single[] = {
 "#version 130 \n\
 attribute vec3 position;\n\
 attribute vec3 normal;\n\
@@ -193,7 +195,7 @@ void main() {\n\
 }"
 };
 
-static char *vertex_shader_vertex[] = {
+static const char *vertex_shader_vertex[] = {
 "#version 130 \n\
 attribute vec3 position;\n\
 attribute vec3 normal;\n\
@@ -228,17 +230,19 @@ void main() {\n\
 }"
 };
 
-static char *fragment_shader[] = {
+static const char *fragment_shader[] = {
 "#version 130\n\
+uniform float opacity;\n\
 \n\
 void main()\n\
 {\n\
       gl_FragColor = gl_Color;\n\
+      gl_FragColor.a = opacity;\n\
 }\n"
 };
 
 static GLuint
-create_program(char *vertex_shader[], char *fragment_shader[])
+create_program(const char *vertex_shader[], const char *fragment_shader[])
 {
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);

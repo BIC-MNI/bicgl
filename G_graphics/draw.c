@@ -1,3 +1,5 @@
+#define GL_GLEXT_PROTOTYPES 1
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif //HAVE_CONFIG_H  
@@ -16,10 +18,6 @@
 #else
 #define GLCHECK
 #endif
-
-#undef GL_GLEXT_LEGACY
-#define GL_GLEXT_PROTOTYPES 1
-#include <GL/gl.h>
 
 #define  MAX_LINE_WIDTH  1000.0f
 
@@ -373,16 +371,17 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
   GLuint vbo_points;
   GLuint vbo_normals;
   GLint loc_position;
-  GLint loc_normal;
+  GLint loc_normal = -1;
   GLint program;
   int start_index = 0;
   int end_index = 0;
   int i;
 
 #if DEBUG
-  printf("dp_one_colour %d %d (normals %lx points %d items %d)\n", 
-         window->shaded_mode_state, window->lighting_state, 
-         (uintptr_t)polygons->normals, polygons->n_points, polygons->n_items);
+  printf("dp_one_colour %d %d (normals %p points %d items %d opacity %f)\n",
+         window->shaded_mode_state, window->lighting_state,
+         polygons->normals, polygons->n_points, polygons->n_items,
+         Surfprop_t(polygons->surfprop));
 #endif
 
   if (polygons->normals != NULL)
@@ -413,6 +412,7 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
   }
   glUseProgram(program);
+
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
   glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
@@ -481,6 +481,14 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
 }
 
 /**
+ * Simple helper function to set the opacity in the fragment shader.
+ */
+static void set_program_opacity(GLint program, GLfloat opacity)
+{
+  glUniform1f(glGetUniformLocation(program, "opacity"), opacity);
+}
+
+/**
  * Draw a triangular mesh in a single colour.
  */
 static void
@@ -490,11 +498,18 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
   GLuint vbo_normals;
   GLuint ebo;
   GLint loc_position;
-  GLint loc_normal;
+  GLint loc_normal = -1;
   int *eboBuffer = NULL;  /* Temporary storage for visible indices. */
   int n_indices = 0;
   GLenum mode = GL_TRIANGLES;
   GLint program;
+
+#if DEBUG
+  printf("dt_one_colour %d %d (normals %p points %d items %d opacity %f)\n",
+         window->shaded_mode_state, window->lighting_state,
+         polygons->normals, polygons->n_points, polygons->n_items,
+         Surfprop_t(polygons->surfprop));
+#endif
 
   n_indices = NUMBER_INDICES(*polygons);
 
@@ -555,6 +570,8 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
   }
 
   glUseProgram(program);
+
+  set_program_opacity(program, Surfprop_t(polygons->surfprop));
 
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
@@ -638,7 +655,7 @@ draw_triangles_per_item_colours(Gwindow window,
   int n_items;
   GLuint program;
 
-  printf("tri_per_item: %d %d %d\n", polygons->n_points, polygons->n_items);
+  printf("tri_per_item: %d %d\n", polygons->n_points, polygons->n_items);
 
   /* To save a little space and time, allocate all of the memory we 
    * will need in one go...
@@ -690,6 +707,8 @@ draw_triangles_per_item_colours(Gwindow window,
 
   glUseProgram(program);
 
+  set_program_opacity(program, Surfprop_t(polygons->surfprop));
+
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
   glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(float) * N_VTX_PER_TRIANGLE,
@@ -703,7 +722,7 @@ draw_triangles_per_item_colours(Gwindow window,
   /* sets the crucial 4 parameters for surface properties:
      ambient, diffuse, specular, shininess
   */
-  glUniform4fv(loc_surfprop, 1, &polygons->surfprop);
+  glUniform4fv(loc_surfprop, 1, &polygons->surfprop.a);
 
   glGenBuffers(1, &vbo_normals);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
@@ -823,6 +842,8 @@ draw_polygons_per_vertex_colours(Gwindow window,
 
   glUseProgram(program);
 
+  set_program_opacity(program, Surfprop_t(polygons->surfprop));
+
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
   glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
@@ -836,7 +857,7 @@ draw_polygons_per_vertex_colours(Gwindow window,
   /* sets the crucial 4 parameters for surface properties:
      ambient, diffuse, specular, shininess
   */
-  glUniform4fv(loc_surfprop, 1, &polygons->surfprop);
+  glUniform4fv(loc_surfprop, 1, &polygons->surfprop.a);
 
   glGenBuffers(1, &vbo_normals);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
@@ -1018,12 +1039,12 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   GLuint vbo_normals;
   GLuint ebo;
   GLint loc_position;
-  GLint loc_normal;
+  GLint loc_normal = -1;
   int n_items = 0;
   GLint program;
   int m_size, n_size;
   int i, j;
-  VIO_Vector *temp_normals;
+  VIO_Vector *temp_normals = NULL;
 
   printf("draw_quadmesh_one_colour %d %d %d %d %d %p (NEW)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag, quadmesh->normals);
 
@@ -1035,11 +1056,14 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
     program = window->GS_window->programs[PROGRAM_SINGLE];
 
     temp_normals = malloc(sizeof(VIO_Vector) * n_items);
-    for (i = 0; i < n_items; i++) {
-      temp_normals[i] = quadmesh->normals[i];
-      VIO_Real temp = temp_normals[i].coords[VIO_Y];
-      temp_normals[i].coords[VIO_Y] = -temp_normals[i].coords[VIO_X];
-      temp_normals[i].coords[VIO_X] = temp;
+    if (temp_normals != NULL)
+    {
+      for (i = 0; i < n_items; i++) {
+        temp_normals[i] = quadmesh->normals[i];
+        VIO_Real temp = temp_normals[i].coords[VIO_Y];
+        temp_normals[i].coords[VIO_Y] = -temp_normals[i].coords[VIO_X];
+        temp_normals[i].coords[VIO_X] = temp;
+      }
     }
 
     /*
@@ -1062,6 +1086,8 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
   }
   glUseProgram(program);
+
+  set_program_opacity(program, Surfprop_t(quadmesh->surfprop));
 
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
@@ -1324,7 +1350,6 @@ G_draw_lines(Gwindow window, lines_struct *lines )
   GLint loc_position;           /* Location of the "position" attribute. */
   GLint program;
   int save_lights;
-  int lines_as_curves = window->render_lines_as_curves_state;
   int i;
 
   if (lines->n_points == 0 || lines->n_items == 0)
@@ -1355,6 +1380,9 @@ G_draw_lines(Gwindow window, lines_struct *lines )
   /* Set up the buffer for our vertex data.
    */
   glUseProgram(program);
+
+  set_program_opacity(program, 1.0);
+
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
   glBufferData(GL_ARRAY_BUFFER, lines->n_points * sizeof(VIO_Point),
