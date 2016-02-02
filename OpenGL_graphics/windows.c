@@ -157,7 +157,7 @@ static  void  initialize_window(
  * surface normals or properties.
  */
 static const char *vertex_shader_trivial[] = {
-"#version 130 \n\
+"#version 120 \n\
 attribute vec3 position;\n\
 void main() {\n\
 \n\
@@ -171,7 +171,7 @@ void main() {\n\
  * It has been modifed to take the position and normal from a bound array.
  */
 static const char *vertex_shader_single[] = {
-"#version 130 \n\
+"#version 120 \n\
 attribute vec3 position;\n\
 attribute vec3 normal;\n\
 void main() {\n\
@@ -196,7 +196,7 @@ void main() {\n\
 };
 
 static const char *vertex_shader_vertex[] = {
-"#version 130 \n\
+"#version 120 \n\
 attribute vec3 position;\n\
 attribute vec3 normal;\n\
 attribute vec4 colour;\n\
@@ -231,7 +231,7 @@ void main() {\n\
 };
 
 static const char *fragment_shader[] = {
-"#version 130\n\
+"#version 120\n\
 uniform float opacity;\n\
 \n\
 void main()\n\
