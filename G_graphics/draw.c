@@ -13,6 +13,8 @@
 #define DISALLOW_DRAWING_INTERRUPT 1
 #define PARANOID 1
 
+/* #define DEBUG 1 */
+
 #if PARANOID
 #define GLCHECK {GLint _temp = glGetError(); if (_temp != GL_NO_ERROR) { fprintf(stderr, "OpenGL reporting error 0x%x at line %d.\n", _temp, __LINE__); } }
 #else
@@ -341,6 +343,14 @@ is_triangular(polygons_struct *polygons)
   return TRUE;
 }
 
+/**
+ * Simple helper function to set the opacity in the fragment shader.
+ */
+static void set_program_opacity(GLint program, GLfloat opacity)
+{
+  glUniform1f(glGetUniformLocation(program, "opacity"), opacity);
+}
+
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : draw_polygons_one_colour
 @INPUT      : window
@@ -413,6 +423,8 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
   }
   glUseProgram(program);
 
+  set_program_opacity(program, Surfprop_t(polygons->surfprop));
+
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
   glBufferData(GL_ARRAY_BUFFER, polygons->n_points * sizeof(VIO_Point),
@@ -478,14 +490,6 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
   glDeleteBuffers(1, &vbo_points);
 
   glUseProgram(0);
-}
-
-/**
- * Simple helper function to set the opacity in the fragment shader.
- */
-static void set_program_opacity(GLint program, GLfloat opacity)
-{
-  glUniform1f(glGetUniformLocation(program, "opacity"), opacity);
 }
 
 /**
