@@ -48,7 +48,8 @@ typedef  enum  {
 typedef  enum  { PIXEL_VIEW, SCREEN_VIEW, WORLD_VIEW, MODEL_VIEW,
                  N_VIEW_TYPES }     View_types;
 
-typedef  enum  { WIREFRAME, FILLED, OVERLAY, POINT }  Shading_modes;
+typedef  enum  { WIREFRAME, FILLED, POINT, OVERLAY } Shading_modes;
+
 typedef  enum  { FLAT_SHADING, GOURAUD_SHADING }  Shading_types;
 
 #define  N_LIGHTS  8

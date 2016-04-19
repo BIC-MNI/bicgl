@@ -6,7 +6,7 @@
 #include  <graphics.h>
 
   void  G_set_shaded_state(
-    Gwindow      window,
+    Gwindow       window,
     Shading_modes state )
 {
     if( state != window->shaded_mode_state )

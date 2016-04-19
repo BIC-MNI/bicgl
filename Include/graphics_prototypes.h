@@ -376,13 +376,9 @@ VIO_BOOL state );
  Random_mask_type get_random_order_mask(
  int size );
 
-void G_set_shaded_state(
- Gwindow window,
- Shading_modes state );
+void G_set_shaded_state( Gwindow window, Shading_modes state );
 
-void G_set_shading_type(
- Gwindow window,
- Shading_types type );
+void G_set_shading_type( Gwindow window, Shading_types type );
 
 VIO_BOOL G_get_lighting_state(
  Gwindow window );

@@ -1,4 +1,10 @@
-2015-11-13  Robert D. Vincnet <robert.d.vincent@mcgill.ca>
+2016-04-19  Robert D. Vincent <robert.d.vincent@mcgill.ca>
+	* Include/graphics_prototypes.h, G_graphics/draw.c,
+	G_graphics/render.c, G_graphics/windows.c,
+	Include/graphics.h, Include/graphics_base.h:
+	Extend shaded modes to permit both "overlay" and "point"
+	modes in addition to filled and wireframe.
+2015-11-13  Robert D. Vincent <robert.d.vincent@mcgill.ca>
 	* Include/graphics_prototypes.h, G_graphics/windows.c,
 	GLUT_windows/windows.c, GLUT_windows/Include/glut_window_prototypes.h,
 	OpenGL_graphics/windows.c,

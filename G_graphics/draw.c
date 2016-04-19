@@ -564,13 +564,17 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
   
   set_colour( window, polygons->colours[0] );
   GLCHECK;
-  if( window->shaded_mode_state )
+  switch (window->shaded_mode_state)
   {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
-  }
-  else
-  {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  case WIREFRAME:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    break;
+  case POINT:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    break;
+  default:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    break;
   }
 
   glUseProgram(program);
@@ -606,6 +610,13 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
                GL_STATIC_DRAW);
 
   glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+  if (window->shaded_mode_state == OVERLAY)
+  {
+    set_surface_property(window, window->background_colour, 
+                         &polygons->surfprop);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+  }
 
   glDeleteBuffers(1, &ebo);
 
@@ -700,13 +711,17 @@ draw_triangles_per_item_colours(Gwindow window,
 
   program = window->GS_window->programs[PROGRAM_VERTEX];
 
-  if( window->shaded_mode_state )
+  switch (window->shaded_mode_state)
   {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
-  }
-  else
-  {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  case WIREFRAME:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    break;
+  case POINT:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    break;
+  default:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    break;
   }
 
   glUseProgram(program);
@@ -747,6 +762,15 @@ draw_triangles_per_item_colours(Gwindow window,
   glEnableVertexAttribArray(loc_colour);
 
   glDrawArrays(GL_TRIANGLES, 0, n_items);
+
+  if (window->shaded_mode_state == OVERLAY)
+  {
+    set_surface_property(window, window->background_colour,
+                         &polygons->surfprop);
+    glDisableVertexAttribArray(loc_colour);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDrawArrays(GL_TRIANGLES, 0, n_items);
+  }
 
   glDisableVertexAttribArray(loc_position);
   glDisableVertexAttribArray(loc_normal);
@@ -835,13 +859,17 @@ draw_polygons_per_vertex_colours(Gwindow window,
 
   program = window->GS_window->programs[PROGRAM_VERTEX];
 
-  if( window->shaded_mode_state )
+  switch (window->shaded_mode_state)
   {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
-  }
-  else
-  {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  case WIREFRAME:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    break;
+  case POINT:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+    break;
+  default:
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    break;
   }
 
   glUseProgram(program);
@@ -889,6 +917,14 @@ draw_polygons_per_vertex_colours(Gwindow window,
                GL_STATIC_DRAW);
 
   glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+  if (window->shaded_mode_state == OVERLAY)
+  {
+    set_surface_property( window, window->background_colour,
+                          &polygons->surfprop );
+    glDisableVertexAttribArray(loc_colour);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+    glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+  }
 
   glDisableVertexAttribArray(loc_position);
   glDisableVertexAttribArray(loc_normal);

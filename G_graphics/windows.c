@@ -175,8 +175,8 @@ static  void  initialize_window(
     window->n_curve_segments = DEFAULT_N_CURVE_SEGMENTS;
     window->marker_labels_visibility = TRUE;
 
-    window->shaded_mode_state = FALSE;
-    G_set_shaded_state( window, TRUE );
+    window->shaded_mode_state = FILLED;
+    G_set_shaded_state( window, FILLED );
 
     G_set_render_lines_as_curves_state( window, FALSE );
 
