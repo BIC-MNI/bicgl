@@ -166,19 +166,29 @@ void main() {\n\
 }"
 };
 
+
 /* Code for this vertex shader is taken almost verbatim from:
- * http://www.lighthouse3d.com/tutorials/glsl-tutorial/lighting/
- * It has been modifed to take the position and normal from a bound array.
+ *
+ * http://www.lighthouse3d.com/tutorials/glsl-tutorial/lighting/ 
+ *
+ * It has been modifed to take the position and normal from a bound
+ * array. It also has the ability to apply a "model expansion factor"
+ * which allows slight movement of a model towards the user's
+ * viewpoint. This is used when rendering a mesh over a shaded
+ * surface, to guarantee that the mesh appears cleanly above the
+ * surface.
  */
 static const char *vertex_shader_single[] = {
 "#version 120 \n\
 attribute vec3 position;\n\
 attribute vec3 normal;\n\
+uniform float mxfactor;\n\
 void main() {\n\
 \n\
     vec3 n, l;\n\
     vec4 diffuse, ambient, globalAmbient, specular = vec4(0.0);\n\
     float NdotL, NdotHV;\n\
+    vec4 v;\n\
     n = normalize(gl_NormalMatrix * normal);\n\
     l = normalize(vec3(gl_LightSource[0].position));\n\
     NdotL = max(dot(n, l), 0.0);\n\
@@ -191,7 +201,9 @@ void main() {\n\
                 pow(NdotHV,gl_FrontMaterial.shininess);\n\
     }\n\
     gl_FrontColor = globalAmbient + NdotL * diffuse + ambient + specular;\n\
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0);\n\
+    v = gl_ModelViewMatrix * vec4(position, 1.0);\n\
+    v.xyz = v.xyz * mxfactor;\n\
+    gl_Position = gl_ProjectionMatrix * v;\n\
 }"
 };
 

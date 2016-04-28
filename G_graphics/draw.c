@@ -2,13 +2,19 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif //HAVE_CONFIG_H  
+#endif //HAVE_CONFIG_H
 
 #include  <volume_io.h>
 #include  <graphics.h>
 #include  <random_order.h>
 
 #include <assert.h>
+
+/**
+ * Sets the amount of expansion in the model when drawing the wireframe
+ * overlay on top of the shaded surface.
+ */
+#define MX_OVERLAY 0.9999
 
 #define DISALLOW_DRAWING_INTERRUPT 1
 #define PARANOID 1
@@ -302,15 +308,15 @@ static  void  set_surface_property(
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : about_to_draw_graphics
 @INPUT      : window
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Called just before drawing into a window, to set the current
               window, and clear it, if automatic clearing is enabled.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
 static  void  about_to_draw_graphics( Gwindow        window )
@@ -348,22 +354,43 @@ is_triangular(polygons_struct *polygons)
  */
 static void set_program_opacity(GLint program, GLfloat opacity)
 {
-  glUniform1f(glGetUniformLocation(program, "opacity"), opacity);
+    glUniform1f( glGetUniformLocation( program, "opacity" ), opacity );
+}
+
+/**
+ * Simple helper function to set the "model expansion factor" in the vertex
+ * shader.
+ */
+static void set_program_mxfactor(GLint program, GLfloat mxfactor)
+{
+    glUniform1f( glGetUniformLocation( program, "mxfactor" ), mxfactor );
+}
+
+static void do_wireframe_overlay( Gwindow window,
+                                  polygons_struct *polygons,
+                                  VIO_Colour colour)
+{
+    GLint program = window->GS_window->programs[PROGRAM_SINGLE];
+    glUseProgram( program );
+    set_program_opacity( program, Surfprop_t( polygons->surfprop ) );
+    set_program_mxfactor( program, MX_OVERLAY );
+    set_surface_property( window, colour, &polygons->surfprop );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : draw_polygons_one_colour
 @INPUT      : window
               polygons
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a set of polygons which has a single colour for all
               polygons.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
 /**
@@ -411,7 +438,7 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
   {
     program = window->GS_window->programs[PROGRAM_TRIVIAL];
   }
-  
+
   set_colour( window, polygons->colours[0] );
   if( window->shaded_mode_state )
   {
@@ -424,6 +451,7 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
   glUseProgram(program);
 
   set_program_opacity(program, Surfprop_t(polygons->surfprop));
+  set_program_mxfactor( program, 1.0 );
 
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
@@ -490,6 +518,19 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
   glDeleteBuffers(1, &vbo_points);
 
   glUseProgram(0);
+}
+
+/**
+ * Choose whether to use black or white to get the best contrast
+ * with the given colour.
+ */
+static VIO_Colour get_contrasting_colour(VIO_Colour colour)
+{
+    int r = get_Colour_r(colour);
+    int g = get_Colour_g(colour);
+    int b = get_Colour_b(colour);
+    int yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? BLACK : WHITE;
 }
 
 /**
@@ -561,7 +602,7 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
   {
     program = window->GS_window->programs[PROGRAM_TRIVIAL];
   }
-  
+
   set_colour( window, polygons->colours[0] );
   GLCHECK;
   switch (window->shaded_mode_state)
@@ -580,6 +621,7 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
   glUseProgram(program);
 
   set_program_opacity(program, Surfprop_t(polygons->surfprop));
+  set_program_mxfactor( program, 1.0 );
 
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
@@ -612,9 +654,8 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
   glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
   if (window->shaded_mode_state == OVERLAY)
   {
-    set_surface_property(window, window->background_colour, 
-                         &polygons->surfprop);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    do_wireframe_overlay( window, polygons,
+                          get_contrasting_colour(polygons->colours[0]) );
     glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
   }
 
@@ -640,17 +681,17 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
 @NAME       : draw_triangles_per_item_colours
 @INPUT      : window
               polygons
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a set of polygons which has a separate colour for each
               polygon.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
-static void 
+static void
 draw_triangles_per_item_colours(Gwindow window,
                                 polygons_struct *polygons)
 {
@@ -672,7 +713,7 @@ draw_triangles_per_item_colours(Gwindow window,
 
   printf("tri_per_item: %d %d\n", polygons->n_points, polygons->n_items);
 
-  /* To save a little space and time, allocate all of the memory we 
+  /* To save a little space and time, allocate all of the memory we
    * will need in one go...
    */
   bufPoints = malloc(polygons->n_items * sizeof(float) * N_VTX_PER_TRIANGLE * N_DIM +
@@ -765,10 +806,7 @@ draw_triangles_per_item_colours(Gwindow window,
 
   if (window->shaded_mode_state == OVERLAY)
   {
-    set_surface_property(window, window->background_colour,
-                         &polygons->surfprop);
-    glDisableVertexAttribArray(loc_colour);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    do_wireframe_overlay(window, polygons, WHITE);
     glDrawArrays(GL_TRIANGLES, 0, n_items);
   }
 
@@ -787,19 +825,18 @@ draw_triangles_per_item_colours(Gwindow window,
 @NAME       : draw_polygons_per_vertex_colours
 @INPUT      : window
               polygons
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a set of polygons which have a separate colour for each
               vertex.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
-static void 
-draw_polygons_per_vertex_colours(Gwindow window,
-                                 polygons_struct *polygons)
+static void
+draw_polygons_per_vertex_colours(Gwindow window, polygons_struct *polygons)
 {
   GLuint vbo_points;
   GLuint vbo_normals;
@@ -916,14 +953,11 @@ draw_polygons_per_vertex_colours(Gwindow window,
                (eboBuffer != NULL) ? eboBuffer : polygons->indices,
                GL_STATIC_DRAW);
 
-  glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
-  if (window->shaded_mode_state == OVERLAY)
+  glDrawElements( mode, n_indices, GL_UNSIGNED_INT, 0 );
+  if ( window->shaded_mode_state == OVERLAY )
   {
-    set_surface_property( window, window->background_colour,
-                          &polygons->surfprop );
-    glDisableVertexAttribArray(loc_colour);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-    glDrawElements(mode, n_indices, GL_UNSIGNED_INT, 0);
+    do_wireframe_overlay( window, polygons, WHITE );
+    glDrawElements( mode, n_indices, GL_UNSIGNED_INT, 0 );
   }
 
   glDisableVertexAttribArray(loc_position);
@@ -945,14 +979,14 @@ draw_polygons_per_vertex_colours(Gwindow window,
 @NAME       : draw_polygons
 @INPUT      : windows
               polygons
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a set of polygons in the window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
 static  void  draw_polygons(
@@ -1005,20 +1039,25 @@ static  void  draw_polygons(
 @NAME       : G_draw_polygons
 @INPUT      : window
               polygons
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Routine to draw a set of polygons in the window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
   void  G_draw_polygons(
     Gwindow         window,
     polygons_struct *polygons )
 {
+    if (polygons->n_points == 0 || polygons->n_items == 0)
+    {
+        return;                 /* no work to do! */
+    }
+
     about_to_draw_graphics( window );
 
     draw_polygons( window, polygons );
@@ -1028,16 +1067,19 @@ static  void  draw_polygons(
 @NAME       : draw_quadmesh_one_colour
 @INPUT      : window
               quadmesh
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a quadmesh of a single colour into the window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
-/*
+#if 0
+/* experimental code. still trying to figure out why the "new" version
+ * gives different results than the "classic" version.
+ */
 void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
 {
   VIO_Point *left_points, *right_points;
@@ -1048,7 +1090,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   int m = quadmesh->m;
   int n = quadmesh->n;
   int used_j;
-  
+
   printf("!!!\n");
 
   get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
@@ -1071,8 +1113,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
     GS_end_quad_strip();
   }
 }
-*/
-#if 1
+#elif 1
 void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
 {
   GLuint vbo_points;
@@ -1115,7 +1156,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   {
     program = window->GS_window->programs[PROGRAM_TRIVIAL];
   }
-  
+
   set_colour( window, quadmesh->colours[0] );
   if( window->shaded_mode_state )
   {
@@ -1128,6 +1169,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   glUseProgram(program);
 
   set_program_opacity(program, Surfprop_t(quadmesh->surfprop));
+  set_program_mxfactor( program, 1.0 );
 
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
@@ -1159,7 +1201,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
 
   for (i = 0; i < m_size; i++) {
     int k = 0;
-    
+
     for (j = n_size; j >= 0; j--) {
       int used_j = j % quadmesh->n;
       indices[k++] = VIO_IJ(i, used_j, quadmesh->n);
@@ -1234,14 +1276,14 @@ static  void  draw_quadmesh_one_colour(
 @NAME       : draw_quadmesh_per_item_colours
 @INPUT      : window
               quadmesh
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a quadmesh with a separate colour per quadrilateral.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
 static  void  draw_quadmesh_per_item_colours(
@@ -1286,14 +1328,14 @@ static  void  draw_quadmesh_per_item_colours(
 @NAME       : draw_quadmesh_per_vertex_colours
 @INPUT      : window
               quadmesh
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a quadmesh with a separate colour per vertex.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
 static  void  draw_quadmesh_per_vertex_colours(
@@ -1338,14 +1380,14 @@ static  void  draw_quadmesh_per_vertex_colours(
 @NAME       : G_draw_quadmesh
 @INPUT      : window
               quadmesh
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a quadmesh in the window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
   void  G_draw_quadmesh(
@@ -1374,16 +1416,16 @@ static  void  draw_quadmesh_per_vertex_colours(
 @NAME       : G_draw_lines
 @INPUT      : window
               lines
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws the lines in the given window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
-void 
+void
 G_draw_lines(Gwindow window, lines_struct *lines )
 {
   GLuint vbo_points;            /* OpenGL vertex buffer object */
@@ -1499,14 +1541,14 @@ G_draw_lines(Gwindow window, lines_struct *lines )
 @NAME       : G_draw_text
 @INPUT      : window
               text
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws the text in the given window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
   void  G_draw_text(
@@ -1532,14 +1574,14 @@ G_draw_lines(Gwindow window, lines_struct *lines )
 @NAME       : G_draw_marker
 @INPUT      : window
               marker
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws a 3D marker in the window
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
   void  G_draw_marker(
@@ -1688,7 +1730,7 @@ draw_marker_as_cube( Gwindow window, VIO_Colour colour )
      static int indices[N_POINTS_CUBE] = {
        0,  1,  2,  3,  4,  5,  6,  7,
        8,  9, 10, 11, 12, 13, 14, 15,
-       16, 17, 18, 19, 20, 21, 22, 23 
+       16, 17, 18, 19, 20, 21, 22, 23
      };
 
      static  polygons_struct  polygons = {
@@ -1715,14 +1757,14 @@ draw_marker_as_cube( Gwindow window, VIO_Colour colour )
 @NAME       : G_draw_pixels
 @INPUT      : window
               pixels
-@OUTPUT     : 
-@RETURNS    : 
+@OUTPUT     :
+@RETURNS    :
 @DESCRIPTION: Draws the pixels in the window.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
   void  G_draw_pixels(
@@ -1773,13 +1815,13 @@ draw_marker_as_cube( Gwindow window, VIO_Colour colour )
               y_min
               y_max
 @OUTPUT     : pixels
-@RETURNS    : 
+@RETURNS    :
 @DESCRIPTION: Reads the pixels from the frame buffer.
-@METHOD     : 
-@GLOBALS    : 
-@CALLS      : 
+@METHOD     :
+@GLOBALS    :
+@CALLS      :
 @CREATED    : 1993            David MacDonald
-@MODIFIED   : 
+@MODIFIED   :
 ---------------------------------------------------------------------------- */
 
   void  G_read_pixels(
