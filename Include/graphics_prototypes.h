@@ -378,7 +378,7 @@ VIO_BOOL state );
 
 void G_set_shaded_state(
  Gwindow window,
-VIO_BOOL state );
+ Shading_modes state );
 
 void G_set_shading_type(
  Gwindow window,

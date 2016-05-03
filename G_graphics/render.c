@@ -7,7 +7,7 @@
 
   void  G_set_shaded_state(
     Gwindow      window,
-    VIO_BOOL      state )
+    Shading_modes state )
 {
     if( state != window->shaded_mode_state )
         window->shaded_mode_state = state;

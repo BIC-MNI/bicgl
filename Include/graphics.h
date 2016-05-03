@@ -39,7 +39,7 @@ typedef  struct   window_struct
     VIO_BOOL                zbuffer_state;
     VIO_BOOL                colour_map_state;
 
-    VIO_BOOL                shaded_mode_state;
+    Shading_modes          shaded_mode_state;
     Shading_types          shading_type;
     VIO_BOOL                lighting_state;
     VIO_BOOL                transparency_state;
