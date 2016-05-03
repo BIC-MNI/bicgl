@@ -419,7 +419,7 @@ draw_polygons_one_colour(Gwindow window, polygons_struct *polygons)
          window->shaded_mode_state, window->lighting_state,
          polygons->normals, polygons->n_points, polygons->n_items,
          Surfprop_t(polygons->surfprop));
-#endif
+#endif  /* DEBUG */
 
   if (polygons->normals != NULL)
   {
@@ -554,7 +554,7 @@ draw_triangles_one_colour(Gwindow window, polygons_struct *polygons)
          window->shaded_mode_state, window->lighting_state,
          polygons->normals, polygons->n_points, polygons->n_items,
          Surfprop_t(polygons->surfprop));
-#endif
+#endif  /* DEBUG */
 
   n_indices = NUMBER_INDICES(*polygons);
 
@@ -711,7 +711,9 @@ draw_triangles_per_item_colours(Gwindow window,
   int n_items;
   GLuint program;
 
+#if DEBUG
   printf("tri_per_item: %d %d\n", polygons->n_points, polygons->n_items);
+#endif /* DEBUG */
 
   /* To save a little space and time, allocate all of the memory we
    * will need in one go...
@@ -891,7 +893,9 @@ draw_polygons_per_vertex_colours(Gwindow window, polygons_struct *polygons)
       }
     }
     n_indices = k;
-    printf("Displaying only %d/%d indices\n", n_indices, NUMBER_INDICES(*polygons));
+#if DEBUG
+    printf("Displaying %d/%d indices\n", n_indices, NUMBER_INDICES(*polygons));
+#endif  /* DEBUG */
   }
 
   program = window->GS_window->programs[PROGRAM_VERTEX];
@@ -1091,7 +1095,9 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   int n = quadmesh->n;
   int used_j;
 
+#if DEBUG
   printf("!!!\n");
+#endif  /* DEBUG */
 
   get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
   set_colour( window, quadmesh->colours[0] );
@@ -1127,7 +1133,9 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   int i, j;
   VIO_Vector *temp_normals = NULL;
 
+#if DEBUG
   printf("draw_quadmesh_one_colour %d %d %d %d %d %p (NEW)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag, quadmesh->normals);
+#endif  /* DEBUG */
 
   get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
   n_items = quadmesh->m * quadmesh->n;
@@ -1236,7 +1244,9 @@ static  void  draw_quadmesh_one_colour(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
+#if DEBUG
     printf("draw_quadmesh_one_colour %d %d %d %d %d (OLD)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag);
+#endif  /* DEBUG */
 
 #define DEF_ONE_COLOUR
 
