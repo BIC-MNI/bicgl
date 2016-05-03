@@ -23,8 +23,6 @@ void G_clear_drawing_interrupt_flag( Gwindow window );
 
 void set_continuation_flag( Gwindow window, VIO_BOOL state );
 
-void initialize_surface_property( Gwindow window );
-
 VIO_BOOL view_is_stereo( Gwindow window );
 
 /**

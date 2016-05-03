@@ -283,18 +283,6 @@ static  void  set_surface_property(
     GS_set_surface_property( window->GS_window, col, surfprop );
 }
 
-  void  initialize_surface_property(
-    Gwindow        window )
-{
-    VIO_Colour                 col;
-    static  VIO_Surfprop       surfprop = { 1.0f, 1.0f, 1.0f, 40.0f, 1.0f };
-
-    col = make_Colour( 255, 255, 255 );
-
-    GS_initialize_surface_property( window->GS_window );
-    set_surface_property( window, col, &surfprop );
-}
-
   VIO_BOOL  view_is_stereo(
     Gwindow        window )
 {
@@ -1080,46 +1068,6 @@ static  void  draw_polygons(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
-#if 0
-/* experimental code. still trying to figure out why the "new" version
- * gives different results than the "classic" version.
- */
-void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
-{
-  VIO_Point *left_points, *right_points;
-  VIO_Vector *left_normals, *right_normals;
-  int item_index;
-  int m_size, n_size;
-  int j;
-  int m = quadmesh->m;
-  int n = quadmesh->n;
-  int used_j;
-
-#if DEBUG
-  printf("!!!\n");
-#endif  /* DEBUG */
-
-  get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
-  set_colour( window, quadmesh->colours[0] );
-
-  for_less(item_index, 0, m_size)
-  {
-    GS_begin_quad_strip();
-
-    for_inclusive( j, 0, n_size )
-    {
-      used_j = j % n;
-      GS_set_normal( &quadmesh->normals[VIO_IJ(item_index,used_j,n)] );
-      GS_set_point( &quadmesh->points[VIO_IJ(item_index,used_j,n)] );
-
-      GS_set_normal( &quadmesh->normals[VIO_IJ((item_index+1)%m,used_j,n)] );
-      GS_set_point( &quadmesh->points[VIO_IJ((item_index+1)%m,used_j,n)] );
-    }
-
-    GS_end_quad_strip();
-  }
-}
-#elif 1
 void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
 {
   GLuint vbo_points;
@@ -1131,7 +1079,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   GLint program;
   int m_size, n_size;
   int i, j;
-  VIO_Vector *temp_normals = NULL;
+  GLuint *indices;
 
 #if DEBUG
   printf("draw_quadmesh_one_colour %d %d %d %d %d %p (NEW)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag, quadmesh->normals);
@@ -1143,18 +1091,6 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
   if (quadmesh->normals != NULL)
   {
     program = window->GS_window->programs[PROGRAM_SINGLE];
-
-    temp_normals = malloc(sizeof(VIO_Vector) * n_items);
-    if (temp_normals != NULL)
-    {
-      for (i = 0; i < n_items; i++) {
-        temp_normals[i] = quadmesh->normals[i];
-        VIO_Real temp = temp_normals[i].coords[VIO_Y];
-        temp_normals[i].coords[VIO_Y] = -temp_normals[i].coords[VIO_X];
-        temp_normals[i].coords[VIO_X] = temp;
-      }
-    }
-
     /*
      * Set up nondefault surface properties.
      */
@@ -1194,42 +1130,43 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
     glGenBuffers(1, &vbo_normals);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
     glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Vector),
-                 temp_normals, GL_STATIC_DRAW);
-
+                 quadmesh->normals, GL_STATIC_DRAW);
     loc_normal = glGetAttribLocation(program, "normal");
     glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(loc_normal);
     GLCHECK;
   }
 
-  GLint indices[(n_size + 1) * 2];
+  indices = malloc((n_size + 1) * 2 * sizeof(GLuint));
 
   glGenBuffers(1, &ebo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-  for (i = 0; i < m_size; i++) {
+  /* Draw these in m_size separate strips, otherwise we get unwanted
+   * extra faces "closing" the surface.
+   */
+  for (i = 0; i < m_size; i++)
+  {
     int k = 0;
-
-    for (j = n_size; j >= 0; j--) {
+    for (j = 0; j <= n_size; j++)
+    {
       int used_j = j % quadmesh->n;
       indices[k++] = VIO_IJ(i, used_j, quadmesh->n);
       indices[k++] = VIO_IJ((i + 1) % quadmesh->m, used_j, quadmesh->n);
     }
-    assert(k == (n_size + 1) * 2);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 (n_size + 1) * 2 * sizeof(GLint),
-                 indices,
-                 GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, k * sizeof(GLuint),
+                 indices, GL_DYNAMIC_DRAW);
     glDrawElements(GL_TRIANGLE_STRIP, k, GL_UNSIGNED_INT, 0);
     GLCHECK;
   }
+
+  free(indices);
 
   if (quadmesh->normals != NULL)
   {
     glDisableVertexAttribArray(loc_normal);
     glDeleteBuffers(1, &vbo_normals);
     GLCHECK;
-    free(temp_normals);
   }
 
   glDeleteBuffers(1, &ebo);
@@ -1239,49 +1176,7 @@ void draw_quadmesh_one_colour(Gwindow window, quadmesh_struct *quadmesh)
 
   glUseProgram(0);
 }
-#else
-static  void  draw_quadmesh_one_colour(
-    Gwindow         window,
-    quadmesh_struct *quadmesh )
-{
-#if DEBUG
-    printf("draw_quadmesh_one_colour %d %d %d %d %d (OLD)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag);
-#endif  /* DEBUG */
 
-#define DEF_ONE_COLOUR
-
-    if( window->shaded_mode_state )
-    {
-        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_quadmesh.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_quadmesh.include.c"
-        }
-    }
-    else
-    {
-#define  DEF_WIREFRAME
-        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_quadmesh.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_quadmesh.include.c"
-        }
-#undef   DEF_WIREFRAME
-    }
-
-#undef  DEF_ONE_COLOUR
-}
-#endif
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : draw_quadmesh_per_item_colours
 @INPUT      : window
@@ -1300,6 +1195,7 @@ static  void  draw_quadmesh_per_item_colours(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
+  printf("draw_quadmesh_per_item_colours\n");
 #define    DEF_PER_ITEM_COLOURS
 
     if( window->shaded_mode_state )
@@ -1347,11 +1243,119 @@ static  void  draw_quadmesh_per_item_colours(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
+#if 1
+void draw_quadmesh_per_vertex_colours(Gwindow window, quadmesh_struct *quadmesh)
+{
+  GLuint vbo_points;
+  GLuint vbo_normals;
+  GLuint vbo_colours;
+  GLuint ebo;
+  GLint loc_position;
+  GLint loc_normal;
+  GLint loc_colour;
+  GLint loc_surfprop;
+  int n_items = 0;
+  GLint program;
+  int m_size, n_size;
+  int i, j;
+  GLuint *indices;
 
+  printf("draw_quadmesh_per_vertex_colours %d %d %d %d %d %p (NEW)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag, quadmesh->normals);
+  printf("  surfprop %f %f %f %f %f\n", 
+         Surfprop_a(quadmesh->surfprop),
+         Surfprop_d(quadmesh->surfprop),
+         Surfprop_s(quadmesh->surfprop),
+         Surfprop_se(quadmesh->surfprop),
+         Surfprop_t(quadmesh->surfprop));
+
+  get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
+  n_items = quadmesh->m * quadmesh->n;
+
+  program = window->GS_window->programs[PROGRAM_VERTEX];
+  glUseProgram(program);
+  set_program_opacity(program, Surfprop_t(quadmesh->surfprop));
+
+  if( window->shaded_mode_state )  
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+  }
+  else
+  {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+  }
+
+  glGenBuffers(1, &vbo_points);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Point),
+               quadmesh->points, GL_STATIC_DRAW);
+
+  loc_position = glGetAttribLocation(program, "position");
+  glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_position);
+  GLCHECK;
+
+  loc_surfprop = glGetUniformLocation(program, "surfprop");
+  glUniform4fv(loc_surfprop, 1, &quadmesh->surfprop.a);
+  
+  glGenBuffers(1, &vbo_normals);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Vector),
+               quadmesh->normals, GL_STATIC_DRAW);
+  
+  loc_normal = glGetAttribLocation(program, "normal");
+  glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(loc_normal);
+
+  glGenBuffers(1, &vbo_colours);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_colours);
+  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Colour),
+               quadmesh->colours, GL_STATIC_DRAW);
+
+  loc_colour = glGetAttribLocation(program, "colour");
+  glVertexAttribPointer(loc_colour, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
+  glEnableVertexAttribArray(loc_colour);
+
+  indices = malloc((n_size + 1) * 2 * sizeof(GLuint));
+
+  glGenBuffers(1, &ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+  /* Draw these in m_size separate strips, otherwise we get unwanted
+   * extra faces "closing" the surface.
+   */
+  for (i = 0; i < m_size; i++)
+  {
+    int k = 0;
+    for (j = 0; j <= n_size; j++)
+    {
+      int used_j = j % quadmesh->n;
+      indices[k++] = VIO_IJ(i, used_j, quadmesh->n);
+      indices[k++] = VIO_IJ((i + 1) % quadmesh->m, used_j, quadmesh->n);
+    }
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, k * sizeof(GLuint),
+                 indices, GL_DYNAMIC_DRAW);
+    glDrawElements(GL_TRIANGLE_STRIP, k, GL_UNSIGNED_INT, 0);
+    GLCHECK;
+  }
+
+  free(indices);
+
+  glDisableVertexAttribArray(loc_position);
+  glDisableVertexAttribArray(loc_colour);
+  glDisableVertexAttribArray(loc_normal);
+  glDeleteBuffers(1, &ebo);
+  glDeleteBuffers(1, &vbo_points);
+  glDeleteBuffers(1, &vbo_colours);
+  glDeleteBuffers(1, &vbo_normals);
+
+  glUseProgram(0);
+}
+#else
 static  void  draw_quadmesh_per_vertex_colours(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
+  printf("draw_quadmesh_per_vertex_colours\n");
 #define DEF_PER_VERTEX_COLOURS
 
     if( window->shaded_mode_state )
@@ -1385,7 +1389,7 @@ static  void  draw_quadmesh_per_vertex_colours(
 
 #undef      DEF_PER_VERTEX_COLOURS
 }
-
+#endif
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : G_draw_quadmesh
 @INPUT      : window
