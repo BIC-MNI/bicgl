@@ -1260,6 +1260,7 @@ void draw_quadmesh_per_vertex_colours(Gwindow window, quadmesh_struct *quadmesh)
   int i, j;
   GLuint *indices;
 
+#if DEBUG
   printf("draw_quadmesh_per_vertex_colours %d %d %d %d %d %p (NEW)\n", quadmesh->m_closed, quadmesh->n_closed, quadmesh->m, quadmesh->n, quadmesh->colour_flag, quadmesh->normals);
   printf("  surfprop %f %f %f %f %f\n", 
          Surfprop_a(quadmesh->surfprop),
@@ -1267,6 +1268,7 @@ void draw_quadmesh_per_vertex_colours(Gwindow window, quadmesh_struct *quadmesh)
          Surfprop_s(quadmesh->surfprop),
          Surfprop_se(quadmesh->surfprop),
          Surfprop_t(quadmesh->surfprop));
+#endif /* DEBUG */
 
   get_quadmesh_n_objects(quadmesh, &m_size, &n_size);
   n_items = quadmesh->m * quadmesh->n;
@@ -1355,7 +1357,9 @@ static  void  draw_quadmesh_per_vertex_colours(
     Gwindow         window,
     quadmesh_struct *quadmesh )
 {
+#if DEBUG
   printf("draw_quadmesh_per_vertex_colours\n");
+#endif /* DEBUG */
 #define DEF_PER_VERTEX_COLOURS
 
     if( window->shaded_mode_state )
