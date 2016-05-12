@@ -38,14 +38,16 @@ static  void  set_colour(
      if( window->colour_map_state ||
          window->current_bitplanes == OVERLAY_PLANES )
          GS_set_colour_index( colour );
-     /*else if( stereo_flag )
+     /*
+     else if( window->stereo_flag )
      {
          int  intensity;
-         intensity = 0.324 * get_Colour_r(c) +
-                     0.499 * get_Colour_g(c) +
-                     0.177 * get_Colour_b(c) + 0.5;
-         cpack( make_Colour( intensity, intensity, intensity ) );
-     } */
+         intensity = 0.324 * get_Colour_r(colour) +
+                     0.499 * get_Colour_g(colour) +
+                     0.177 * get_Colour_b(colour) + 0.5;
+         GS_set_colour( make_Colour( intensity, intensity, intensity ) );
+     }
+     */
      else
          GS_set_colour( colour );
 }
@@ -114,166 +116,6 @@ static  void  set_colour(
 {
     window->continuation_flag = state;
 }
-
-#ifndef   DISALLOW_DRAWING_INTERRUPT
-
-/*  macro for drawing objects with interrupts  */
-
-#define  BEGIN_DRAW_OBJECTS( window, check_every, n_objects, wireframe_flag ) \
-{ \
-    Random_mask_type            OBJECT_INDEX; \
-    int                         _i, _iter, _n_iters, _n_done, _n_before_check; \
-    int                         _check_every, _n_objects_to_do; \
-    VIO_BOOL                     _random_order, _interrupt_allowed; \
-    Random_mask_type            _random_order_mask; \
-    VIO_Real                        interrupt_at, current_time; \
-    int                         _n_objects, _first_object, _second_object; \
-    VIO_BOOL                     _wireframe_flag; \
-    static   VIO_BOOL            const_true = TRUE; \
- \
-    _n_objects = (n_objects); \
-    _wireframe_flag = (wireframe_flag); \
- \
-    (window)->interrupt_occurred = FALSE; \
-\
-    interrupt_at = (window)->interrupt_time; \
-    _interrupt_allowed = (G_get_drawing_interrupt_state( window ) && \
-                         (_n_objects) > (window)->interrupt_interval ); \
- \
-    if( _interrupt_allowed ) \
-    { \
-        _random_order = (window->zbuffer_state || \
-                         const_true == _wireframe_flag); \
-        if( _random_order ) \
-            _random_order_mask = get_random_order_mask( _n_objects ); \
- \
-        _check_every = (check_every); \
-        _n_before_check = _check_every; \
-    } \
-    else \
-        _random_order = FALSE; \
-   \
-    if( (window)->continuation_flag ) \
-    { \
-        _first_object = (window)->next_item; \
-        _n_done = (window)->n_items_done;   \
-        (window)->continuation_flag = FALSE;            \
-    } \
-    else \
-    { \
-        _first_object = 0; \
-        _n_done = 0; \
-    } \
- \
-    if( view_is_stereo(window) )                                            \
-    {                                                                         \
-        _n_iters = 2;                                                         \
-        set_view_for_eye( window, 0 );                                        \
-    }                                                                         \
-    else                                                                      \
-        _n_iters = 1;                                                         \
-                                                                              \
-    _n_objects_to_do = _n_objects;                                            \
-    if( _n_objects > 1 )                                                      \
-        _second_object = get_random_int( _n_objects-1 ) + 1;                  \
-    else                                                                      \
-        _second_object = 0;                                                   \
-                                                                              \
-    for_less( _iter, 0, _n_iters )                                            \
-    {                                                                         \
-        OBJECT_INDEX = (Random_mask_type) _first_object;                      \
-                                                                              \
-        if( _iter == 1 )                                                      \
-        {                                                                     \
-            set_view_for_eye( window, 1 );                                    \
-            _interrupt_allowed = FALSE;                                       \
-        }                                                                     \
-                                                                              \
-        for_less( _i, _n_done, _n_objects_to_do ) \
-        {
-
-
-#define  END_DRAW_OBJECTS  \
-            if( _random_order ) \
-            { \
-                if( _i == 0 ) \
-                { \
-                    OBJECT_INDEX = (Random_mask_type) _second_object; \
-                } \
-                else \
-                { \
-                    do \
-                    { \
-                        INCREMENT_RANDOM_ORDER( OBJECT_INDEX, \
-                                                _random_order_mask ); \
-                    } while( OBJECT_INDEX >= (Random_mask_type) _n_objects ); \
-                } \
-            } \
-            else \
-            { \
-                ++OBJECT_INDEX; \
-            } \
- \
-            if( _interrupt_allowed ) \
-            { \
-                --_n_before_check; \
-                if( _n_before_check == 0 ) \
-                { \
-                    current_time = current_realtime_seconds(); \
-                    if( current_time >= interrupt_at ) \
-                    { \
-                        _n_objects_to_do = _i+1; \
-                        (window)->n_items_done = _n_objects_to_do; \
-                        (window)->next_item = (int) OBJECT_INDEX; \
-                        (window)->interrupt_occurred = TRUE; \
-                        break; \
-                    } \
-                    _n_before_check = _check_every; \
-                } \
-            } \
-        } \
-    } \
-\
-    if( view_is_stereo(window) ) \
-    { \
-        set_view_for_eye( window, -1 );                                        \
-    } \
-}
-
-#else
-
-#define  BEGIN_DRAW_OBJECTS( window, check_every, n_objects, wireframe_flag )\
-{                                                                             \
-    int                      _i, _n_iters, OBJECT_INDEX;                      \
-                                                                              \
-    if( view_is_stereo(window) )                                            \
-    {                                                                         \
-        _n_iters = 2;                                                         \
-        set_view_for_eye( window, 0 );                                        \
-    }                                                                         \
-    else                                                                      \
-        _n_iters = 1;                                                         \
-                                                                              \
-    for_less( _i, 0, _n_iters )                                               \
-    {                                                                         \
-        if( _i == 1 )                                                         \
-        {                                                                     \
-            set_view_for_eye( window, 1 );                                    \
-        }                                                                     \
-                                                                              \
-        for_less( OBJECT_INDEX, 0, n_objects )                                \
-        {
-
-#define  END_DRAW_OBJECTS                                                     \
-        }                                                                     \
-    }                                                                         \
-    if( view_is_stereo(window) )                                              \
-    {                                                                         \
-        set_view_for_eye( window, -1 );                                       \
-    }                                                                         \
-}
-
-#endif
 
 static  void  set_surface_property(
     Gwindow        window,
@@ -985,6 +827,8 @@ static  void  draw_polygons(
     Gwindow         window,
     polygons_struct *polygons )
 {
+    int n_iters, i;
+
     if( !window->shaded_mode_state &&
         polygons->line_thickness > 1.0f &&
         polygons->line_thickness < MAX_LINE_WIDTH )
@@ -992,33 +836,59 @@ static  void  draw_polygons(
         GS_set_line_width( (VIO_Real) polygons->line_thickness );
     }
 
-    switch( polygons->colour_flag )
+    if( view_is_stereo(window) )
     {
-    case ONE_COLOUR:
-      if (!is_triangular(polygons))
-      {
-        draw_polygons_one_colour( window, polygons );
-      }
-      else
-      {
-        draw_triangles_one_colour( window, polygons );
-      }
-      break;
+        n_iters = 2;
+    }
+    else
+    {
+        n_iters = 1;
+    }
 
-    case PER_ITEM_COLOURS:
-      if (!is_triangular(polygons))
+    for (i = 0; i < n_iters; i++)
+    {
+      if (n_iters == 2)
       {
-        draw_polygons_one_colour( window, polygons );
+          set_view_for_eye( window, i );
+          if (i == 0)
+            glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+          else
+            glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE);
       }
-      else
+      switch( polygons->colour_flag )
       {
-        draw_triangles_per_item_colours( window, polygons );
-      }
-      break;
+      case ONE_COLOUR:
+        if (!is_triangular(polygons))
+        {
+          draw_polygons_one_colour( window, polygons );
+        }
+        else
+        {
+          draw_triangles_one_colour( window, polygons );
+        }
+        break;
 
-    case  PER_VERTEX_COLOURS:
-      draw_polygons_per_vertex_colours( window, polygons );
-      break;
+      case PER_ITEM_COLOURS:
+        if (!is_triangular(polygons))
+        {
+          draw_polygons_one_colour( window, polygons );
+        }
+        else
+        {
+          draw_triangles_per_item_colours( window, polygons );
+        }
+        break;
+
+      case  PER_VERTEX_COLOURS:
+        draw_polygons_per_vertex_colours( window, polygons );
+        break;
+      }
+    }
+
+    if( view_is_stereo(window) )
+    {
+        set_view_for_eye( window, -1 );
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
 
     if( !window->shaded_mode_state &&
@@ -1196,38 +1066,6 @@ static  void  draw_quadmesh_per_item_colours(
     quadmesh_struct *quadmesh )
 {
   printf("draw_quadmesh_per_item_colours\n");
-#define    DEF_PER_ITEM_COLOURS
-
-    if( window->shaded_mode_state )
-    {
-        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_quadmesh.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_quadmesh.include.c"
-        }
-    }
-    else
-    {
-#define  DEF_WIREFRAME
-        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_quadmesh.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_quadmesh.include.c"
-        }
-#undef   DEF_WIREFRAME
-    }
-
-#undef      DEF_PER_ITEM_COLOURS
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -1243,7 +1081,6 @@ static  void  draw_quadmesh_per_item_colours(
 @CREATED    : 1993            David MacDonald
 @MODIFIED   :
 ---------------------------------------------------------------------------- */
-#if 1
 void draw_quadmesh_per_vertex_colours(Gwindow window, quadmesh_struct *quadmesh)
 {
   GLuint vbo_points;
@@ -1352,48 +1189,6 @@ void draw_quadmesh_per_vertex_colours(Gwindow window, quadmesh_struct *quadmesh)
 
   glUseProgram(0);
 }
-#else
-static  void  draw_quadmesh_per_vertex_colours(
-    Gwindow         window,
-    quadmesh_struct *quadmesh )
-{
-#if DEBUG
-  printf("draw_quadmesh_per_vertex_colours\n");
-#endif /* DEBUG */
-#define DEF_PER_VERTEX_COLOURS
-
-    if( window->shaded_mode_state )
-    {
-        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_quadmesh.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_quadmesh.include.c"
-        }
-    }
-    else
-    {
-#define  DEF_WIREFRAME
-        if( window->lighting_state && quadmesh->normals != (VIO_Vector *) 0 )
-        {
-#define     DEF_NORMALS
-#include    "draw_quadmesh.include.c"
-#undef      DEF_NORMALS
-        }
-        else
-        {
-#include    "draw_quadmesh.include.c"
-        }
-#undef   DEF_WIREFRAME
-    }
-
-#undef      DEF_PER_VERTEX_COLOURS
-}
-#endif
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : G_draw_quadmesh
 @INPUT      : window
@@ -1447,20 +1242,19 @@ void
 G_draw_lines(Gwindow window, lines_struct *lines )
 {
   GLuint vbo_points;            /* OpenGL vertex buffer object */
+  GLuint vbo_colours;
   GLint loc_position;           /* Location of the "position" attribute. */
+  GLint loc_colour;
+  GLint loc_surfprop;
   GLint program;
   int save_lights;
+  int start_index = 0;
+  int end_index = 0;
   int i;
 
   if (lines->n_points == 0 || lines->n_items == 0)
   {
     /* Nothing to do! */
-    return;
-  }
-
-  if (lines->colour_flag == PER_VERTEX_COLOURS)
-  {
-    fprintf(stderr, "G_draw_lines does not handle per-vertex colours yet.\n");
     return;
   }
 
@@ -1472,17 +1266,22 @@ G_draw_lines(Gwindow window, lines_struct *lines )
   if( lines->line_thickness > 1.0 && lines->line_thickness < MAX_LINE_WIDTH )
     GS_set_line_width( lines->line_thickness );
 
-  if( lines->colour_flag == ONE_COLOUR )
+  if (lines->colour_flag == PER_VERTEX_COLOURS)
+  {
+    program = window->GS_window->programs[PROGRAM_VERTEX];
+  }
+  else
+  {
     set_colour( window, lines->colours[0] );
+    program = window->GS_window->programs[PROGRAM_TRIVIAL];
+  }
 
-  program = window->GS_window->programs[PROGRAM_TRIVIAL];
-
-  /* Set up the buffer for our vertex data.
-   */
   glUseProgram(program);
 
   set_program_opacity(program, 1.0);
 
+  /* Set up the buffer for our vertex data.
+   */
   glGenBuffers(1, &vbo_points);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_points);
   glBufferData(GL_ARRAY_BUFFER, lines->n_points * sizeof(VIO_Point),
@@ -1494,40 +1293,50 @@ G_draw_lines(Gwindow window, lines_struct *lines )
   glVertexAttribPointer(loc_position, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
   glEnableVertexAttribArray(loc_position);
 
+  if (lines->colour_flag == PER_VERTEX_COLOURS)
+  {
+    VIO_Surfprop spr = {1, 0, 0, 0, 1};
+    loc_surfprop = glGetUniformLocation(program, "surfprop");
+    /* sets the crucial 4 parameters for surface properties:
+       ambient, diffuse, specular, shininess
+    */
+    glUniform4fv(loc_surfprop, 1, &spr.a);
+
+    /* Set up the buffer for the colour data.
+     */
+    glGenBuffers(1, &vbo_colours);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_colours);
+    glBufferData(GL_ARRAY_BUFFER, lines->n_points * sizeof(GLuint),
+                 lines->colours, GL_STATIC_DRAW);
+
+    /* Assign the colour data to the "colour" value in the shader.
+     */
+    loc_colour = glGetAttribLocation(program, "colour");
+    glVertexAttribPointer(loc_colour, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
+    glEnableVertexAttribArray(loc_colour);
+  }
+
   /* Now start sending the line segments.
    */
-  if (lines->colour_flag == PER_ITEM_COLOURS)
+  for (i = 0; i < lines->n_items; i++)
   {
-    int start_index = 0;
-    int end_index = 0;
-
-    for (i = 0; i < lines->n_items; i++)
+    start_index = end_index;
+    end_index = lines->end_indices[i];
+    if (lines->colour_flag == PER_ITEM_COLOURS)
     {
-      start_index = end_index;
-      end_index = lines->end_indices[i];
       set_colour(window, lines->colours[i]);
-      glDrawElements(GL_LINE_STRIP, end_index - start_index,
-                     GL_UNSIGNED_INT,
-                     &lines->indices[start_index]);
     }
-  }
-  else
-  {
-    int start_index = 0;
-    int end_index = 0;
-
-    for (i = 0; i < lines->n_items; i++)
-    {
-      start_index = end_index;
-      end_index = lines->end_indices[i];
-      glDrawElements(GL_LINE_STRIP, end_index - start_index,
-                     GL_UNSIGNED_INT,
-                     &lines->indices[start_index]);
-    }
+    glDrawElements(GL_LINE_STRIP, end_index - start_index, GL_UNSIGNED_INT,
+                   &lines->indices[start_index]);
   }
 
   /* Clean up after ourselves.
    */
+  if (lines->colour_flag == PER_VERTEX_COLOURS)
+  {
+    glDisableVertexAttribArray(loc_colour);
+    glDeleteBuffers(1, &vbo_colours);
+  }
   glDisableVertexAttribArray(loc_position);
   glDeleteBuffers(1, &vbo_points);
   glUseProgram(0);
@@ -1577,15 +1386,11 @@ G_draw_lines(Gwindow window, lines_struct *lines )
 
     set_colour( window, text->colour );
 
-    BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, 1, TRUE )
+    GS_set_raster_position( (VIO_Real) Point_x(text->origin),
+                            (VIO_Real) Point_y(text->origin),
+                            (VIO_Real) Point_z(text->origin) );
 
-        GS_set_raster_position( (VIO_Real) Point_x(text->origin),
-                                (VIO_Real) Point_y(text->origin),
-                                (VIO_Real) Point_z(text->origin) );
-
-        GS_draw_text( text->font, text->size, text->string );
-
-    END_DRAW_OBJECTS
+    GS_draw_text( text->font, text->size, text->string );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -1616,57 +1421,52 @@ G_draw_lines(Gwindow window, lines_struct *lines )
 
     set_colour( window, marker->colour );
 
-    BEGIN_DRAW_OBJECTS( window, window->interrupt_interval, 1, TRUE )
-
-        if( marker->size <= 0.0 )
-        {
-            GS_begin_point();
-                GS_set_point( &marker->position );
-            GS_end_point();
-        }
-        else
-        {
-            GS_push_transform();
-
-            make_translation_transform( (VIO_Real) Point_x(marker->position),
-                                        (VIO_Real) Point_y(marker->position),
-                                        (VIO_Real) Point_z(marker->position),
-                                        &transform );
-            GS_mult_transform( &transform );
-
-            make_scale_transform( marker->size, marker->size, marker->size,
+    if( marker->size <= 0.0 )
+    {
+      GS_begin_point();
+      GS_set_point( &marker->position );
+      GS_end_point();
+    }
+    else
+    {
+      GS_push_transform();
+      make_translation_transform( (VIO_Real) Point_x(marker->position),
+                                  (VIO_Real) Point_y(marker->position),
+                                  (VIO_Real) Point_z(marker->position),
                                   &transform );
-            GS_mult_transform( &transform );
+      GS_mult_transform( &transform );
 
-            switch( marker->type )
-            {
-            case  BOX_MARKER:
-                draw_marker_as_cube( window, marker->colour );
-                break;
+      make_scale_transform( marker->size, marker->size, marker->size,
+                            &transform );
+      GS_mult_transform( &transform );
 
-            case  SPHERE_MARKER:
-                draw_marker_as_cube( window, marker->colour );
-                break;
+      switch( marker->type )
+      {
+      case  BOX_MARKER:
+        draw_marker_as_cube( window, marker->colour );
+        break;
 
-            default:
-                print_error("G_draw_marker(): unknown marker type.");
-                break;
-            }
+      case  SPHERE_MARKER:
+        draw_marker_as_cube( window, marker->colour );
+        break;
 
-            GS_pop_transform();
-        }
+      default:
+        print_error("G_draw_marker(): unknown marker type.");
+        break;
+      }
 
-        if( window->marker_labels_visibility )
-        {
-            GS_set_raster_position( (VIO_Real) Point_x(marker->position) +
-                                       1.5 * (VIO_Real) marker->size / 2.0,
-                                    (VIO_Real) Point_y(marker->position),
-                                    (VIO_Real) Point_z(marker->position) );
+      GS_pop_transform();
+    }
 
-            GS_draw_text( FIXED_FONT, 10.0, marker->label );
-        }
+    if( window->marker_labels_visibility )
+    {
+      GS_set_raster_position( (VIO_Real) Point_x(marker->position) +
+                              1.5 * (VIO_Real) marker->size / 2.0,
+                              (VIO_Real) Point_y(marker->position),
+                              (VIO_Real) Point_z(marker->position) );
 
-    END_DRAW_OBJECTS
+      GS_draw_text( FIXED_FONT, 10.0, marker->label );
+    }
 
     G_set_lighting_state( window, save_lights );
 }
