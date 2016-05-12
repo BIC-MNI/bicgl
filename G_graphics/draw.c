@@ -30,6 +30,7 @@
 #define  MAX_LINE_WIDTH  1000.0f
 
 static  void     draw_marker_as_cube( Gwindow, VIO_Colour );
+static  void     draw_marker_as_sphere( Gwindow, VIO_Colour );
 
 static  void  set_colour(
     Gwindow   window,
@@ -1189,6 +1190,7 @@ void draw_quadmesh_per_vertex_colours(Gwindow window, quadmesh_struct *quadmesh)
 
   glUseProgram(0);
 }
+
 /* ----------------------------- MNI Header -----------------------------------
 @NAME       : G_draw_quadmesh
 @INPUT      : window
@@ -1430,6 +1432,7 @@ G_draw_lines(Gwindow window, lines_struct *lines )
     else
     {
       GS_push_transform();
+
       make_translation_transform( (VIO_Real) Point_x(marker->position),
                                   (VIO_Real) Point_y(marker->position),
                                   (VIO_Real) Point_z(marker->position),
@@ -1447,7 +1450,7 @@ G_draw_lines(Gwindow window, lines_struct *lines )
         break;
 
       case  SPHERE_MARKER:
-        draw_marker_as_cube( window, marker->colour );
+        draw_marker_as_sphere( window, marker->colour );
         break;
 
       default:
@@ -1569,6 +1572,109 @@ draw_marker_as_cube( Gwindow window, VIO_Colour colour )
 
     polygons.colours[0] = colour;
     draw_polygons( window, &polygons );
+}
+
+double DEGS_TO_RAD = M_PI / 180.0;
+
+void
+create_sphere(VIO_Point center, double radius, int n_latitude, int n_longitude,
+              polygons_struct *polygons)
+{
+  int p;
+  int s;
+  int n_indices = 0;
+  int n = 2;
+
+  const int n_pitch = n_longitude + 1;
+  const VIO_Real pitch_inc = (M_PI / (VIO_Real) n_pitch);
+  const VIO_Real rot_inc = (M_PI * 2.0 / (VIO_Real) n_latitude);
+  const VIO_Real cx = Point_x(center);
+  const VIO_Real cy = Point_y(center);
+  const VIO_Real cz = Point_z(center);
+  const int n_triangles = n_longitude * 4;
+  const int n_quads = n_latitude * (n_longitude - 1);
+  const int first_offset = 2;
+  const int last_offset = first_offset + (n_latitude * (n_longitude - 1));
+
+  polygons->n_items = n_triangles + n_quads;
+  polygons->n_points = 2 + (n_latitude * n_longitude);
+  ALLOC(polygons->points, polygons->n_points);
+  ALLOC(polygons->normals, polygons->n_points);
+  ALLOC(polygons->end_indices, polygons->n_items);
+  ALLOC(polygons->indices, 3 * n_triangles + 4 * n_quads);
+
+  /* Generate top and bottom vertices. */
+  fill_Point(polygons->points[0], cx, cy + radius, cz);
+  fill_Point(polygons->points[1], cx, cy - radius, cz);
+
+  fill_Vector(polygons->normals[0], 0, radius, 0);
+  fill_Vector(polygons->normals[1], 0, -radius, 0);
+
+  for (p = 1; p < n_pitch; p++)
+  {
+    VIO_Real out = fabs(radius * sin(p * pitch_inc));
+    VIO_Real y = radius * cos(p * pitch_inc);
+
+    for (s = 0; s < n_latitude; s++)
+    {
+      VIO_Real x = out * cos(s * rot_inc);
+      VIO_Real z = out * sin(s * rot_inc);
+
+      fill_Vector(polygons->normals[n], x, y, z);
+      fill_Point(polygons->points[n], x + cx, y + cy, z + cz);
+      n++;
+    }
+  }
+
+  n = 0;
+
+  /* Create the quadrilateral faces between intermediate points.
+   */
+  for (p = 1; p < n_longitude; p++) /* for each longitude line */
+  {
+    for (s = 0; s < n_latitude; s++) /* for each latitude line */
+    {
+      int i = p * n_latitude + s;
+      int j = (s == n_latitude - 1) ? i - n_latitude : i;
+
+      polygons->indices[n_indices++] = i - n_latitude + first_offset;
+      polygons->indices[n_indices++] = j + 1 - n_latitude + first_offset;
+      polygons->indices[n_indices++] = j + 1 + first_offset;
+      polygons->indices[n_indices++] = i + first_offset;
+      polygons->end_indices[n++] = n_indices;
+    }
+  }
+
+  /* Create the "triangular fan" that surrounds the top and bottom
+   * vertices.
+   */
+  int n_around = n_longitude * 2;
+  for (s = 0; s < n_around; s++)
+  {
+    int j = (s == n_around - 1) ? -1 : s;
+
+    polygons->indices[n_indices++] = 0; /* index of top  */
+    polygons->indices[n_indices++] = j + 1 + first_offset;
+    polygons->indices[n_indices++] = s + first_offset;
+    polygons->end_indices[n++] = n_indices;
+
+    polygons->indices[n_indices++] = 1; /* index of bottom */
+    polygons->indices[n_indices++] = s + last_offset;
+    polygons->indices[n_indices++] = j + 1 + last_offset;
+    polygons->end_indices[n++] = n_indices;
+  }
+}
+
+static void
+draw_marker_as_sphere( Gwindow window, VIO_Colour colour )
+{
+  object_struct   *object = create_object( POLYGONS );
+  polygons_struct *polygons = get_polygons_ptr( object );
+  VIO_Point       pt = { { 0, 0, 0 } };
+  initialize_polygons( polygons, colour, NULL );
+  create_sphere( pt, 0.5, 16, 16/2, polygons );
+  draw_polygons( window, polygons );
+  delete_object( object );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
