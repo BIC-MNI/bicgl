@@ -176,6 +176,8 @@ VIO_Status  WS_create_window(
 
     window->init_x = glutGet(GLUT_WINDOW_X);
     window->init_y = glutGet(GLUT_WINDOW_Y);
+    window->border_width = 0;
+    window->border_height = 0;
     window->is_visible = TRUE;
     window->is_new = TRUE;
 

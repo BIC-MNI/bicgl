@@ -42,7 +42,11 @@ static  void  initialize_viewport(
 
     viewport->background_colour = make_Colour( 0, 0, 0 );
     viewport->background_colour_index = 0;
-
+    /* Start with ridiculous x and y values. */
+    viewport->x_min = INT_MAX;
+    viewport->x_max = INT_MIN;
+    viewport->y_min = INT_MAX;
+    viewport->y_max = INT_MIN;
     for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
     {
         viewport->bitplanes[bitplane].n_objects = 0;
