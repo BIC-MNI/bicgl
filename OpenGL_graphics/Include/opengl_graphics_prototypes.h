@@ -184,6 +184,8 @@
 
   void  GS_event_loop( void );
 
+void GS_exit_loop(void);
+
   void  GS_set_mouse_position(
     int       x_screen,
     int       y_screen );

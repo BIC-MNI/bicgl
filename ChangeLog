@@ -1,3 +1,7 @@
+2016-05-27  Robert D. Vincent <robert.d.vincent@mcgill.ca>
+	* multiple: Implement G_exit_loop() so that we can exploit
+	the orderly shutdown features of FreeGLUT when available.
+
 2016-04-19  Robert D. Vincent <robert.d.vincent@mcgill.ca>
 	* Include/graphics_prototypes.h, G_graphics/draw.c,
 	G_graphics/render.c, G_graphics/windows.c,

@@ -152,6 +152,11 @@
     WS_event_loop();
 }
 
+void GS_exit_loop( void )
+{
+  WS_exit_loop();
+}
+
   void  GS_set_mouse_position(
     int       x_screen,
     int       y_screen )

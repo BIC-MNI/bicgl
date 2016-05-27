@@ -171,6 +171,8 @@
 
   void  WS_event_loop( void );
 
+void WS_exit_loop(void);
+
   void  WS_set_update_flag(
     WSwindow   window  );
 

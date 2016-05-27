@@ -6,7 +6,11 @@
 #ifdef HAVE_APPLE_OPENGL_FRAMEWORK
 #include <GLUT/glut.h>
 #else
+#ifdef HAVE_FREEGLUT_H
+#include <GL/freeglut.h>
+#else
 #include  <GL/glut.h>
+#endif
 #endif
 
 typedef  int  Window_id;

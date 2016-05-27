@@ -820,6 +820,11 @@ static  void  check_update_windows(
     GS_event_loop();
 }
 
+void G_exit_loop(void)
+{
+  GS_exit_loop();
+}
+
   void  G_set_mouse_position(
     int       x_screen,
     int       y_screen )

@@ -246,6 +246,7 @@ void G_remove_idle_function( void (*func) ( void * ), void *data );
 
 void G_main_loop( void );
 
+void G_exit_loop(void);
 /**
  * @}
  */

@@ -896,7 +896,20 @@ static  void  global_idle_function( void )
 
   void  WS_event_loop( void )
 {
+#ifdef GLUT_ACTION_GLUTMAINLOOP_RETURNS
+    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
+                  GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+#endif /* GLUT_ACTION_ON_WINDOW_CLOSE */
     glutMainLoop();
+}
+
+void WS_exit_loop(void)
+{
+#ifdef GLUT_ACTION_GLUTMAINLOOP_RETURNS
+   glutLeaveMainLoop();
+#else
+   exit( 0 );
+#endif
 }
 
   void  WS_set_update_flag(

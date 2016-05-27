@@ -37,6 +37,9 @@
 /* Define to 1 if you have the <windows.h> header file. */
 #cmakedefine HAVE_WINDOWS_H
 
+/* Define to 1 if you have the <GL/freeglut.h> header file. */
+#cmakedefine HAVE_FREEGLUT_H
+
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
 #cmakedefine PTHREAD_CREATE_JOINABLE
