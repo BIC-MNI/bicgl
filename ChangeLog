@@ -1,3 +1,7 @@
+2016-05-31  Robert D. Vincent <robert.d.vincent@mcgill.ca>
+	* multiple: Move all OpenGL-specific drawing code from
+	G_graphics/draw.c to OpenGL_graphics/draw.c
+
 2016-05-27  Robert D. Vincent <robert.d.vincent@mcgill.ca>
 	* multiple: Implement G_exit_loop() so that we can exploit
 	the orderly shutdown features of FreeGLUT when available.
