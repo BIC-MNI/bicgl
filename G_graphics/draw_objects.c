@@ -31,6 +31,9 @@
         case TEXT:
             G_draw_text( window, get_text_ptr(object) );
             break;
+        default:
+            handle_internal_error("Request to draw object of unknown type");
+            break;
         }
     }
 }

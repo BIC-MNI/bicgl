@@ -14,7 +14,7 @@
 	OpenGL_graphics/windows.c,
 	OpenGL_graphics/Include/opengl_graphics_prototypes.h:
 	Added G_set_geometry() and G_create_child_window() calls to
-	accomodate placement and creation of child windows.
+	accommodate placement and creation of child windows.
 
 2015-10-18  Robert D. Vincent <robert.d.vincent@mcgill.ca>
 	* G_graphics/graphics_structs.c, G_graphics/windows.c,

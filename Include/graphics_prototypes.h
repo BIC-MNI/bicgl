@@ -25,6 +25,7 @@ void set_continuation_flag( Gwindow window, VIO_BOOL state );
 
 VIO_BOOL view_is_stereo( Gwindow window );
 
+VIO_BOOL is_triangular( polygons_struct *polygons );
 /**
  * Draw the polygons_struct in the selected window.
  *

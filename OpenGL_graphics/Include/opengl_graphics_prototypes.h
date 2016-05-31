@@ -421,4 +421,30 @@ void GS_exit_loop(void);
 
 void GS_set_geometry(GSwindow window, int x, int y, int width, int height);
 
+void GS_draw_polygons_one_colour(GSwindow window, Shading_modes shading_mode,
+                                 polygons_struct *polygons);
+
+void GS_draw_polygons_per_vertex_colours(GSwindow window,
+                                         Shading_modes shading_mode,
+                                         polygons_struct *polygons);
+
+void GS_draw_triangles_one_colour(GSwindow window, Shading_modes shading_mode,
+                                  polygons_struct *polygons);
+
+void GS_draw_triangles_per_item_colours(GSwindow window,
+                                        Shading_modes shading_mode,
+                                        polygons_struct *polygons);
+
+void GS_draw_quadmesh_one_colour(GSwindow window, Shading_modes shading_mode,
+                                 quadmesh_struct *quadmesh);
+
+void GS_draw_quadmesh_per_item_colours(GSwindow         window,
+                                       Shading_modes    shading_mode,
+                                       quadmesh_struct *quadmesh );
+
+void GS_draw_quadmesh_per_vertex_colours(GSwindow window, 
+                                         Shading_modes shading_mode,
+                                         quadmesh_struct *quadmesh);
+
+void GS_draw_lines(GSwindow window, lines_struct *lines);
 #endif
