@@ -4,7 +4,7 @@
 #include "config.h"
 #endif //HAVE_CONFIG_H  
 
-#include  <volume_io.h>
+#include  <graphics.h>
 #include  <GS_graphics.h>
 
 #if PARANOID

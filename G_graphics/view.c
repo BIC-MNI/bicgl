@@ -28,9 +28,9 @@ static  void  set_view_type(
     Gwindow   window )
 {
     VIO_Transform      identity;
-    static  VIO_Point  default_origin = { 0.0f, 0.0f, 1.0f };
-    static  VIO_Vector default_line_of_sight = { 0.0f, 0.0f, -1.0f };
-    static  VIO_Vector default_up_direction = { 0.0f, 1.0f, 0.0f };
+    static  VIO_Point  default_origin = { { 0.0f, 0.0f, 1.0f } };
+    static  VIO_Vector default_line_of_sight = { { 0.0f, 0.0f, -1.0f } };
+    static  VIO_Vector default_up_direction = { { 0.0f, 1.0f, 0.0f } };
     VIO_Real           default_front_clip_distance = 0.01;
     VIO_Real           default_back_clip_distance = 2.0;
     VIO_BOOL        default_perspective_flag = TRUE;

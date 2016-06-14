@@ -9,7 +9,6 @@
 #define  DEFAULT_WINDOW_Y_SIZE    300
 
 static  void  set_event_callbacks_for_current_window( void );
-static  int  flip_screen_y( int   screen_y );
 
 #define MAX_GLUT_ID 9
 /**
@@ -605,12 +604,6 @@ static  int  flip_window_y(
     int   window_y )
 {
     return( glutGet( (GLenum) GLUT_WINDOW_HEIGHT ) - 1 - window_y );
-}
-
-static  int  flip_screen_y(
-    int   screen_y )
-{
-    return( glutGet( (GLenum) GLUT_SCREEN_HEIGHT ) - 1 - screen_y );
 }
 
 static  void  display_function( void )

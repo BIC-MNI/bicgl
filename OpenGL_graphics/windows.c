@@ -738,16 +738,7 @@ static  void  clear_viewport(
 {
     WS_set_bitplanes( &window->WS_window, bitplanes );
 
-    switch( bitplanes )
-    {
-    case NORMAL_PLANES:
-        glDepthMask( (GLboolean) TRUE );
-        break;
-
-    case OVERLAY_PLANES:
-        glDepthMask( (GLboolean) FALSE );
-        break;
-    }
+    glDepthMask( bitplanes == NORMAL_PLANES );
 }
 
   void  GS_set_overlay_colour_map(
