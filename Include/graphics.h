@@ -42,7 +42,7 @@ typedef  struct   window_struct
     Shading_modes          shaded_mode_state;
     Shading_types          shading_type;
     VIO_BOOL                lighting_state;
-    VIO_BOOL                transparency_state;
+    Transparency_modes     transparency_state;
     VIO_BOOL                backface_culling_state;
     VIO_BOOL                render_lines_as_curves_state;
     int                    n_curve_segments;

@@ -105,6 +105,7 @@ static  void  reinitialize_window(
 {
     int            n_segments;
     Shading_types  type;
+    Transparency_modes transparency;
     static  VIO_Surfprop  spr = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
     set_current_window( window );
@@ -121,8 +122,12 @@ static  void  reinitialize_window(
     window->lighting_state = !window->lighting_state;
     G_set_lighting_state( window, !window->lighting_state );
 
-    window->transparency_state = !window->transparency_state;
-    G_set_transparency_state( window, !window->transparency_state );
+    transparency = window->transparency_state;
+    if ( window->transparency_state == NO_TRANSPARENCY )
+      window->transparency_state = NORMAL_TRANSPARENCY;
+    else
+      window->transparency_state = NO_TRANSPARENCY;
+    G_set_transparency_state( window, transparency );
 
     window->backface_culling_state = !window->backface_culling_state;
     G_backface_culling_state( window, !window->backface_culling_state );
@@ -170,7 +175,7 @@ static  void  initialize_window(
 
     window->shading_type = GOURAUD_SHADING;
     window->lighting_state = FALSE;
-    window->transparency_state = TRUE;
+    window->transparency_state = NORMAL_TRANSPARENCY;
     window->backface_culling_state = FALSE;
     window->n_curve_segments = DEFAULT_N_CURVE_SEGMENTS;
     window->marker_labels_visibility = TRUE;
@@ -756,9 +761,9 @@ static  void  update_blend_function(
     set_current_window( window );
 
     if( bitplane == OVERLAY_PLANES || !window->transparency_state )
-        GS_turn_off_blend_function();
+        GS_set_blend_function(0);
     else
-        GS_turn_on_blend_function();
+        GS_set_blend_function( window->transparency_state );
 }
 
 /* ----------------------------- MNI Header -----------------------------------
@@ -877,8 +882,8 @@ void G_set_current_window( Gwindow window )
 }
 
   void  G_set_transparency_state(
-    Gwindow        window,
-    VIO_BOOL        state )
+    Gwindow            window,
+    Transparency_modes state )
 {
     if( state != window->transparency_state )
     {

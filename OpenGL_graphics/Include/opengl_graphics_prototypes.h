@@ -223,9 +223,7 @@ void GS_exit_loop(void);
   void  GS_set_shade_model(
     Shading_types  type );
 
-  void  GS_turn_off_blend_function( void );
-
-  void  GS_turn_on_blend_function( void );
+  void  GS_set_blend_function( Transparency_modes );
 
   void  GS_set_lighting_state(
     GSwindow     window,

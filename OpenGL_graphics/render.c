@@ -14,16 +14,23 @@
         glShadeModel( GL_FLAT );
 }
 
-  void  GS_turn_off_blend_function( void )
+void  GS_set_blend_function( Transparency_modes mode )
 {
-    glDisable( GL_BLEND );
-    glBlendFunc( GL_ONE, GL_ZERO );
-}
-
-  void  GS_turn_on_blend_function( void )
-{
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    glEnable( GL_BLEND );
+    switch ( mode )
+    {
+    case NO_TRANSPARENCY:
+      glDisable( GL_BLEND );
+      glBlendFunc( GL_ONE, GL_ZERO );
+      break;
+    case NORMAL_TRANSPARENCY:
+      glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+      glEnable( GL_BLEND );
+      break;
+    case ADDITIVE_TRANSPARENCY:
+      glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+      glEnable( GL_BLEND );
+      break;
+    }
 }
 
 /* ARGSUSED */

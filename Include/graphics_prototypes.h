@@ -747,9 +747,9 @@ void G_continue_last_update( Gwindow window );
 /**
  * Set the transparency state of the window.
  * \param window The window's handle.
- * \param state TRUE if transparency should be enabled.
+ * \param state 0 to disable, 1 for normal, 2 for additive.
  */
-void G_set_transparency_state( Gwindow window, VIO_BOOL state );
+void G_set_transparency_state( Gwindow window, Transparency_modes state );
 
 /**
  * Make the window visible or invisible.

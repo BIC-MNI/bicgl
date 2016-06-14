@@ -52,6 +52,10 @@ typedef  enum  { WIREFRAME, FILLED, POINT, OVERLAY } Shading_modes;
 
 typedef  enum  { FLAT_SHADING, GOURAUD_SHADING }  Shading_types;
 
+typedef enum {
+  NO_TRANSPARENCY, NORMAL_TRANSPARENCY, ADDITIVE_TRANSPARENCY
+} Transparency_modes;
+
 #define  N_LIGHTS  8
 
 typedef  enum { 
