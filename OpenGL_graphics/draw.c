@@ -1024,7 +1024,7 @@ void GS_draw_quadmesh_one_colour(GSwindow window, Shading_modes shading_mode,
       indices[k++] = VIO_IJ((i + 1) % quadmesh->m, used_j, quadmesh->n);
     }
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, k * sizeof(GLuint),
-                 indices, GL_DYNAMIC_DRAW);
+                 indices, GL_STATIC_DRAW);
     glDrawElements(GL_TRIANGLE_STRIP, k, GL_UNSIGNED_INT, 0);
     GLCHECK;
   }
@@ -1176,7 +1176,7 @@ void GS_draw_quadmesh_per_vertex_colours(GSwindow window,
       indices[k++] = VIO_IJ((i + 1) % quadmesh->m, used_j, quadmesh->n);
     }
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, k * sizeof(GLuint),
-                 indices, GL_DYNAMIC_DRAW);
+                 indices, GL_STATIC_DRAW);
     glDrawElements(GL_TRIANGLE_STRIP, k, GL_UNSIGNED_INT, 0);
     GLCHECK;
   }
