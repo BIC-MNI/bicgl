@@ -683,9 +683,12 @@ GS_draw_triangles_per_item_colours(GSwindow window,
         bufPoints[nk + VIO_X] = Point_x(polygons->points[c]);
         bufPoints[nk + VIO_Y] = Point_y(polygons->points[c]);
         bufPoints[nk + VIO_Z] = Point_z(polygons->points[c]);
-        bufNormals[nk + VIO_X] = Vector_x(polygons->normals[c]);
-        bufNormals[nk + VIO_Y] = Vector_y(polygons->normals[c]);
-        bufNormals[nk + VIO_Z] = Vector_z(polygons->normals[c]);
+        if (polygons->normals != NULL)
+        {
+          bufNormals[nk + VIO_X] = Vector_x(polygons->normals[c]);
+          bufNormals[nk + VIO_Y] = Vector_y(polygons->normals[c]);
+          bufNormals[nk + VIO_Z] = Vector_z(polygons->normals[c]);
+        }
         bufColours[k] = polygons->colours[i];
         k++;
       }
@@ -727,14 +730,17 @@ GS_draw_triangles_per_item_colours(GSwindow window,
   */
   glUniform4fv(loc_surfprop, 1, &polygons->surfprop.a);
 
-  glGenBuffers(1, &vbo_normals);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
-  glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(float) * N_VTX_PER_TRIANGLE,
-               bufNormals, GL_STATIC_DRAW);
+  if (polygons->normals != NULL)
+  {
+    glGenBuffers(1, &vbo_normals);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+    glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(float) * N_VTX_PER_TRIANGLE,
+                 bufNormals, GL_STATIC_DRAW);
 
-  loc_normal = glGetAttribLocation(program, "normal");
-  glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(loc_normal);
+    loc_normal = glGetAttribLocation(program, "normal");
+    glVertexAttribPointer(loc_normal, N_DIM, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(loc_normal);
+  }
 
   glGenBuffers(1, &vbo_colours);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_colours);
@@ -753,12 +759,15 @@ GS_draw_triangles_per_item_colours(GSwindow window,
     glDrawArrays(GL_TRIANGLES, 0, n_items);
   }
 
+  if (polygons->normals != NULL)
+  {
+    glDisableVertexAttribArray(loc_normal);
+    glDeleteBuffers(1, &vbo_normals);
+  }
   glDisableVertexAttribArray(loc_position);
-  glDisableVertexAttribArray(loc_normal);
   glDisableVertexAttribArray(loc_colour);
 
   glDeleteBuffers(1, &vbo_colours);
-  glDeleteBuffers(1, &vbo_normals);
   glDeleteBuffers(1, &vbo_points);
   free(bufPoints);
   glUseProgram(0);
