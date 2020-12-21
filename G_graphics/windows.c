@@ -238,7 +238,7 @@ VIO_Status  G_create_child_window(
 
     if( status != VIO_OK )
     {
-        print_error( "G_create_window():  cannot open a graphics window.\n" );
+        print_error( "G_create_child_window():  cannot open a graphics window.\n" );
     }
     else
     {

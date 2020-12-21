@@ -10,6 +10,12 @@
 
 static  void  set_event_callbacks_for_current_window( void );
 
+
+// TO QUERY SCALING FACTOR
+#if !defined(GLUT_WINDOW_SCALE)
+#	define GLUT_WINDOW_SCALE 199
+#endif
+
 #define MAX_GLUT_ID 9
 /**
  * This array is used to store pointers to our private state information.
@@ -28,8 +34,15 @@ void  WS_initialize( void )
 
     if( !initialized )
     {
+        int s0;
         initialized = TRUE;
         glutInit( &argc, argv );
+        /*ONLY ON APPLE?*/
+        /*
+        glutInitDisplayString("rgba double hidpi");
+        s0 = glutGet(GLUT_WINDOW_SCALE);
+        printf("s0=%d\n",s0);
+        */
     }
 }
 
