@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif //HAVE_CONFIG_H  
 
 #include  <graphics.h>
 
@@ -10,15 +13,15 @@ static  void  check_pixels( window_struct *window );
 
 void  copy_pixels();
 
-main()
+int main(int argc,char **argv)
 {
-    Status            status;
+    VIO_Status            status;
     window_struct     *window, *event_window;
     text_struct       text;
     lines_struct      lines;
     polygons_struct   polygons;
     pixels_struct     pixels;
-    static Surfprop   spr = { 0.2, 0.5, 0.5, 20.0, 1.0 };
+    static VIO_Surfprop   spr = { 0.2, 0.5, 0.5, 20.0, 1.0 };
     VIO_Point             point, centre_of_rotation;
     VIO_Vector            normal, light_direction;
     Event_types       event_type;
@@ -33,7 +36,7 @@ main()
     VIO_Real              angle_in_degrees;
     int               i, j, pixels_x_size, pixels_y_size;
     VIO_Real              x, y;
-    Transform         modeling_transform, rotation_transform;
+    VIO_Transform         modeling_transform, rotation_transform;
     static VIO_Point      origin = { 0.0, 0.0, 2.0 };
     static VIO_Vector     up_direction = { 0.0, 1.0, 0.0 };
     static VIO_Vector     line_of_sight = { 0.0, 0.0, -1.0 };
@@ -297,7 +300,7 @@ main()
 
     status = G_delete_window( window );
 
-    return( status != OK );
+    return( status != VIO_OK );
 }
 
 static  void  check_pixels( window_struct *window )
