@@ -10,7 +10,7 @@
 #undef  Status
 #endif
 
-#include  <window_events.h>
+//#include  <window_events.h>
 
 typedef  Window   Window_id;
 
@@ -26,15 +26,9 @@ typedef  struct
 }
 X_window_struct;
 
-#ifndef  
-#define          extern
-#define       public_was_defined_here
-#endif
-
 #include  <x_window_prototypes.h>
 
 #ifdef  public_was_defined_here
-#undef       
 #undef       public_was_defined_here
 #endif
 

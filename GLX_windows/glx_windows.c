@@ -48,8 +48,8 @@ static  VIO_BOOL  GLX_supported( void )
     return( supported );
 }
 
-  Status  WS_create_window(
-    STRING                 title,
+ VIO_Status  WS_create_window(
+    VIO_STR                 title,
     int                    initial_x_pos,
     int                    initial_y_pos,
     int                    initial_x_size,
@@ -66,7 +66,7 @@ static  VIO_BOOL  GLX_supported( void )
 {
     int           attrib[100], n_attrib, flag, min_size, max_size, mid;
     int           colour_req_index;
-    Status        status;
+    VIO_Status        status;
     Colormap      cmap;
     XVisualInfo   *visual;
 

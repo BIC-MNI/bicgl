@@ -1,6 +1,8 @@
 #ifndef  DEF_GLX_WINDOWS
 #define  DEF_GLX_WINDOWS
 
+#include  <graphics_base.h>
+
 #include  <volume_io.h>
 #include  <x_windows.h>
 
@@ -28,10 +30,6 @@ typedef  struct
     XFontStruct   *x_font_info;
 }  WS_font_info;
 
-#ifndef  
-#define          extern
-#define       public_was_defined_here
-#endif
 
 #include  <glx_window_prototypes.h>
 

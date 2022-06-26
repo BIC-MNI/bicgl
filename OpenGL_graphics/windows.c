@@ -195,7 +195,7 @@ void main() {\n\
     diffuse = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;\n\
     ambient = gl_FrontMaterial.ambient * gl_LightSource[0].ambient;\n\
     globalAmbient = gl_LightModel.ambient * gl_FrontMaterial.ambient;\n\
-    if (NdotL > 0.0) {\n\
+    if (NdotL > 0.0 && gl_FrontMaterial.shininess>0.0) {\n\
        NdotHV = max(dot(n, gl_LightSource[0].halfVector.xyz),0.0);\n\
        specular = gl_FrontMaterial.specular * gl_LightSource[0].specular *\n\
                 pow(NdotHV,gl_FrontMaterial.shininess);\n\
@@ -232,7 +232,7 @@ void main() {\n\
     diffuse = colDiffuse * gl_LightSource[0].diffuse;\n\
     ambient = colAmbient * gl_LightSource[0].ambient;\n\
     globalAmbient = gl_LightModel.ambient * colAmbient;\n\
-    if (NdotL > 0.0) {\n\
+    if (NdotL > 0.0 && shininess > 0.0) {\n\
        NdotHV = max(dot(n, gl_LightSource[0].halfVector.xyz),0.0);\n\
        specular = colSpecular * gl_LightSource[0].specular *\n\
                 pow(NdotHV, shininess);\n\
@@ -242,6 +242,8 @@ void main() {\n\
 }"
 };
 
+
+
 static const char *fragment_shader[] = {
 "#version 120\n\
 uniform float opacity;\n\
@@ -249,9 +251,13 @@ uniform float opacity;\n\
 void main()\n\
 {\n\
       gl_FragColor = gl_Color;\n\
-      gl_FragColor.a = opacity;\n\
+      gl_FragColor.a *= opacity;\n\
 }\n"
 };
+
+/*      VF: having uniform opacity breaks per-voxel opacity */ 
+/*          TODO: figure out how to fix it */
+/*      gl_FragColor.a = opacity;\n\*/
 
 static GLuint
 create_program(const char *vertex_shader[], const char *fragment_shader[])

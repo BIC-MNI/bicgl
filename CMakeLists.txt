@@ -8,6 +8,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(BICGL_PACKAGE_VERSION_MAJOR 2)
 SET(BICGL_PACKAGE_VERSION_MINOR 0)
 SET(BICGL_PACKAGE_VERSION_PATCH 1)
+SET(BICGL_USE_GLUT ON)
+
 
 IF(NOT MINC_TOOLKIT_BUILD)
   # Packaging defines
@@ -76,16 +78,16 @@ CHECK_INCLUDE_FILES(string.h    HAVE_STRING_H)
 CHECK_INCLUDE_FILES(strings.h   HAVE_STRINGS_H)
 
 
-IF(FREEGLUT_FOUND) 
-SET(HAVE_FREEGLUT_H ON)
+IF(FREEGLUT_FOUND)
+  SET(HAVE_FREEGLUT_H ON)
 ELSE()
-CHECK_INCLUDE_FILES(GL/freeglut.h HAVE_FREEGLUT_H)
+  CHECK_INCLUDE_FILES(GL/freeglut.h HAVE_FREEGLUT_H)
 ENDIF()
 
 IF(HAVE_FREEGLUT_H)
-message("Found freeglut.h")
+  message("Found freeglut.h")
 ELSE()
-message("NOT Found freeglut.h")
+  message("NOT Found freeglut.h")
 ENDIF()
 
 # CHECK_INCLUDE_FILES(bicgl/deform.h HAVE_DEFORM_H)
@@ -108,7 +110,14 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/epm-header.in  ${CMAKE_CURRENT_BINARY
 
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
 INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIR} )
-INCLUDE_DIRECTORIES( OpenGL_graphics/Include Include GLUT_windows/Include )
+INCLUDE_DIRECTORIES( OpenGL_graphics/Include Include )
+
+IF(BICGL_USE_GLUT)
+  INCLUDE_DIRECTORIES( GLUT_windows/Include )
+ELSE()
+  INCLUDE_DIRECTORIES(  X_windows/Include GLX_windows/Include )
+ENDIF()
+
 INCLUDE_DIRECTORIES( User_interface/Include Functionality/Include UI_calls_F/Include  )
 
 IF(X11_FOUND)
@@ -122,24 +131,34 @@ SET(GLX_SRC
     GLX_windows/stored_font.c
   )
 
+SET(GLX_headers
+  GLX_windows/Include/glx_window_prototypes.h
+  GLX_windows/Include/WS_windows.h
+)
+
 SET(GLUT_SRC
     GLUT_windows/glut_windows.c
 #    GLUT_windows/copy_x_colours.c
   )
 
+SET(GLUT_headers
+  GLUT_windows/Include/WS_graphics.h
+  GLUT_windows/Include/glut_window_prototypes.h
+)
+
 SET(X_SRC
     X_windows/x_windows.c
    )
 
-SET(GL_SRC
-    IrisGL_graphics/colour_def.c
-    IrisGL_graphics/draw.c
-    IrisGL_graphics/event_loop.c
-    IrisGL_graphics/lights.c
-    IrisGL_graphics/render.c
-    IrisGL_graphics/view.c
-    IrisGL_graphics/windows.c
-   )
+# SET(GL_SRC
+#     IrisGL_graphics/colour_def.c
+#     IrisGL_graphics/draw.c
+#     IrisGL_graphics/event_loop.c
+#     IrisGL_graphics/lights.c
+#     IrisGL_graphics/render.c
+#     IrisGL_graphics/view.c
+#     IrisGL_graphics/windows.c
+#    )
 
 SET(OPENGL_SRC
     OpenGL_graphics/colour_def.c
@@ -163,9 +182,18 @@ SET(G_SRC
     G_graphics/windows.c
   )
 
+IF(BICGL_USE_GLUT)
 SET(bicgl_HEADERS
-  GLUT_windows/Include/WS_graphics.h
-  GLUT_windows/Include/glut_window_prototypes.h
+  ${GLUT_headers}
+)
+ELSE()
+SET(bicgl_HEADERS
+  ${GLX_headers}
+)
+ENDIF()
+
+SET(bicgl_HEADERS
+  ${bicgl_HEADERS}
   Include/graphics_base.h
   Include/GS_graphics.h
   Include/graphics.h
@@ -175,9 +203,9 @@ SET(bicgl_HEADERS
   Include/graphics_prototypes.h
   Include/random_order.h
   Include/graphics_struct.h
-  IrisGL_graphics/Include/GS_graphics.h
-  IrisGL_graphics/Include/def_gl.h
-  IrisGL_graphics/Include/irisgl_graphics_prototypes.h
+  # IrisGL_graphics/Include/GS_graphics.h
+  # IrisGL_graphics/Include/def_gl.h
+  # IrisGL_graphics/Include/irisgl_graphics_prototypes.h
   GLX_windows/Include/glx_window_prototypes.h
   GLX_windows/Include/WS_windows.h
   OpenGL_graphics/Include/opengl_graphics_prototypes.h
@@ -187,8 +215,11 @@ SET(bicgl_HEADERS
  )
 
 
-SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLUT_SRC} ${bicgl_HEADERS})
-
+IF(BICGL_USE_GLUT)
+  SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLUT_SRC} ${bicgl_HEADERS})
+ELSE()
+  SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLX_SRC} ${bicgl_HEADERS})
+ENDIF()
 
 IF(BICGL_BUILD_SHARED_LIBS)
   SET(LIBRARY_TYPE    SHARED)
@@ -206,12 +237,23 @@ SET(BICGL_SRC
 ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC})
 
 IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
-  TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
-      ${BICPL_STATIC_LIBRARIES}  ${LIBMINC_STATIC_LIBRARIES} )
+
+  IF(BICGL_USE_GLUT)
+    TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
+        ${BICPL_STATIC_LIBRARIES}  ${LIBMINC_STATIC_LIBRARIES} )
+  ELSE()
+    TARGET_LINK_LIBRARIES(bicgl ${OPENGL_gl_LIBRARY}
+    ${BICPL_STATIC_LIBRARIES}  ${LIBMINC_STATIC_LIBRARIES} )
+  ENDIF()
 
 ELSE(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
-  TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
-      ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
+  IF(BICGL_USE_GLUT)
+    TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
+        ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
+  ELSE()
+    TARGET_LINK_LIBRARIES(bicgl ${OPENGL_gl_LIBRARY}
+    ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
+  ENDIF()
 ENDIF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
 # should we really install the library if it's static?

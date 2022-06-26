@@ -725,7 +725,7 @@ GS_draw_triangles_per_item_colours(GSwindow window,
   /* sets the crucial 4 parameters for surface properties:
      ambient, diffuse, specular, shininess
   */
-  glUniform4fv(loc_surfprop, 1, &polygons->surfprop.a);
+  glUniform4f(loc_surfprop, polygons->surfprop.a, polygons->surfprop.d, polygons->surfprop.s, polygons->surfprop.se);
 
   glGenBuffers(1, &vbo_normals);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
@@ -874,7 +874,7 @@ GS_draw_polygons_per_vertex_colours(GSwindow window,
   /* sets the crucial 4 parameters for surface properties:
      ambient, diffuse, specular, shininess
   */
-  glUniform4fv(loc_surfprop, 1, &polygons->surfprop.a);
+  glUniform4f(loc_surfprop, polygons->surfprop.a, polygons->surfprop.d, polygons->surfprop.s, polygons->surfprop.se);
 
   glGenBuffers(1, &vbo_normals);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
@@ -1118,7 +1118,7 @@ void GS_draw_quadmesh_per_vertex_colours(GSwindow window,
   glUseProgram(program);
   set_program_opacity(program, Surfprop_t(quadmesh->surfprop));
 
-  if( shading_mode )  
+  if( shading_mode!=WIREFRAME )  
   {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
   }
@@ -1137,9 +1137,9 @@ void GS_draw_quadmesh_per_vertex_colours(GSwindow window,
   glEnableVertexAttribArray(loc_position);
   GLCHECK;
 
-  loc_surfprop = glGetUniformLocation(program, "surfprop");
-  glUniform4fv(loc_surfprop, 1, &quadmesh->surfprop.a);
-  
+  loc_surfprop = glGetUniformLocation(program, "surfprop"); /*VF:maybe don't set shinenes to the same value?*/
+  glUniform4f(loc_surfprop, quadmesh->surfprop.a, quadmesh->surfprop.d, quadmesh->surfprop.s, quadmesh->surfprop.se);
+
   glGenBuffers(1, &vbo_normals);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
   glBufferData(GL_ARRAY_BUFFER, n_items * sizeof(VIO_Vector),
@@ -1241,7 +1241,7 @@ GS_draw_lines(GSwindow window, lines_struct *lines)
     /* sets the crucial 4 parameters for surface properties:
        ambient, diffuse, specular, shininess
     */
-    glUniform4fv(loc_surfprop, 1, &spr.a);
+    glUniform4f(loc_surfprop,spr.a, spr.d, spr.s, spr.se);
 
     /* Set up the buffer for the colour data.
      */
