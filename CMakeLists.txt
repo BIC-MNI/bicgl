@@ -284,9 +284,11 @@ configure_file(BICGLConfig.cmake.in
 
 # config for install dir
 set(BICGL_INCLUDE_DIRS_CONFIG
-    ${CMAKE_INSTALL_PREFIX}/include/bicgl/OpenGL_graphics/Include
-    ${CMAKE_INSTALL_PREFIX}/include/bicgl/Include
-    ${CMAKE_INSTALL_PREFIX}/include/bicgl/GLUT_windows/Include )
+  ${CMAKE_INSTALL_PREFIX}/include/bicgl
+    # ${CMAKE_INSTALL_PREFIX}/include/bicgl/OpenGL_graphics/Include
+    # ${CMAKE_INSTALL_PREFIX}/include/bicgl/Include
+    # ${CMAKE_INSTALL_PREFIX}/include/bicgl/GLUT_windows/Include 
+    )
 
 set(BICGL_LIBRARY_DIRS_CONFIG  ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX} )
 set(BICGL_LIBRARIES_CONFIG     bicgl )
