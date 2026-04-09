@@ -736,18 +736,17 @@ static float s_sized_font_height  = 10.0f;
 
 static VIO_BOOL load_x11_font_glists( GLuint list_base )
 {
-    /* Preferred compact fonts, tried in order.
-     * 5x7 / 5x8 are tried first because their 5px cell width is closest
-     * to GLUT Helvetica 10's average character width (~5-6px). */
+    /* Preferred fonts, tried in order.  6x10 / 6x12 give a good balance
+     * between readability and fitting within the register button width. */
     static const char *candidates[] = {
-        "5x7",
-        "-misc-fixed-medium-r-normal--7-70-75-75-c-50-iso8859-1",
-        "5x8",
-        "-misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1",
         "6x10",
         "-misc-fixed-medium-r-normal--10-100-75-75-c-60-iso8859-1",
         "6x12",
         "-misc-fixed-medium-r-normal--12-120-75-75-c-70-iso8859-1",
+        "5x8",
+        "-misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1",
+        "5x7",
+        "-misc-fixed-medium-r-normal--7-70-75-75-c-50-iso8859-1",
         NULL
     };
 
@@ -1117,29 +1116,44 @@ static void dispatch_xevent( XEvent *xe )
 }
 
 /* -----------------------------------------------------------------------
- * Fire expired timers; return microseconds until the next one (or -1)
+ * Fire expired timers (two-pass to handle callbacks that re-register).
+ *
+ * Problem: timer_function() deactivates itself then re-registers into the
+ * same slot via G_add_timer_function().  A combined fire+scan loop misses
+ * the re-registered entry because it already passed that index, returns -1,
+ * and the event loop blocks indefinitely in select().
+ *
+ * Solution: first pass fires all expired timers; second pass (after all
+ * callbacks have run) scans for the soonest upcoming deadline.
  * --------------------------------------------------------------------- */
 
-static long fire_timers( void )
+static void fire_timers( void )
 {
-    int   i;
-    long  min_usec = -1L;
-
-    for( i = 0; i < s_n_timers; ++i )
+    int i;
+    /* Snapshot s_n_timers before firing — callbacks may grow the array. */
+    int n = s_n_timers;
+    for( i = 0; i < n; ++i )
     {
         if( !s_timers[i].active ) continue;
-
-        long usec = timeval_usec_until( &s_timers[i].fire_time );
-        if( usec <= 0 )
+        if( timeval_usec_until( &s_timers[i].fire_time ) <= 0 )
         {
             s_timers[i].active = FALSE;
             (*s_timers[i].func)( s_timers[i].data );
         }
-        else
-        {
-            if( min_usec < 0 || usec < min_usec )
-                min_usec = usec;
-        }
+    }
+}
+
+/* Return microseconds until the soonest active timer, or -1 if none. */
+static long next_timer_usec( void )
+{
+    int  i;
+    long min_usec = -1L;
+    for( i = 0; i < s_n_timers; ++i )
+    {
+        if( !s_timers[i].active ) continue;
+        long usec = timeval_usec_until( &s_timers[i].fire_time );
+        if( usec > 0 && (min_usec < 0 || usec < min_usec) )
+            min_usec = usec;
     }
     return min_usec;
 }
@@ -1199,20 +1213,23 @@ void  WS_event_loop( void )
         }
 
         /* 3. Fire any expired timers */
-        long next_timer_usec = fire_timers();
+        fire_timers();
 
         /* 4. Fire pending redraws */
         fire_redraws();
 
         /* 5. Wait for next X event or next timer, whichever comes first.
               Use zero timeout when idle functions are active or any window
-              has a pending redraw (matching GLUT's immediate-callback model). */
+              has a pending redraw (matching GLUT's immediate-callback model).
+              Scan for the next timer AFTER firing (callbacks may re-register). */
         if( !s_quit_loop )
         {
             struct timeval tv;
             struct timeval *tvp = NULL;
             VIO_BOOL any_pending = FALSE;
             int pi;
+            long deadline_usec = next_timer_usec();
+
             for( pi = 0; pi < s_n_windows; ++pi )
                 if( s_windows[pi].ws && s_windows[pi].ws->redisplay_pending )
                     { any_pending = TRUE; break; }
@@ -1223,10 +1240,10 @@ void  WS_event_loop( void )
                 tv.tv_usec = 0;
                 tvp = &tv;
             }
-            else if( next_timer_usec > 0 )
+            else if( deadline_usec > 0 )
             {
-                tv.tv_sec  = next_timer_usec / 1000000L;
-                tv.tv_usec = next_timer_usec % 1000000L;
+                tv.tv_sec  = deadline_usec / 1000000L;
+                tv.tv_usec = deadline_usec % 1000000L;
                 tvp = &tv;
             }
 
