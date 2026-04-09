@@ -576,7 +576,10 @@ VIO_Status  WS_create_window(
     create_fixed_font( (GLuint) window->font_list_base );
 
     window->font_list_base_sized = (int) glGenLists( 128 );
-    create_sized_font( (GLuint) window->font_list_base_sized );
+    /* Try to load a compact X11 system font; fall back to downsampled
+     * stored font if no suitable X font is available. */
+    if( !load_x11_font_glists( (GLuint) window->font_list_base_sized ) )
+        create_sized_font( (GLuint) window->font_list_base_sized );
 
     bind_special_keys();
 
@@ -721,6 +724,141 @@ void  WS_swap_buffers( void )
 }
 
 /* -----------------------------------------------------------------------
+ * X11 system font → OpenGL display-list loader (SIZED_FONT path)
+ *
+ * Rasterises each ASCII glyph to an X11 Pixmap, reads the pixels back
+ * with XGetImage, and uploads them as GL display lists via glBitmap.
+ * No GLX required — uses only Xlib drawing + EGL/OpenGL.
+ *
+ * Returns TRUE on success and sets s_sized_font_advance / _height.
+ * Falls back to create_sized_font() (downsampled stored font) on failure.
+ * --------------------------------------------------------------------- */
+
+static float s_sized_font_advance = 7.0f;   /* updated on successful load */
+static float s_sized_font_height  = 10.0f;
+
+static VIO_BOOL load_x11_font_glists( GLuint list_base )
+{
+    /* Preferred compact fonts, tried in order. */
+    static const char *candidates[] = {
+        "6x10",
+        "-misc-fixed-medium-r-normal--10-100-75-75-c-60-iso8859-1",
+        "6x12",
+        "-misc-fixed-medium-r-normal--12-120-75-75-c-70-iso8859-1",
+        "5x8",
+        "-misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1",
+        NULL
+    };
+
+    XFontStruct *fs = NULL;
+    int fi;
+    for( fi = 0; candidates[fi]; ++fi )
+    {
+        fs = XLoadQueryFont( s_display, candidates[fi] );
+        if( fs ) break;
+    }
+    if( !fs )
+    {
+        fprintf( stderr, "EGL backend: no compact X11 font found, "
+                         "using downsampled fallback.\n" );
+        return FALSE;
+    }
+
+    int fwidth  = fs->max_bounds.width;
+    int fheight = fs->ascent + fs->descent;
+    int fascent = fs->ascent;
+    int screen  = DefaultScreen( s_display );
+    int stride  = ( fwidth + 7 ) / 8;   /* bytes per bitmap row */
+
+    fprintf( stderr, "EGL backend: SIZED_FONT using X11 font '%s' (%dx%d).\n",
+             candidates[fi], fwidth, fheight );
+
+    /* Pixmap + GC for off-screen glyph rasterisation */
+    Pixmap pix = XCreatePixmap( s_display,
+                                RootWindow( s_display, screen ),
+                                (unsigned) fwidth, (unsigned) fheight,
+                                (unsigned) DefaultDepth( s_display, screen ) );
+    GC gc = XCreateGC( s_display, pix, 0, NULL );
+    XSetFont( s_display, gc, fs->fid );
+
+    unsigned long black = BlackPixel( s_display, screen );
+    unsigned long white = WhitePixel( s_display, screen );
+
+    GLubyte *bits = (GLubyte *) malloc( (size_t)( stride * fheight ) );
+    if( !bits )
+    {
+        XFreeGC( s_display, gc );
+        XFreePixmap( s_display, pix );
+        XFreeFont( s_display, fs );
+        return FALSE;
+    }
+
+    glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+
+    int c;
+    for( c = 32; c < 127; ++c )
+    {
+        char ch = (char) c;
+
+        /* Clear to black, draw glyph in white */
+        XSetForeground( s_display, gc, black );
+        XFillRectangle( s_display, pix, gc, 0, 0,
+                        (unsigned) fwidth, (unsigned) fheight );
+        XSetForeground( s_display, gc, white );
+        XDrawString( s_display, pix, gc, 0, fascent, &ch, 1 );
+
+        /* Read back */
+        XImage *img = XGetImage( s_display, pix, 0, 0,
+                                 (unsigned) fwidth, (unsigned) fheight,
+                                 AllPlanes, ZPixmap );
+
+        /* Convert to GL bottom-up bitmap, MSB = leftmost pixel */
+        memset( bits, 0, (size_t)( stride * fheight ) );
+        int row, col;
+        for( row = 0; row < fheight; ++row )
+        {
+            int gl_row = fheight - 1 - row;
+            for( col = 0; col < fwidth; ++col )
+            {
+                if( XGetPixel( img, col, row ) != black )
+                    bits[ gl_row * stride + col / 8 ] |=
+                        (GLubyte)( 0x80u >> ( col % 8 ) );
+            }
+        }
+        XDestroyImage( img );
+
+        /* Per-character advance width (0 for undefined chars → fwidth) */
+        float advance = (float) fwidth;
+        if( fs->per_char )
+        {
+            int idx = c - (int) fs->min_char_or_byte2;
+            if( idx >= 0 && c <= (int) fs->max_char_or_byte2 )
+            {
+                int w = fs->per_char[idx].width;
+                if( w > 0 ) advance = (float) w;
+            }
+        }
+
+        glNewList( (GLuint) c + list_base, GL_COMPILE );
+        glBitmap( (GLsizei) fwidth, (GLsizei) fheight,
+                  0.0f, (float) fs->descent,
+                  advance, 0.0f,
+                  bits );
+        glEndList();
+    }
+
+    free( bits );
+    XFreeGC( s_display, gc );
+    XFreePixmap( s_display, pix );
+
+    s_sized_font_advance = (float) fwidth;
+    s_sized_font_height  = (float) fheight;
+
+    XFreeFont( s_display, fs );
+    return TRUE;
+}
+
+/* -----------------------------------------------------------------------
  * Font / text — uses stored_font.c display lists
  * --------------------------------------------------------------------- */
 
@@ -755,12 +893,10 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
     (void)size;
     if( !str ) return 0.0;
 
-    /* SIZED_FONT uses the 7-pixel-advance display lists (6×10 scaled glyph);
-     * FIXED_FONT uses 8px advance matching GLUT_BITMAP_8_BY_13. */
     if( type == SIZED_FONT )
-        return (VIO_Real)( strlen(str) ) * 7.0;
+        return (VIO_Real) strlen(str) * (VIO_Real) s_sized_font_advance;
     else
-        return (VIO_Real)( strlen(str) ) * get_fixed_font_width( str[0] );
+        return (VIO_Real) strlen(str) * get_fixed_font_width( str[0] );
 }
 
 /* -----------------------------------------------------------------------
