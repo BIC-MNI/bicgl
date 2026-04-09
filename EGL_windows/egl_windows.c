@@ -300,17 +300,12 @@ static VIO_BOOL egl_init( void )
 
     s_wm_delete_window = XInternAtom( s_display, "WM_DELETE_WINDOW", False );
 
-    /* When running over SSH X11 forwarding (or any remote X11 connection),
-     * DRI3 file-descriptor passing across the TCP tunnel is impossible.
-     * Force Mesa's "swrast" software-rasteriser driver, which uses plain
-     * Xlib pixel-transfer (XPutImage) rather than DRI3/DRI2/KMS, so it
-     * works over any X11 connection.
-     *
-     * setenv(..., 0) means "set only if not already in the environment",
-     * so the user can always override from their shell. */
-    setenv( "LIBGL_ALWAYS_SOFTWARE",       "1",     0 );
-    setenv( "MESA_LOADER_DRIVER_OVERRIDE", "swrast", 0 );
-    setenv( "EGL_PLATFORM",                "x11",   0 );
+    /* Always set EGL_PLATFORM so the EGL library knows we want X11 surfaces.
+     * Do not force software rendering by default — let EGL use hardware if
+     * available. The user can export LIBGL_ALWAYS_SOFTWARE=1 or
+     * MESA_LOADER_DRIVER_OVERRIDE=swrast manually when hardware EGL fails
+     * (e.g. on x2go / SSH X11 forwarding where DRI3 is unavailable). */
+    setenv( "EGL_PLATFORM", "x11", 0 );
 
     /* Try eglGetPlatformDisplay first (EGL_EXT_platform_x11 / EGL 1.5)
      * so the platform is unambiguous even with GLVND dispatch. */
@@ -337,13 +332,39 @@ static VIO_BOOL egl_init( void )
     EGLint major = 0, minor = 0;
     if( !eglInitialize( s_egl_dpy, &major, &minor ) )
     {
-        print_error( "EGL backend: eglInitialize failed (EGL error 0x%x).\n"
-                     "  Hint: try setting MESA_LOADER_DRIVER_OVERRIDE=swrast\n"
-                     "        and LIBGL_ALWAYS_SOFTWARE=1 in your environment.\n",
-                     (unsigned) eglGetError() );
-        return FALSE;
+        /* Hardware EGL failed — try Mesa software rasteriser fallback. */
+        fprintf( stderr,
+                 "EGL backend: hardware EGL init failed (0x%x), "
+                 "falling back to Mesa swrast.\n",
+                 (unsigned) eglGetError() );
+        eglTerminate( s_egl_dpy );
+        s_egl_dpy = EGL_NO_DISPLAY;
+
+        setenv( "LIBGL_ALWAYS_SOFTWARE",       "1",      1 );
+        setenv( "MESA_LOADER_DRIVER_OVERRIDE", "swrast", 1 );
+
+        /* Retry with explicit swrast */
+#if defined(EGL_PLATFORM_X11_EXT)
+        {
+            PFNEGLGETPLATFORMDISPLAYEXTPROC fn =
+                (PFNEGLGETPLATFORMDISPLAYEXTPROC)
+                eglGetProcAddress( "eglGetPlatformDisplayEXT" );
+            if( fn )
+                s_egl_dpy = fn( EGL_PLATFORM_X11_EXT, (void *) s_display, NULL );
+        }
+#endif
+        if( s_egl_dpy == EGL_NO_DISPLAY )
+            s_egl_dpy = eglGetDisplay( (EGLNativeDisplayType) s_display );
+
+        if( s_egl_dpy == EGL_NO_DISPLAY ||
+            !eglInitialize( s_egl_dpy, &major, &minor ) )
+        {
+            print_error( "EGL backend: swrast fallback also failed.\n"
+                         "  Install libegl1-mesa or set DISPLAY correctly.\n" );
+            return FALSE;
+        }
+        fprintf( stderr, "EGL backend: using Mesa swrast (software rendering).\n" );
     }
-    fprintf( stderr, "EGL backend: initialised EGL %d.%d.\n", major, minor );
 
     if( !eglBindAPI( EGL_OPENGL_API ) )
     {
