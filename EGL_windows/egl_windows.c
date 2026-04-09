@@ -558,7 +558,7 @@ VIO_Status  WS_create_window(
     window->width             = initial_x_size;
     window->height            = initial_y_size;
     window->is_visible        = TRUE;
-    window->redisplay_pending = FALSE;
+    window->redisplay_pending = TRUE;
     window->init_x            = initial_x_pos;
     window->init_y            = initial_y_pos;
     window->border_width      = 0;
@@ -736,14 +736,18 @@ static float s_sized_font_height  = 10.0f;
 
 static VIO_BOOL load_x11_font_glists( GLuint list_base )
 {
-    /* Preferred compact fonts, tried in order. */
+    /* Preferred compact fonts, tried in order.
+     * 5x7 / 5x8 are tried first because their 5px cell width is closest
+     * to GLUT Helvetica 10's average character width (~5-6px). */
     static const char *candidates[] = {
+        "5x7",
+        "-misc-fixed-medium-r-normal--7-70-75-75-c-50-iso8859-1",
+        "5x8",
+        "-misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1",
         "6x10",
         "-misc-fixed-medium-r-normal--10-100-75-75-c-60-iso8859-1",
         "6x12",
         "-misc-fixed-medium-r-normal--12-120-75-75-c-70-iso8859-1",
-        "5x8",
-        "-misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1",
         NULL
     };
 
@@ -1201,13 +1205,19 @@ void  WS_event_loop( void )
         fire_redraws();
 
         /* 5. Wait for next X event or next timer, whichever comes first.
-              If there are idle functions, use a zero timeout (poll only). */
+              Use zero timeout when idle functions are active or any window
+              has a pending redraw (matching GLUT's immediate-callback model). */
         if( !s_quit_loop )
         {
             struct timeval tv;
             struct timeval *tvp = NULL;
+            VIO_BOOL any_pending = FALSE;
+            int pi;
+            for( pi = 0; pi < s_n_windows; ++pi )
+                if( s_windows[pi].ws && s_windows[pi].ws->redisplay_pending )
+                    { any_pending = TRUE; break; }
 
-            if( s_n_idles > 0 )
+            if( s_n_idles > 0 || any_pending )
             {
                 tv.tv_sec  = 0;
                 tv.tv_usec = 0;
