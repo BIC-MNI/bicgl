@@ -162,20 +162,23 @@ static   GLubyte rasters[][13] = {
     }
 }
 
-/* Scaled-down variant for SIZED_FONT: nearest-neighbour subsample of the
+/* Scaled-down variant for SIZED_FONT: area-averaged downsample of the
  * 8×13 bitmaps to 6×10, with a 7-pixel advance (1px gap between glyphs).
- * Used by the EGL backend so button labels fit register's 100px menu width
- * without letter overlap. */
+ *
+ * For each output pixel the corresponding input region [x0,x1)×[y0,y1)
+ * is integrated with fractional (bilinear) weights. The output pixel is
+ * set when the weighted coverage fraction exceeds COVERAGE_THRESHOLD,
+ * which preserves thin strokes far better than nearest-neighbour. */
+#define COVERAGE_THRESHOLD 0.32f
+
   void create_sized_font(
     GLuint fontOffset )
 {
     GLuint i;
     int    oy, ox;
-    /* Output glyph dimensions */
-    const int out_w = 6, out_h = 10;
-    /* Scale factors mapping output → input coordinates */
-    const float sx = 7.0f / 5.0f;   /* (8-1)/(6-1) */
-    const float sy = 12.0f / 9.0f;  /* (13-1)/(10-1) */
+    const int   out_w = 6, out_h = 10;
+    const float scale_x = 8.0f / out_w;   /* input pixels per output pixel */
+    const float scale_y = 13.0f / out_h;
     GLubyte scaled[10];
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -183,15 +186,41 @@ static   GLubyte rasters[][13] = {
     for (i = 32; i < 127; i++) {
         const GLubyte *src = rasters[i - 32];
 
-        /* Nearest-neighbour downsample from 8×13 to 6×10 */
         for (oy = 0; oy < out_h; oy++) {
-            int iy = (int)(oy * sy + 0.5f);
+            float y0 = oy       * scale_y;
+            float y1 = (oy + 1) * scale_y;
             GLubyte row = 0;
-            if (iy > 12) iy = 12;
+
             for (ox = 0; ox < out_w; ox++) {
-                int ix = (int)(ox * sx + 0.5f);
-                if (ix > 7) ix = 7;
-                if ((src[iy] >> (7 - ix)) & 1)
+                float x0 = ox       * scale_x;
+                float x1 = (ox + 1) * scale_x;
+
+                /* Integrate over all input pixels that overlap [x0,x1)×[y0,y1) */
+                float coverage = 0.0f, total = 0.0f;
+                int iy, ix;
+                int iy0 = (int)y0, iy1 = (int)y1; if (iy1 > 12) iy1 = 12;
+                int ix0 = (int)x0, ix1 = (int)x1; if (ix1 > 7)  ix1 = 7;
+
+                for (iy = iy0; iy <= iy1; iy++) {
+                    float top    = (float) iy,       bottom = top    + 1.0f;
+                    float wy = ( (bottom < y1 ? bottom : y1) -
+                                 (top    > y0 ? top    : y0) );
+                    if (wy <= 0.0f) continue;
+
+                    for (ix = ix0; ix <= ix1; ix++) {
+                        float left  = (float) ix,   right  = left   + 1.0f;
+                        float wx = ( (right < x1 ? right : x1) -
+                                     (left  > x0 ? left  : x0) );
+                        if (wx <= 0.0f) continue;
+
+                        float w = wx * wy;
+                        if ((src[iy] >> (7 - ix)) & 1)
+                            coverage += w;
+                        total += w;
+                    }
+                }
+
+                if (total > 0.0f && coverage / total >= COVERAGE_THRESHOLD)
                     row |= (GLubyte)(0x80 >> ox);
             }
             scaled[oy] = row;
@@ -202,6 +231,7 @@ static   GLubyte rasters[][13] = {
 	glEndList();
     }
 }
+#undef COVERAGE_THRESHOLD
 
   int  get_fixed_font_n_chars( void )
 {
