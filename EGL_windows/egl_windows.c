@@ -51,6 +51,9 @@ int     get_fixed_font_n_chars( void );
 VIO_Real get_fixed_font_height( void );
 VIO_Real get_fixed_font_width( char ch );
 
+/* Forward declaration — defined later in the font/text section */
+static VIO_BOOL load_x11_font_glists( GLuint list_base );
+
 /* -----------------------------------------------------------------------
  * EGL globals (one EGL display, shared across all windows)
  * --------------------------------------------------------------------- */
