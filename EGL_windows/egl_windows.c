@@ -192,59 +192,12 @@ static VIO_BOOL s_quit_loop = FALSE;
  * Key binding — replicate static bind_special_keys() from x_windows.c
  * --------------------------------------------------------------------- */
 
-static void bind_key( KeySym keysym, int output_key_value )
-{
-    unsigned char str[1];
-    str[0] = (unsigned char) output_key_value;
-    XRebindKeysym( s_display, keysym, NULL, 0, str, 1 );
-
-    if( keysym == XK_Shift_L   || keysym == XK_Shift_R   ||
-        keysym == XK_Control_L || keysym == XK_Control_R  ||
-        keysym == XK_Alt_L     || keysym == XK_Alt_R )
-    {
-        XRebindKeysym( s_display, keysym, &keysym, 1, str, 1 );
-    }
-}
-
 static void bind_special_keys( void )
 {
-    static VIO_BOOL first = TRUE;
-    static struct { KeySym keysym; int character; } table[] = {
-        { XK_Left,       LEFT_ARROW_KEY  },
-        { XK_Right,      RIGHT_ARROW_KEY },
-        { XK_Down,       DOWN_ARROW_KEY  },
-        { XK_Up,         UP_ARROW_KEY    },
-        { XK_Shift_L,    LEFT_SHIFT_KEY  },
-        { XK_Shift_R,    RIGHT_SHIFT_KEY },
-        { XK_Control_L,  LEFT_CTRL_KEY   },
-        { XK_Control_R,  RIGHT_CTRL_KEY  },
-        { XK_Alt_L,      LEFT_ALT_KEY    },
-        { XK_Alt_R,      RIGHT_ALT_KEY   },
-        { XK_F1,         BICGL_F1_KEY    },
-        { XK_F2,         BICGL_F2_KEY    },
-        { XK_F3,         BICGL_F3_KEY    },
-        { XK_F4,         BICGL_F4_KEY    },
-        { XK_F5,         BICGL_F5_KEY    },
-        { XK_F6,         BICGL_F6_KEY    },
-        { XK_F7,         BICGL_F7_KEY    },
-        { XK_F8,         BICGL_F8_KEY    },
-        { XK_F9,         BICGL_F9_KEY    },
-        { XK_F10,        BICGL_F10_KEY   },
-        { XK_F11,        BICGL_F11_KEY   },
-        { XK_F12,        BICGL_F12_KEY   },
-        { XK_Page_Up,    BICGL_PGUP_KEY  },
-        { XK_Page_Down,  BICGL_PGDN_KEY  },
-        { XK_Home,       BICGL_HOME_KEY  },
-        { XK_End,        BICGL_END_KEY   },
-        { XK_Insert,     BICGL_INSERT_KEY},
-    };
-    int i;
-
-    if( !first ) return;
-    first = FALSE;
-
-    for( i = 0; i < (int)(sizeof(table)/sizeof(table[0])); ++i )
-        bind_key( table[i].keysym, table[i].character );
+    /* No-op: key translation is done directly in translate_key() via
+     * KeySym switch — XRebindKeysym is not used because it can deadlock
+     * on remote X11 servers (x2go, SSH X11 forwarding). */
+    (void)0;
 }
 
 /* -----------------------------------------------------------------------
@@ -261,7 +214,12 @@ static int get_modifiers( unsigned int state )
 }
 
 /* -----------------------------------------------------------------------
- * Key translation (mirrors translate_key in x_windows.c)
+ * Key translation — maps XEvent to a bicgl key code.
+ *
+ * We do NOT use XRebindKeysym (it can deadlock on remote X11 servers such
+ * as x2go / SSH X11 forwarding).  Instead we:
+ *   1. Try XLookupString for printable / ASCII keys.
+ *   2. Fall through to a direct KeySym → bicgl-code table for special keys.
  * --------------------------------------------------------------------- */
 
 static VIO_BOOL translate_key( XEvent *xe, int *key )
@@ -272,9 +230,45 @@ static VIO_BOOL translate_key( XEvent *xe, int *key )
     int             n;
 
     n = XLookupString( &xe->xkey, buf, (int)sizeof(buf), &sym, &comp );
-    if( n < 1 ) return FALSE;
-    *key = (int)((unsigned char *)buf)[0];
-    return TRUE;
+    if( n >= 1 )
+    {
+        *key = (int)((unsigned char *)buf)[0];
+        return TRUE;
+    }
+
+    /* Special / non-printing keys — map KeySym directly */
+    switch( sym )
+    {
+    case XK_Left:       *key = LEFT_ARROW_KEY;    return TRUE;
+    case XK_Right:      *key = RIGHT_ARROW_KEY;   return TRUE;
+    case XK_Down:       *key = DOWN_ARROW_KEY;    return TRUE;
+    case XK_Up:         *key = UP_ARROW_KEY;      return TRUE;
+    case XK_Shift_L:    *key = LEFT_SHIFT_KEY;    return TRUE;
+    case XK_Shift_R:    *key = RIGHT_SHIFT_KEY;   return TRUE;
+    case XK_Control_L:  *key = LEFT_CTRL_KEY;     return TRUE;
+    case XK_Control_R:  *key = RIGHT_CTRL_KEY;    return TRUE;
+    case XK_Alt_L:      *key = LEFT_ALT_KEY;      return TRUE;
+    case XK_Alt_R:      *key = RIGHT_ALT_KEY;     return TRUE;
+    case XK_F1:         *key = BICGL_F1_KEY;      return TRUE;
+    case XK_F2:         *key = BICGL_F2_KEY;      return TRUE;
+    case XK_F3:         *key = BICGL_F3_KEY;      return TRUE;
+    case XK_F4:         *key = BICGL_F4_KEY;      return TRUE;
+    case XK_F5:         *key = BICGL_F5_KEY;      return TRUE;
+    case XK_F6:         *key = BICGL_F6_KEY;      return TRUE;
+    case XK_F7:         *key = BICGL_F7_KEY;      return TRUE;
+    case XK_F8:         *key = BICGL_F8_KEY;      return TRUE;
+    case XK_F9:         *key = BICGL_F9_KEY;      return TRUE;
+    case XK_F10:        *key = BICGL_F10_KEY;     return TRUE;
+    case XK_F11:        *key = BICGL_F11_KEY;     return TRUE;
+    case XK_F12:        *key = BICGL_F12_KEY;     return TRUE;
+    case XK_Page_Up:    *key = BICGL_PGUP_KEY;    return TRUE;
+    case XK_Page_Down:  *key = BICGL_PGDN_KEY;    return TRUE;
+    case XK_Home:       *key = BICGL_HOME_KEY;    return TRUE;
+    case XK_End:        *key = BICGL_END_KEY;     return TRUE;
+    case XK_Insert:     *key = BICGL_INSERT_KEY;  return TRUE;
+    case XK_Delete:     *key = 127;               return TRUE;
+    default:            return FALSE;
+    }
 }
 
 /* -----------------------------------------------------------------------
