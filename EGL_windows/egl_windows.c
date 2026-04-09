@@ -755,9 +755,10 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
     (void)size;
     if( !str ) return 0.0;
 
-    /* SIZED_FONT uses the 6-pixel-advance display lists; FIXED_FONT uses 8. */
+    /* SIZED_FONT uses the 7-pixel-advance display lists (6×10 scaled glyph);
+     * FIXED_FONT uses 8px advance matching GLUT_BITMAP_8_BY_13. */
     if( type == SIZED_FONT )
-        return (VIO_Real)( strlen(str) ) * 6.0;
+        return (VIO_Real)( strlen(str) ) * 7.0;
     else
         return (VIO_Real)( strlen(str) ) * get_fixed_font_width( str[0] );
 }

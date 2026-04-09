@@ -162,19 +162,43 @@ static   GLubyte rasters[][13] = {
     }
 }
 
-/* Compact variant: 6-pixel advance to approximate small proportional fonts.
- * Used by the EGL backend for SIZED_FONT rendering so that button labels
- * fit within register's 100-pixel main-menu width. */
+/* Scaled-down variant for SIZED_FONT: nearest-neighbour subsample of the
+ * 8×13 bitmaps to 6×10, with a 7-pixel advance (1px gap between glyphs).
+ * Used by the EGL backend so button labels fit register's 100px menu width
+ * without letter overlap. */
   void create_sized_font(
     GLuint fontOffset )
 {
     GLuint i;
+    int    oy, ox;
+    /* Output glyph dimensions */
+    const int out_w = 6, out_h = 10;
+    /* Scale factors mapping output → input coordinates */
+    const float sx = 7.0f / 5.0f;   /* (8-1)/(6-1) */
+    const float sy = 12.0f / 9.0f;  /* (13-1)/(10-1) */
+    GLubyte scaled[10];
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     for (i = 32; i < 127; i++) {
+        const GLubyte *src = rasters[i - 32];
+
+        /* Nearest-neighbour downsample from 8×13 to 6×10 */
+        for (oy = 0; oy < out_h; oy++) {
+            int iy = (int)(oy * sy + 0.5f);
+            GLubyte row = 0;
+            if (iy > 12) iy = 12;
+            for (ox = 0; ox < out_w; ox++) {
+                int ix = (int)(ox * sx + 0.5f);
+                if (ix > 7) ix = 7;
+                if ((src[iy] >> (7 - ix)) & 1)
+                    row |= (GLubyte)(0x80 >> ox);
+            }
+            scaled[oy] = row;
+        }
+
 	glNewList(i+fontOffset, GL_COMPILE);
-	glBitmap(8, 13, 0.0f, 2.0f, 6.0f, 0.0f, rasters[i-32]);
+	glBitmap(out_w, out_h, 0.0f, 1.0f, 7.0f, 0.0f, scaled);
 	glEndList();
     }
 }
