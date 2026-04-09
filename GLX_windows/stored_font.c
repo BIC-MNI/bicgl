@@ -157,7 +157,24 @@ static   GLubyte rasters[][13] = {
 
     for (i = 32; i < 127; i++) {
 	glNewList(i+fontOffset, GL_COMPILE);
-	glBitmap(8, 13, 0.0f, 2.0f, 10.0f, 0.0f, rasters[i-32]);
+	glBitmap(8, 13, 0.0f, 2.0f, 8.0f, 0.0f, rasters[i-32]);
+	glEndList();
+    }
+}
+
+/* Compact variant: 6-pixel advance to approximate small proportional fonts.
+ * Used by the EGL backend for SIZED_FONT rendering so that button labels
+ * fit within register's 100-pixel main-menu width. */
+  void create_sized_font(
+    GLuint fontOffset )
+{
+    GLuint i;
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    for (i = 32; i < 127; i++) {
+	glNewList(i+fontOffset, GL_COMPILE);
+	glBitmap(8, 13, 0.0f, 2.0f, 6.0f, 0.0f, rasters[i-32]);
 	glEndList();
     }
 }
@@ -177,5 +194,5 @@ static   GLubyte rasters[][13] = {
   VIO_Real  get_fixed_font_width(
     char   ch )
 {
-    return( 10.0 );
+    return( 8.0 );
 }

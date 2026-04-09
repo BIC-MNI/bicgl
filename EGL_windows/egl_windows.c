@@ -40,6 +40,7 @@
 
 /* Forward declaration of stored_font functions */
 void    create_fixed_font( GLuint fontOffset );
+void    create_sized_font( GLuint fontOffset );
 int     get_fixed_font_n_chars( void );
 VIO_Real get_fixed_font_height( void );
 VIO_Real get_fixed_font_width( char ch );
@@ -342,8 +343,7 @@ static VIO_BOOL egl_init( void )
                      (unsigned) eglGetError() );
         return FALSE;
     }
-    print_error( "EGL backend: initialised EGL %d.%d with swrast.\n",
-                 major, minor );
+    fprintf( stderr, "EGL backend: initialised EGL %d.%d.\n", major, minor );
 
     if( !eglBindAPI( EGL_OPENGL_API ) )
     {
@@ -546,8 +546,12 @@ VIO_Status  WS_create_window(
     s_current_window = window;
 
     window->font_list_base = (int) glGenLists( 128 );
-    bind_special_keys();
     create_fixed_font( (GLuint) window->font_list_base );
+
+    window->font_list_base_sized = (int) glGenLists( 128 );
+    create_sized_font( (GLuint) window->font_list_base_sized );
+
+    bind_special_keys();
 
     register_window( x11_win, window );
 
@@ -695,32 +699,40 @@ void  WS_swap_buffers( void )
 
 void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 {
-    (void)type; (void)size;   /* stored font is fixed size */
+    (void)size;
     if( !string || !s_current_window ) return;
 
-    glListBase( (GLuint) s_current_window->font_list_base );
+    /* Use the compact 6-pixel-advance font for SIZED_FONT so that text
+     * fits within register's fixed-width button areas. */
+    if( type == SIZED_FONT )
+        glListBase( (GLuint) s_current_window->font_list_base_sized );
+    else
+        glListBase( (GLuint) s_current_window->font_list_base );
+
     glCallLists( (GLsizei) strlen(string), GL_UNSIGNED_BYTE,
                  (const GLubyte *) string );
 }
 
 VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
 {
-    (void)type; (void)size;
+    /* For SIZED_FONT, return the requested size so register's layout
+     * allocates the correct line height for the requested font size.
+     * For FIXED_FONT, return the actual bitmap height (13px). */
+    if( type == SIZED_FONT )
+        return size;
     return get_fixed_font_height();
 }
 
 VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
 {
-    int      i, len;
-    VIO_Real  w = 0.0;
-
-    (void)type; (void)size;
+    (void)size;
     if( !str ) return 0.0;
 
-    len = (int) strlen( str );
-    for( i = 0; i < len; ++i )
-        w += get_fixed_font_width( str[i] );
-    return w;
+    /* SIZED_FONT uses the 6-pixel-advance display lists; FIXED_FONT uses 8. */
+    if( type == SIZED_FONT )
+        return (VIO_Real)( strlen(str) ) * 6.0;
+    else
+        return (VIO_Real)( strlen(str) ) * get_fixed_font_width( str[0] );
 }
 
 /* -----------------------------------------------------------------------

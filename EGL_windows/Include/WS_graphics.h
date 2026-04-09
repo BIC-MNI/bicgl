@@ -22,7 +22,8 @@ typedef  struct
     struct egl_window_data *egl;          /* EGL surface + context         */
     int                     width;
     int                     height;
-    int                     font_list_base; /* base of stored_font GL lists */
+    int                     font_list_base;       /* FIXED_FONT GL lists (8px advance)  */
+    int                     font_list_base_sized; /* SIZED_FONT GL lists (6px advance)  */
     VIO_BOOL                is_visible;
     VIO_BOOL                redisplay_pending;
     /* Fields expected by GS_window_struct (via OpenGL_graphics/windows.c) */
