@@ -31,12 +31,6 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 
-/* setenv() requires _DEFAULT_SOURCE (or _BSD_SOURCE on older glibc).
- * Define before any system header is included. */
-#ifndef _DEFAULT_SOURCE
-#  define _DEFAULT_SOURCE
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
