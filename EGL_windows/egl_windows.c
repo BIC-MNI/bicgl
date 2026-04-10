@@ -555,6 +555,10 @@ static void glfw_focus_cb( GLFWwindow *w, int focused )
 
 void  WS_initialize( void )
 {
+#if GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4)
+    /* GLFW 3.4+: native Wayland path is broken; force X11 (XWayland). */
+    glfwInitHint( GLFW_PLATFORM, GLFW_PLATFORM_X11 );
+#endif
     glfwSetErrorCallback( glfw_error_cb );
     if( !glfwInit() )
         fprintf( stderr, "GLFW backend: glfwInit() failed.\n" );
