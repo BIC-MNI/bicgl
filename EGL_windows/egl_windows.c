@@ -1316,6 +1316,44 @@ void  WS_event_loop( void )
 {
     s_quit_loop = FALSE;
 
+    /* Sync all windows to their true framebuffer size.  During window
+     * creation (WS_create_window → glfwShowWindow), the Wayland compositor
+     * may reconfigure already-created windows, but resize_callback is not
+     * yet set at that point (it is set by initialize_callbacks, which runs
+     * just before WS_event_loop).  Re-query each window now and fire the
+     * resize callback so that the layout engine sees the correct size. */
+    if( resize_callback )
+    {
+        int i;
+        for( i = 0; i < s_n_windows; ++i )
+        {
+            WSwindow ws = s_windows[i].ws;
+            GLFWwindow *gw = s_windows[i].glfw;
+            if( !ws || !gw ) continue;
+            int fb_w = 0, fb_h = 0;
+            int log_w = 0, log_h = 0;
+            glfwGetFramebufferSize( gw, &fb_w, &fb_h );
+            glfwGetWindowSize( gw, &log_w, &log_h );
+            ws->width          = fb_w;
+            ws->height         = fb_h;
+            ws->logical_width  = log_w;
+            ws->logical_height = log_h;
+            ws->dpi_scale_x    = ( log_w > 0 ) ? (float)fb_w / log_w : 1.0f;
+            ws->dpi_scale_y    = ( log_h > 0 ) ? (float)fb_h / log_h : 1.0f;
+            {
+                int xpos = 0, ypos = 0;
+                glfwSetErrorCallback( NULL );
+                glfwGetWindowPos( gw, &xpos, &ypos );
+                glfwSetErrorCallback( glfw_error_cb );
+                fprintf( stderr, "HIDPI: sync window[%d] fb=(%d,%d) logical=(%d,%d) "
+                         "dpi=(%.2f,%.2f)\n",
+                         i, fb_w, fb_h, log_w, log_h,
+                         ws->dpi_scale_x, ws->dpi_scale_y );
+                (*resize_callback)( ws->window_id, xpos, ypos, fb_w, fb_h );
+            }
+        }
+    }
+
     while( !s_quit_loop )
     {
         /* 1. Dispatch all pending GLFW/X11 events via registered callbacks */
