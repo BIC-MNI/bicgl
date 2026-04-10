@@ -55,8 +55,11 @@ VIO_Real get_fixed_font_width( char ch );
  * GLFW globals
  * --------------------------------------------------------------------- */
 
-static Display    *s_x11_display   = NULL;  /* from glfwGetX11Display()  */
-static GLFWwindow *s_first_glfw_win = NULL; /* share target for 2nd+ wins */
+static Display    *s_x11_display    = NULL;  /* from glfwGetX11Display()  */
+static GLFWwindow *s_first_glfw_win = NULL;  /* share target for 2nd+ wins */
+static int         s_context_api    = 0;     /* GLFW_NATIVE_CONTEXT_API or
+                                                GLFW_EGL_CONTEXT_API; 0 = not
+                                                yet determined               */
 
 /* -----------------------------------------------------------------------
  * Window registry — maps GLFWwindow* → WSwindow
@@ -490,18 +493,29 @@ VIO_Status  WS_create_window(
     glfwWindowHint( GLFW_DEPTH_BITS,   16 );
     glfwWindowHint( GLFW_VISIBLE,      GLFW_FALSE );   /* shown after setup */
 
-    /* Use the first window as the shared-context target for subsequent ones */
+    /* Use the first window as the shared-context target for subsequent ones.
+     * All windows must use the same context creation API as the first one;
+     * mixing GLX and EGL contexts in a share group is not allowed and causes
+     * GLFW error 65539 ("Context creation APIs do not match between contexts"). */
     GLFWwindow *share = s_first_glfw_win;
 
-    /* Try the default context API first (GLX on X11 — uses hardware if available).
-     * Fall back to EGL when GLX fails (x2go, SSH X11 forwarding, no DRI3). */
+    if( s_context_api != 0 )
+    {
+        /* API already determined by the first window — use it directly. */
+        if( s_context_api == GLFW_EGL_CONTEXT_API )
+            glfwWindowHint( GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API );
+    }
+
     GLFWwindow *gw = glfwCreateWindow( initial_x_size, initial_y_size,
                                        title ? title : "", NULL, share );
-    if( !gw )
+    if( !gw && s_context_api == 0 )
     {
+        /* First window: default API (GLX) failed — retry with EGL. */
         glfwWindowHint( GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API );
         gw = glfwCreateWindow( initial_x_size, initial_y_size,
                                title ? title : "", NULL, share );
+        if( gw )
+            s_context_api = GLFW_EGL_CONTEXT_API;
     }
     if( !gw )
     {
@@ -511,6 +525,9 @@ VIO_Status  WS_create_window(
                  desc ? desc : "unknown error" );
         return VIO_ERROR;
     }
+    /* Record the API used by the first window so all later windows match. */
+    if( s_context_api == 0 )
+        s_context_api = GLFW_NATIVE_CONTEXT_API;
 
     /* First window: cache X11 display handle for font loading */
     if( !s_first_glfw_win )
