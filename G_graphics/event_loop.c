@@ -208,6 +208,11 @@ static  void  global_resize_function(
     if( window == NULL )
         return;
 
+    fprintf( stderr, "HIDPI: global_resize_function x_size=%d y_size=%d "
+             "per_window_cb=%s\n",
+             x_size, y_size,
+             window->resize_callback != NULL ? "SET" : "NULL" );
+
     window->x_origin = x;
     window->y_origin = y;
     window->x_size = x_size;
@@ -488,6 +493,7 @@ static  void  global_quit_function(
 
 static  void  initialize_callbacks( void )
 {
+    fprintf( stderr, "HIDPI: initialize_callbacks — setting global resize_callback\n" );
     GS_set_update_function( global_update_function );
     GS_set_update_overlay_function( global_update_overlay_function );
     GS_set_resize_function( global_resize_function );

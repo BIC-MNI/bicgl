@@ -164,6 +164,8 @@ static  void  initialize_window(
 
     GS_get_window_size( &window->x_size, &window->y_size );
     GS_get_window_position( &window->x_origin, &window->y_origin );
+    fprintf( stderr, "HIDPI: initialize_window x_size=%d y_size=%d\n",
+             window->x_size, window->y_size );
 
     G_set_automatic_clear_state( window, TRUE );
 

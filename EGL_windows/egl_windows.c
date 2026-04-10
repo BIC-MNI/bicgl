@@ -288,6 +288,10 @@ static void update_window_scale( WSwindow ws, GLFWwindow *gw,
     ws->height         = fb_h;
     ws->dpi_scale_x    = ( logical_w > 0 ) ? (float) fb_w / logical_w : 1.0f;
     ws->dpi_scale_y    = ( logical_h > 0 ) ? (float) fb_h / logical_h : 1.0f;
+    fprintf( stderr, "HIDPI: update_window_scale logical=(%d,%d) fb=(%d,%d) "
+             "dpi=(%.2f,%.2f)\n",
+             logical_w, logical_h, fb_w, fb_h,
+             ws->dpi_scale_x, ws->dpi_scale_y );
 }
 
 /* -----------------------------------------------------------------------
@@ -449,11 +453,11 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
     /* Recompute dpi_scale from the (already stored) framebuffer size. */
     if( width  > 0 ) ws->dpi_scale_x = (float) ws->width  / width;
     if( height > 0 ) ws->dpi_scale_y = (float) ws->height / height;
-    /* The resize_callback is fired from glfw_framebuffer_size_cb, which
-     * is the authoritative source for the GL rendering dimensions.
-     * Firing it here as well would either double-fire (both callbacks
-     * arrive for the same event) or use stale ws->width/height if this
-     * callback arrives before the framebuffer one. */
+    fprintf( stderr, "HIDPI: glfw_window_size_cb logical=(%d,%d) ws=(%d,%d) "
+             "dpi=(%.2f,%.2f) resize_cb=%s\n",
+             width, height, ws->width, ws->height,
+             ws->dpi_scale_x, ws->dpi_scale_y,
+             resize_callback ? "SET" : "NULL" );
 }
 
 static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
@@ -469,6 +473,11 @@ static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
     ws->height = fb_h;
     if( ws->logical_width  > 0 ) ws->dpi_scale_x = (float) fb_w / ws->logical_width;
     if( ws->logical_height > 0 ) ws->dpi_scale_y = (float) fb_h / ws->logical_height;
+    fprintf( stderr, "HIDPI: glfw_framebuffer_size_cb fb=(%d,%d) logical=(%d,%d) "
+             "dpi=(%.2f,%.2f) resize_cb=%s\n",
+             fb_w, fb_h, ws->logical_width, ws->logical_height,
+             ws->dpi_scale_x, ws->dpi_scale_y,
+             resize_callback ? "SET" : "NULL" );
     if( resize_callback )
     {
         int xpos = 0, ypos = 0;
@@ -689,7 +698,11 @@ VIO_Status  WS_create_window(
 
     register_window( gw, window );
 
+    fprintf( stderr, "HIDPI: before glfwShowWindow ws=(%d,%d)\n",
+             window->width, window->height );
     glfwShowWindow( gw );
+    fprintf( stderr, "HIDPI: after glfwShowWindow ws=(%d,%d)\n",
+             window->width, window->height );
 
     /* glfwGetWindowContentScale() returns the correct scale both before and
      * after glfwShowWindow, so no re-query is needed here.  Async scale
