@@ -439,39 +439,44 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 {
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    /* Store the logical size.  ws->width/height (physical framebuffer pixels)
-     * are maintained by glfw_framebuffer_size_cb, which is the authoritative
-     * source and fires alongside this callback.  We must NOT call
-     * glfwGetFramebufferSize here — on XWayland that returns physical pixels,
-     * and using them as the logical size would trigger a resize feedback loop
-     * (layout engine resizes window to physical size → new window-size event
-     * → glfwGetFramebufferSize returns 4× size → ...). */
+    /* Store the logical (window-coordinate) size.  Physical framebuffer
+     * dimensions live in ws->width/height and are maintained exclusively
+     * by glfw_framebuffer_size_cb.  Do NOT call glfwGetFramebufferSize()
+     * here — on Wayland it returns physical pixels and feeding those back
+     * as the logical size would start a resize feedback loop. */
     ws->logical_width  = width;
     ws->logical_height = height;
-    /* Update dpi_scale from the framebuffer size already stored. */
+    /* Recompute dpi_scale from the (already stored) framebuffer size. */
     if( width  > 0 ) ws->dpi_scale_x = (float) ws->width  / width;
     if( height > 0 ) ws->dpi_scale_y = (float) ws->height / height;
-    if( resize_callback )
-    {
-        int xpos = 0, ypos = 0;
-        glfwSetErrorCallback( NULL );
-        glfwGetWindowPos( w, &xpos, &ypos );
-        glfwSetErrorCallback( glfw_error_cb );
-        (*resize_callback)( ws->window_id, xpos, ypos, ws->width, ws->height );
-    }
+    /* The resize_callback is fired from glfw_framebuffer_size_cb, which
+     * is the authoritative source for the GL rendering dimensions.
+     * Firing it here as well would either double-fire (both callbacks
+     * arrive for the same event) or use stale ws->width/height if this
+     * callback arrives before the framebuffer one. */
 }
 
 static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
 {
-    /* Authoritative physical pixel dimensions.  On XWayland this fires after
-     * glfwShowWindow with the true 2× framebuffer size; on native X11 it
-     * fires with fb == logical (scale=1.0).  Always trust this value. */
+    /* Authoritative physical pixel dimensions.  On native Wayland this
+     * fires after glfwShowWindow with the true 2× framebuffer size; on
+     * X11 (including XWayland) it fires with fb == logical (scale=1.0).
+     * Always trust this value and fire the resize callback from here
+     * so that the layout engine always uses the correct GL dimensions. */
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
     ws->width  = fb_w;
     ws->height = fb_h;
     if( ws->logical_width  > 0 ) ws->dpi_scale_x = (float) fb_w / ws->logical_width;
     if( ws->logical_height > 0 ) ws->dpi_scale_y = (float) fb_h / ws->logical_height;
+    if( resize_callback )
+    {
+        int xpos = 0, ypos = 0;
+        glfwSetErrorCallback( NULL );
+        glfwGetWindowPos( w, &xpos, &ypos );
+        glfwSetErrorCallback( glfw_error_cb );
+        (*resize_callback)( ws->window_id, xpos, ypos, fb_w, fb_h );
+    }
 }
 
 static void glfw_refresh_cb( GLFWwindow *w )
