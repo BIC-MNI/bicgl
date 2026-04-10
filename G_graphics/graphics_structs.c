@@ -310,18 +310,6 @@ static  VIO_BOOL  check_redraw_viewport(
 
     G_set_current_window(window); /* Be sure we draw in the right window! */
 
-    for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
-    {
-        if( (bitplane != OVERLAY_PLANES ||
-             G_window_has_overlay_planes(window)) &&
-            graphics->clear_bitplane_flags[bitplane][current_buffer] )
-        {
-            G_set_bitplanes( window, bitplane );
-            G_clear_window( window );
-            graphics->clear_bitplane_flags[bitplane][current_buffer] = FALSE;
-        }
-    }
-
     /* A window clear is a write to the back buffer: treat it as
      * "something drawn" so the caller knows a swap is required.
      * Without this, a clear that fires when all viewport update flags
