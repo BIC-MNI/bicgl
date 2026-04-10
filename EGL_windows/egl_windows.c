@@ -580,20 +580,6 @@ VIO_Status  WS_create_window(
     if( initial_x_pos  <  0 ) initial_x_pos  = 0;
     if( initial_y_pos  <  0 ) initial_y_pos  = 0;
 
-    /* Clamp requested size to monitor work area so the window's "restore"
-     * geometry (used when un-maximising) fits on screen.  glfwCreateWindow
-     * takes logical pixels, and glfwGetMonitorWorkarea returns logical. */
-    {
-        GLFWmonitor *mon = glfwGetPrimaryMonitor();
-        if( mon )
-        {
-            int mx, my, mw, mh;
-            glfwGetMonitorWorkarea( mon, &mx, &my, &mw, &mh );
-            if( initial_x_size > mw ) initial_x_size = mw;
-            if( initial_y_size > mh ) initial_y_size = mh;
-        }
-    }
-
     glfwDefaultWindowHints();
     glfwWindowHint( GLFW_CLIENT_API,   GLFW_OPENGL_API );
     glfwWindowHint( GLFW_DOUBLEBUFFER, GLFW_TRUE );
@@ -711,6 +697,29 @@ VIO_Status  WS_create_window(
     glfwSetWindowFocusCallback(        gw, glfw_focus_cb );
 
     register_window( gw, window );
+
+    /* Clamp window size to the monitor work area.  This must happen after
+     * glfwCreateWindow because on Wayland the monitor list is not populated
+     * until the first window is created (wl_registry roundtrip).  Clamping
+     * before glfwShowWindow ensures the compositor's "restore" geometry
+     * (used when un-maximising) fits on screen. */
+    {
+        GLFWmonitor *mon = glfwGetPrimaryMonitor();
+        if( mon )
+        {
+            int mx, my, mw, mh;
+            glfwGetMonitorWorkarea( mon, &mx, &my, &mw, &mh );
+            if( mw > 0 && mh > 0 &&
+                ( initial_x_size > mw || initial_y_size > mh ) )
+            {
+                if( initial_x_size > mw ) initial_x_size = mw;
+                if( initial_y_size > mh ) initial_y_size = mh;
+                glfwSetWindowSize( gw, initial_x_size, initial_y_size );
+                update_window_scale( window, gw, initial_x_size,
+                                     initial_y_size );
+            }
+        }
+    }
 
     fprintf( stderr, "HIDPI: before glfwShowWindow ws=(%d,%d)\n",
              window->width, window->height );
@@ -1429,7 +1438,10 @@ void  WS_exit_loop( void )
 void  WS_set_update_flag( WSwindow window )
 {
     if( window )
+    {
         window->redisplay_pending = TRUE;
+        glfwPostEmptyEvent();   /* wake glfwWaitEvents() if blocking */
+    }
 }
 
 void  WS_set_visibility( WSwindow window, VIO_BOOL is_visible )
