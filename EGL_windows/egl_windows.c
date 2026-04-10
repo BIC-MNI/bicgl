@@ -60,9 +60,6 @@ static GLFWwindow *s_first_glfw_win = NULL;  /* share target for 2nd+ wins */
 static int         s_context_api    = 0;     /* GLFW_NATIVE_CONTEXT_API or
                                                 GLFW_EGL_CONTEXT_API; 0 = not
                                                 yet determined               */
-static int         s_is_xwayland    = -1;    /* -1 = not yet detected,
-                                                0 = native X11,
-                                                1 = XWayland                 */
 
 /* -----------------------------------------------------------------------
  * Window registry — maps GLFWwindow* → WSwindow
@@ -259,56 +256,38 @@ static int cursor_px( float scale, double logical )
     return (int)( logical * scale );
 }
 
-/* Detect whether we are running under XWayland (once, on first call).
- * XWayland sets WAYLAND_DISPLAY in the environment.  On native X11 that
- * variable is absent.  The result is cached in s_is_xwayland. */
-static int is_xwayland( void )
-{
-    if( s_is_xwayland < 0 )
-        s_is_xwayland = ( getenv( "WAYLAND_DISPLAY" ) != NULL ) ? 1 : 0;
-    return s_is_xwayland;
-}
-
 /* Set ws->width/height and ws->dpi_scale from the GLFW window gw.
  *
- * On XWayland the compositor handles pixel doubling: glfwGetFramebufferSize
- * returns logical pixels (same as window size), but glfwGetWindowContentScale
- * returns the real HiDPI factor (e.g. 2.0).  We must use content_scale *
- * logical to get the true physical pixel count.
+ * ws->width/height must always equal glfwGetFramebufferSize — that is what
+ * OpenGL actually renders into, and what glViewport and the layout engine
+ * must use.
  *
- * On native X11 HiDPI there is NO compositor pixel doubling.  The app draws
- * directly into physical pixels.  glfwGetFramebufferSize already returns the
- * true pixel count (== logical window size on X11), so we derive dpi_scale
- * from fb/logical (= 1.0 on X11).  glfwGetWindowContentScale returns the
- * Xft.dpi ratio (e.g. 2.0) but that does NOT mean the framebuffer is 2×
- * larger — it is only a hint for font/UI sizing and must NOT be used to
- * scale viewport dimensions. */
+ * On GLFW 3.3 with the X11 backend (covers both native X11 and XWayland):
+ *   glfwGetFramebufferSize == logical window size in both cases.
+ *   The compositor on XWayland handles pixel doubling transparently.
+ *   So ws->width = fb_w = logical_w on both platforms.
+ *
+ * dpi_scale is used only for scaling cursor coordinates from logical to
+ * framebuffer pixels (cursor_px()).  On native X11 fb==logical so scale=1.0.
+ * On XWayland fb==logical too, BUT glfwGetWindowContentScale returns 2.0
+ * (the compositor scale) — and GLFW already delivers cursor positions in
+ * logical pixels, so we should NOT scale them either.  dpi_scale = 1.0
+ * everywhere on the X11/XWayland GLFW backend.
+ *
+ * If a future native Wayland backend is used (GLFW_PLATFORM=wayland),
+ * glfwGetFramebufferSize will return true physical pixels and fb/logical
+ * will naturally give the correct scale > 1.0. */
 static void update_window_scale( WSwindow ws, GLFWwindow *gw,
                                  int logical_w, int logical_h )
 {
+    int fb_w = logical_w, fb_h = logical_h;
+    glfwGetFramebufferSize( gw, &fb_w, &fb_h );
     ws->logical_width  = logical_w;
     ws->logical_height = logical_h;
-
-    if( is_xwayland() )
-    {
-        /* XWayland: compositor handles scaling; use content scale. */
-        float sx = 1.0f, sy = 1.0f;
-        glfwGetWindowContentScale( gw, &sx, &sy );
-        ws->dpi_scale_x = sx;
-        ws->dpi_scale_y = sy;
-        ws->width       = (int)( logical_w * sx );
-        ws->height      = (int)( logical_h * sy );
-    }
-    else
-    {
-        /* Native X11: framebuffer == logical; scale == 1.0. */
-        int fb_w = logical_w, fb_h = logical_h;
-        glfwGetFramebufferSize( gw, &fb_w, &fb_h );
-        ws->width       = fb_w;
-        ws->height      = fb_h;
-        ws->dpi_scale_x = ( logical_w > 0 ) ? (float) fb_w / logical_w : 1.0f;
-        ws->dpi_scale_y = ( logical_h > 0 ) ? (float) fb_h / logical_h : 1.0f;
-    }
+    ws->width          = fb_w;
+    ws->height         = fb_h;
+    ws->dpi_scale_x    = ( logical_w > 0 ) ? (float) fb_w / logical_w : 1.0f;
+    ws->dpi_scale_y    = ( logical_h > 0 ) ? (float) fb_h / logical_h : 1.0f;
 }
 
 /* -----------------------------------------------------------------------
@@ -446,40 +425,23 @@ static void glfw_scroll_cb( GLFWwindow *w, double xoffset, double yoffset )
     if( yoffset < 0.0 && scroll_down_callback ) (*scroll_down_callback)(wid, x, y, s_current_mods );
 }
 
-/* Called when the window moves to a monitor with a different DPI scale —
- * e.g. dragging from a 1× to a 2× display, or on XWayland when the
- * compositor first associates the window with a monitor after show.
- * Re-computes physical pixel dimensions and fires resize_callback so that
- * glViewport and the layout engine see the updated framebuffer size. */
+/* Called when the content scale changes (e.g. window moved between monitors).
+ * Since ws->width/height always come from glfwGetFramebufferSize (which
+ * reflects the actual GL renderable size), a scale change only matters if the
+ * framebuffer size also changes — which will be reported by
+ * glfw_framebuffer_size_cb and glfw_window_size_cb.  Nothing to do here. */
 static void glfw_content_scale_cb( GLFWwindow *w, float sx, float sy )
 {
-    /* On XWayland: DPI scale changed (e.g. window moved to a different
-     * monitor).  Recompute physical dimensions and notify the layout engine. */
-    if( !is_xwayland() ) return;
-    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
-    if( !ws ) return;
-    ws->dpi_scale_x = sx;
-    ws->dpi_scale_y = sy;
-    ws->width  = (int)( ws->logical_width  * sx );
-    ws->height = (int)( ws->logical_height * sy );
-    if( resize_callback )
-    {
-        int xpos = 0, ypos = 0;
-        glfwSetErrorCallback( NULL );
-        glfwGetWindowPos( w, &xpos, &ypos );
-        glfwSetErrorCallback( glfw_error_cb );
-        (*resize_callback)( ws->window_id, xpos, ypos, ws->width, ws->height );
-    }
+    (void) w; (void) sx; (void) sy;
 }
 
 static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 {
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    /* GLFW delivers width/height in logical (screen-coordinate) pixels.
-     * update_window_scale sets ws->width/height to physical pixels:
-     *   - XWayland: content_scale * logical (compositor handles pixel doubling)
-     *   - Native X11: glfwGetFramebufferSize (== logical, scale=1.0) */
+    /* GLFW delivers width/height in logical pixels on both X11 and XWayland.
+     * update_window_scale calls glfwGetFramebufferSize to set ws->width/height
+     * (which equals logical on both platforms with GLFW's X11 backend). */
     update_window_scale( ws, w, width, height );
     if( resize_callback )
     {
@@ -493,18 +455,9 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 
 static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
 {
-    /* On XWayland, fb == logical (compositor handles pixel doubling), so
-     * physical dimensions are already correctly set by glfw_window_size_cb
-     * via update_window_scale.  Nothing to do here.
-     *
-     * On native X11, fb == logical too (no compositor scaling), and this
-     * callback fires alongside glfw_window_size_cb.  update_window_scale
-     * already calls glfwGetFramebufferSize internally, so both callbacks
-     * converge to the same value.  We still update here so the scale is
-     * accurate even if only the framebuffer callback fires (e.g. initial
-     * show before any window-size event). */
-    if( is_xwayland() ) return;
-
+    /* Update ws->width/height from the actual framebuffer size.  On both
+     * native X11 and XWayland (GLFW X11 backend) fb == logical, so this
+     * stays in sync with glfw_window_size_cb. */
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
     ws->width  = fb_w;
