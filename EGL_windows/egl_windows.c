@@ -258,21 +258,25 @@ static int cursor_px( float scale, double logical )
 
 /* Query the content (DPI) scale for a GLFW window.
  *
- * On XWayland — which is the common "Wayland" case seen by most toolkits —
- * glfwGetFramebufferSize() returns the same dimensions as glfwGetWindowSize()
- * because XWayland presents a 1:1 framebuffer and the Wayland compositor
- * handles the 2× upscale transparently.  The only API that reliably exposes
- * the physical scale factor is glfwGetMonitorContentScale().
+ * glfwGetWindowContentScale() is the correct per-window API (GLFW 3.3+).
  *
- * We use glfwGetWindowMonitor() first (valid only for fullscreen windows),
- * then fall back to the primary monitor.
+ * On XWayland the Wayland compositor presents a logical-pixel interface to
+ * XWayland clients: glfwGetWindowSize() returns logical pixels and the
+ * compositor handles the physical upscale.  glfwGetWindowContentScale()
+ * returns the compositor scale factor (e.g. 2.0 at 2× HiDPI).
+ *
+ * On native X11 there is no compositor-level pixel scaling: GLFW delivers
+ * window and cursor coordinates already in physical pixels, so
+ * glfwGetWindowContentScale() correctly returns 1.0 regardless of the
+ * monitor's physical DPI.  Using glfwGetMonitorContentScale() on native X11
+ * would incorrectly return the monitor's DPI ratio (e.g. 2.0 on a HiDPI
+ * screen), causing everything to be laid out at twice the actual framebuffer
+ * size.
  */
 static void get_window_content_scale( GLFWwindow *gw, float *sx, float *sy )
 {
     *sx = 1.0f;  *sy = 1.0f;
-    GLFWmonitor *mon = glfwGetWindowMonitor( gw );   /* non-NULL only if fullscreen */
-    if( !mon ) mon = glfwGetPrimaryMonitor();
-    if( mon ) glfwGetMonitorContentScale( mon, sx, sy );
+    glfwGetWindowContentScale( gw, sx, sy );
 }
 
 /* Apply content scale to a WSwindow: set width/height (physical pixels) and
@@ -424,10 +428,41 @@ static void glfw_scroll_cb( GLFWwindow *w, double xoffset, double yoffset )
     if( yoffset < 0.0 && scroll_down_callback ) (*scroll_down_callback)(wid, x, y, s_current_mods );
 }
 
+/* Called when the window moves to a monitor with a different DPI scale —
+ * e.g. dragging from a 1× to a 2× display, or on XWayland when the
+ * compositor first associates the window with a monitor after show.
+ * Re-computes physical pixel dimensions and fires resize_callback so that
+ * glViewport and the layout engine see the updated framebuffer size. */
+static void glfw_content_scale_cb( GLFWwindow *w, float sx, float sy )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    ws->dpi_scale_x = sx;
+    ws->dpi_scale_y = sy;
+    ws->width  = (int)( ws->logical_width  * sx );
+    ws->height = (int)( ws->logical_height * sy );
+    if( resize_callback )
+    {
+        int xpos = 0, ypos = 0;
+        glfwSetErrorCallback( NULL );
+        glfwGetWindowPos( w, &xpos, &ypos );
+        glfwSetErrorCallback( glfw_error_cb );
+        (*resize_callback)( ws->window_id, xpos, ypos, ws->width, ws->height );
+    }
+}
+
 static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 {
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
+    /* GLFW delivers width/height in logical (screen-coordinate) pixels on all
+     * platforms.  update_window_scale multiplies by the per-window content
+     * scale (from glfwGetWindowContentScale) to obtain physical pixels:
+     *   - XWayland 2×: scale=2.0 → ws->width = 2 * logical_width  (correct)
+     *   - Native X11:  scale=1.0 → ws->width = logical_width       (correct)
+     * ws->width/height are then passed to resize_callback so that
+     * global_resize_function stores the right framebuffer size in
+     * window->x_size/y_size, which drives glViewport and resize_layout. */
     update_window_scale( ws, width, height );
     if( resize_callback )
     {
@@ -436,12 +471,6 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
         glfwSetErrorCallback( NULL );
         glfwGetWindowPos( w, &xpos, &ypos );
         glfwSetErrorCallback( glfw_error_cb );
-        /* Pass PHYSICAL pixel dimensions (ws->width/height, set by
-         * update_window_scale above) so that global_resize_function stores
-         * the correct framebuffer size into window->x_size/y_size.  On
-         * XWayland the GLFW-reported width/height are logical pixels and
-         * would cause glViewport and resize_layout to use the wrong size,
-         * rendering everything into the bottom-left quarter of the window. */
         (*resize_callback)( ws->window_id, xpos, ypos, ws->width, ws->height );
     }
 }
@@ -666,30 +695,23 @@ VIO_Status  WS_create_window(
     glfwSetCursorPosCallback(    gw, glfw_cursor_pos_cb );
     glfwSetMouseButtonCallback(  gw, glfw_mouse_button_cb );
     glfwSetScrollCallback(       gw, glfw_scroll_cb );
-    glfwSetWindowSizeCallback(       gw, glfw_window_size_cb );
-    glfwSetFramebufferSizeCallback(  gw, glfw_framebuffer_size_cb );
-    glfwSetWindowRefreshCallback(    gw, glfw_refresh_cb );
-    glfwSetWindowCloseCallback(  gw, glfw_close_cb );
-    glfwSetWindowIconifyCallback(gw, glfw_iconify_cb );
-    glfwSetCursorEnterCallback(  gw, glfw_cursor_enter_cb );
-    glfwSetWindowFocusCallback(  gw, glfw_focus_cb );
+    glfwSetWindowSizeCallback(         gw, glfw_window_size_cb );
+    glfwSetWindowContentScaleCallback( gw, glfw_content_scale_cb );
+    glfwSetFramebufferSizeCallback(    gw, glfw_framebuffer_size_cb );
+    glfwSetWindowRefreshCallback(      gw, glfw_refresh_cb );
+    glfwSetWindowCloseCallback(        gw, glfw_close_cb );
+    glfwSetWindowIconifyCallback(      gw, glfw_iconify_cb );
+    glfwSetCursorEnterCallback(        gw, glfw_cursor_enter_cb );
+    glfwSetWindowFocusCallback(        gw, glfw_focus_cb );
 
     register_window( gw, window );
 
     glfwShowWindow( gw );
 
-    /* Re-query the content scale now that the window is visible and the
-     * compositor has associated it with a monitor.  Before glfwShowWindow the
-     * window is unmapped and glfwGetPrimaryMonitor() may return a stale or
-     * wrong scale (especially on XWayland at 2×).  A single poll lets pending
-     * window-manager events (including the initial configure/map) be processed
-     * so the monitor association is valid when we read the content scale. */
-    glfwPollEvents();
-    {
-        int lw, lh;
-        glfwGetWindowSize( gw, &lw, &lh );
-        update_window_scale( window, lw, lh );
-    }
+    /* glfwGetWindowContentScale() returns the correct scale both before and
+     * after glfwShowWindow, so no re-query is needed here.  Async scale
+     * changes (e.g. window moved to a different DPI monitor) are handled by
+     * glfw_content_scale_cb. */
 
     if( actual_colour_map_mode    ) *actual_colour_map_mode    = FALSE;
     if( actual_double_buffer_flag ) *actual_double_buffer_flag = TRUE;
