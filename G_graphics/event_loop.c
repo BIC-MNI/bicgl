@@ -140,10 +140,17 @@ static  Gwindow  get_key_or_mouse_event_window(
 static  void  update_the_window(
     Gwindow  window )
 {
-    --n_windows_to_update_on_idle;
-    if( n_windows_to_update_on_idle == 0 )
+    /* Only adjust the idle counter when update_required_flag is TRUE,
+     * i.e. when G_set_update_flag() previously incremented the counter.
+     * fire_redraws() can call us via global_update_function even when
+     * the flag is FALSE (redisplay_pending but no G_set_update_flag). */
+    if( window->update_required_flag )
     {
-        G_remove_idle_function( check_update_windows, NULL );
+        --n_windows_to_update_on_idle;
+        if( n_windows_to_update_on_idle == 0 )
+        {
+            G_remove_idle_function( check_update_windows, NULL );
+        }
     }
 
     if( window->update_callback != NULL )
