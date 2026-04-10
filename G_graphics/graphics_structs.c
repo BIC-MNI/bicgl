@@ -322,7 +322,26 @@ static  VIO_BOOL  check_redraw_viewport(
         }
     }
 
+    /* A window clear is a write to the back buffer: treat it as
+     * "something drawn" so the caller knows a swap is required.
+     * Without this, a clear that fires when all viewport update flags
+     * are already FALSE returns FALSE, allowing an independent draw
+     * (e.g. register's IF_redraw_slices) to trigger a swap of a frame
+     * that is black everywhere except those independently-drawn areas. */
     something_drawn = FALSE;
+
+    for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
+    {
+        if( (bitplane != OVERLAY_PLANES ||
+             G_window_has_overlay_planes(window)) &&
+            graphics->clear_bitplane_flags[bitplane][current_buffer] )
+        {
+            G_set_bitplanes( window, bitplane );
+            G_clear_window( window );
+            graphics->clear_bitplane_flags[bitplane][current_buffer] = FALSE;
+            something_drawn = TRUE;
+        }
+    }
 
     for_less( viewport_index, 0, graphics->n_viewports )
     {
