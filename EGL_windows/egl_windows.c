@@ -580,6 +580,20 @@ VIO_Status  WS_create_window(
     if( initial_x_pos  <  0 ) initial_x_pos  = 0;
     if( initial_y_pos  <  0 ) initial_y_pos  = 0;
 
+    /* Clamp requested size to monitor work area so the window's "restore"
+     * geometry (used when un-maximising) fits on screen.  glfwCreateWindow
+     * takes logical pixels, and glfwGetMonitorWorkarea returns logical. */
+    {
+        GLFWmonitor *mon = glfwGetPrimaryMonitor();
+        if( mon )
+        {
+            int mx, my, mw, mh;
+            glfwGetMonitorWorkarea( mon, &mx, &my, &mw, &mh );
+            if( initial_x_size > mw ) initial_x_size = mw;
+            if( initial_y_size > mh ) initial_y_size = mh;
+        }
+    }
+
     glfwDefaultWindowHints();
     glfwWindowHint( GLFW_CLIENT_API,   GLFW_OPENGL_API );
     glfwWindowHint( GLFW_DOUBLEBUFFER, GLFW_TRUE );
