@@ -703,6 +703,8 @@ VIO_Status  WS_create_window(
      * until the first window is created (wl_registry roundtrip).  Clamping
      * before glfwShowWindow ensures the compositor's "restore" geometry
      * (used when un-maximising) fits on screen. */
+    int  clamped_x = 0, clamped_y = 0;
+    VIO_BOOL  did_clamp = FALSE;
     {
         GLFWmonitor *mon = glfwGetPrimaryMonitor();
         if( mon )
@@ -717,6 +719,9 @@ VIO_Status  WS_create_window(
                 glfwSetWindowSize( gw, initial_x_size, initial_y_size );
                 update_window_scale( window, gw, initial_x_size,
                                      initial_y_size );
+                clamped_x = initial_x_size;
+                clamped_y = initial_y_size;
+                did_clamp = TRUE;
             }
         }
     }
@@ -726,6 +731,16 @@ VIO_Status  WS_create_window(
     glfwShowWindow( gw );
     fprintf( stderr, "HIDPI: after glfwShowWindow ws=(%d,%d)\n",
              window->width, window->height );
+
+    /* On Wayland, glfwSetWindowSize on a hidden (not-yet-mapped) window is
+     * ignored by the compositor — it records the glfwCreateWindow dimensions
+     * as the "restore" geometry instead.  Re-apply the clamped size after
+     * the window is mapped so the compositor sees it on a live surface. */
+    if( did_clamp )
+    {
+        glfwPollEvents();   /* complete Wayland xdg_surface configure round-trip */
+        glfwSetWindowSize( gw, clamped_x, clamped_y );
+    }
 
     /* glfwGetWindowContentScale() returns the correct scale both before and
      * after glfwShowWindow, so no re-query is needed here.  Async scale
