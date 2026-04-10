@@ -256,6 +256,39 @@ static int cursor_px( float scale, double logical )
     return (int)( logical * scale );
 }
 
+/* Query the content (DPI) scale for a GLFW window.
+ *
+ * On XWayland — which is the common "Wayland" case seen by most toolkits —
+ * glfwGetFramebufferSize() returns the same dimensions as glfwGetWindowSize()
+ * because XWayland presents a 1:1 framebuffer and the Wayland compositor
+ * handles the 2× upscale transparently.  The only API that reliably exposes
+ * the physical scale factor is glfwGetMonitorContentScale().
+ *
+ * We use glfwGetWindowMonitor() first (valid only for fullscreen windows),
+ * then fall back to the primary monitor.
+ */
+static void get_window_content_scale( GLFWwindow *gw, float *sx, float *sy )
+{
+    *sx = 1.0f;  *sy = 1.0f;
+    GLFWmonitor *mon = glfwGetWindowMonitor( gw );   /* non-NULL only if fullscreen */
+    if( !mon ) mon = glfwGetPrimaryMonitor();
+    if( mon ) glfwGetMonitorContentScale( mon, sx, sy );
+}
+
+/* Apply content scale to a WSwindow: set width/height (physical pixels) and
+ * dpi_scale from the window's logical size and the monitor content scale. */
+static void update_window_scale( WSwindow ws, int logical_w, int logical_h )
+{
+    float sx, sy;
+    get_window_content_scale( ws->glfw, &sx, &sy );
+    ws->logical_width  = logical_w;
+    ws->logical_height = logical_h;
+    ws->dpi_scale_x    = sx;
+    ws->dpi_scale_y    = sy;
+    ws->width          = (int)( logical_w * sx );
+    ws->height         = (int)( logical_h * sy );
+}
+
 /* -----------------------------------------------------------------------
  * Cursor state (updated in cursor-pos callback; used by other callbacks)
  * --------------------------------------------------------------------- */
@@ -395,8 +428,7 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 {
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    ws->logical_width  = width;
-    ws->logical_height = height;
+    update_window_scale( ws, width, height );
     if( resize_callback )
     {
         int xpos = 0, ypos = 0;
@@ -410,13 +442,23 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 
 static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
 {
+    /* On XWayland, fb_w/fb_h == logical window size (no help for HiDPI).
+     * Content-scale-based physical dimensions are maintained by
+     * glfw_window_size_cb via update_window_scale().  This callback exists
+     * only to catch true framebuffer changes on platforms where they differ
+     * (e.g. native Wayland with a future GLFW that reports real fb pixels). */
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    ws->width  = fb_w;
-    ws->height = fb_h;
-    if( ws->logical_width  > 0 ) ws->dpi_scale_x = (float) fb_w / ws->logical_width;
-    if( ws->logical_height > 0 ) ws->dpi_scale_y = (float) fb_h / ws->logical_height;
-    /* resize_callback is fired from glfw_window_size_cb (logical coords) */
+    /* Only update if the framebuffer is genuinely larger than the logical
+     * window size (i.e. NOT the XWayland 1:1 case). */
+    if( ws->logical_width > 0 && ws->logical_height > 0 &&
+        ( fb_w > ws->logical_width || fb_h > ws->logical_height ) )
+    {
+        ws->width       = fb_w;
+        ws->height      = fb_h;
+        ws->dpi_scale_x = (float) fb_w / ws->logical_width;
+        ws->dpi_scale_y = (float) fb_h / ws->logical_height;
+    }
 }
 
 static void glfw_refresh_cb( GLFWwindow *w )
@@ -596,21 +638,10 @@ VIO_Status  WS_create_window(
     /* Fill in WSwindow fields */
     window->glfw              = gw;
     window->window_id         = x11_win;
-    /* Store framebuffer (physical) pixel dimensions for all GL operations.
-     * On HiDPI / Wayland compositors the framebuffer may be larger than the
-     * logical window size reported by glfwCreateWindow. */
-    {
-        int fb_w = initial_x_size, fb_h = initial_y_size;
-        glfwGetFramebufferSize( gw, &fb_w, &fb_h );
-        window->width          = fb_w;
-        window->height         = fb_h;
-        window->logical_width  = initial_x_size;
-        window->logical_height = initial_y_size;
-        window->dpi_scale_x    = ( fb_w > 0 && initial_x_size > 0 )
-                                  ? (float) fb_w / initial_x_size : 1.0f;
-        window->dpi_scale_y    = ( fb_h > 0 && initial_y_size > 0 )
-                                  ? (float) fb_h / initial_y_size : 1.0f;
-    }
+    /* Compute physical pixel dimensions from the monitor content scale.
+     * On XWayland, glfwGetFramebufferSize == window size (1:1), so we must
+     * use glfwGetMonitorContentScale to get the real HiDPI factor. */
+    update_window_scale( window, initial_x_size, initial_y_size );
     window->font_cache_count  = 0;
     window->is_visible        = TRUE;
     window->redisplay_pending = TRUE;
@@ -1339,14 +1370,6 @@ void  WS_set_geometry( WSwindow window, int x, int y, int cx, int cy )
     if( cx > 0 && cy > 0 )
     {
         glfwSetWindowSize( window->glfw, cx, cy );
-        /* Read back framebuffer (physical) pixels — may differ from cx/cy on HiDPI */
-        int fb_w = cx, fb_h = cy;
-        glfwGetFramebufferSize( window->glfw, &fb_w, &fb_h );
-        window->width          = fb_w;
-        window->height         = fb_h;
-        window->logical_width  = cx;
-        window->logical_height = cy;
-        window->dpi_scale_x    = ( fb_w > 0 ) ? (float) fb_w / cx : 1.0f;
-        window->dpi_scale_y    = ( fb_h > 0 ) ? (float) fb_h / cy : 1.0f;
+        update_window_scale( window, cx, cy );
     }
 }
