@@ -8,15 +8,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(BICGL_PACKAGE_VERSION_MAJOR 2)
 SET(BICGL_PACKAGE_VERSION_MINOR 0)
 SET(BICGL_PACKAGE_VERSION_PATCH 1)
-OPTION(BICGL_USE_GLUT "Build the GLUT windowing backend (default)" ON)
-# Set BICGL_USE_GLFW=ON (and BICGL_USE_GLUT=OFF) to build the GLFW backend.
-# The GLFW backend does not require GLX and works on x2go / SSH X11 sessions.
-OPTION(BICGL_USE_GLFW "Build GLFW windowing backend (no GLX required)" OFF)
-
-# Mutual exclusion: EGL overrides GLUT
-IF(BICGL_USE_GLFW)
-  SET(BICGL_USE_GLUT OFF)
-ENDIF()
 
 
 IF(NOT MINC_TOOLKIT_BUILD)
@@ -27,22 +18,30 @@ IF(NOT MINC_TOOLKIT_BUILD)
   SET(CPACK_PACKAGE_VERSION_PATCH ${BICGL_PACKAGE_VERSION_PATCH})
   INCLUDE(CPack)
 
+  OPTION(BICGL_USE_GLUT "Build the GLUT windowing backend (default)" ON)
+  # Set BICGL_USE_GLFW=ON (and BICGL_USE_GLUT=OFF) to build the GLFW backend.
+  # The GLFW backend does not require GLX and works on x2go / SSH X11 sessions.
+  OPTION(BICGL_USE_GLFW "Build GLFW windowing backend (no GLX required)" OFF)
+
+  # Mutual exclusion: EGL overrides GLUT
+  IF(BICGL_USE_GLFW)
+    SET(BICGL_USE_GLUT OFF)
+  ENDIF()
+
   FIND_PACKAGE( LIBMINC )
   FIND_PACKAGE( BICPL )
   FIND_PACKAGE( Threads )
+
   FIND_PACKAGE( OpenGL REQUIRED )
-  IF(NOT BICGL_USE_GLFW)
-    FIND_PACKAGE( GLUT REQUIRED )
-  ELSE()
-    FIND_PACKAGE( GLUT )
-  ENDIF()
   FIND_PACKAGE( X11 QUIET )
+
   IF(BICGL_USE_GLFW)
     # The EGL backend uses GLFW (which handles EGL context creation internally).
     # Try the system GLFW package first; fall back to fetching 3.4 from git.
     IF(NOT FETCH_GLFW)
       FIND_PACKAGE( glfw3 QUIET )
     ENDIF()
+
     IF(glfw3_FOUND)
       MESSAGE(STATUS "GLFW: using system package (${glfw3_VERSION})")
     ELSE()
@@ -59,6 +58,8 @@ IF(NOT MINC_TOOLKIT_BUILD)
       )
       FetchContent_MakeAvailable(glfw)
     ENDIF()
+  ELSE()
+    FIND_PACKAGE( GLUT REQUIRED )
   ENDIF()
 
   OPTION(BICGL_BUILD_SHARED_LIBS "Build shared libraries." OFF)
@@ -295,6 +296,7 @@ ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC})
 IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
   IF(BICGL_USE_GLFW)
+    message(STATUS "Linking bicgl with static libraries and GLFW")
     TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
         ${X11_X11_LIB}
         ${BICPL_STATIC_LIBRARIES} ${LIBMINC_STATIC_LIBRARIES} )
@@ -308,6 +310,7 @@ IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
 ELSE(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
   IF(BICGL_USE_GLFW)
+    message(STATUS "Linking bicgl with shared libraries and GLFW")  
     TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
         ${X11_X11_LIB}
         ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
