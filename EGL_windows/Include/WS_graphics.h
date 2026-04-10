@@ -3,6 +3,7 @@
 
 #include  <graphics_base.h>
 
+/* X11 — provides typedef Window Window_id; also used for font loading */
 #include  <X11/Xlib.h>
 #include  <X11/Xutil.h>
 
@@ -10,26 +11,26 @@
 #undef  Status
 #endif
 
-typedef  Window   Window_id;
+/* GLFW — for GLFWwindow* field in WS_window_struct */
+#define GLFW_INCLUDE_NONE
+#include  <GLFW/glfw3.h>
 
-/* Opaque pointer to EGL surface + context data.
-   Defined in egl_windows.c — keeps EGL headers out of GS_graphics.h. */
-struct egl_window_data;
+typedef  Window   Window_id;
 
 typedef  struct
 {
-    Window_id               window_id;
-    struct egl_window_data *egl;          /* EGL surface + context         */
-    int                     width;
-    int                     height;
-    int                     font_list_base;       /* FIXED_FONT GL lists (8px advance)  */
-    int                     font_list_base_sized; /* SIZED_FONT GL lists (6px advance)  */
-    VIO_BOOL                is_visible;
-    VIO_BOOL                redisplay_pending;
+    Window_id    window_id;
+    GLFWwindow  *glfw;                /* GLFW window handle                  */
+    int          width;
+    int          height;
+    int          font_list_base;       /* FIXED_FONT GL lists (8px advance)  */
+    int          font_list_base_sized; /* SIZED_FONT GL lists (6px advance)  */
+    VIO_BOOL     is_visible;
+    VIO_BOOL     redisplay_pending;
     /* Fields expected by GS_window_struct (via OpenGL_graphics/windows.c) */
-    int                     init_x, init_y;
-    int                     border_width, border_height;
-    VIO_BOOL                is_new;
+    int          init_x, init_y;
+    int          border_width, border_height;
+    VIO_BOOL     is_new;
 }
 WS_window_struct;
 

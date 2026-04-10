@@ -38,21 +38,26 @@ IF(NOT MINC_TOOLKIT_BUILD)
   ENDIF()
   FIND_PACKAGE( X11 QUIET )
   IF(BICGL_USE_EGL)
-    FIND_PACKAGE( OpenGL REQUIRED )   # for libEGL on some distros via OpenGL::EGL
-    # Try pkg-config for EGL
-    FIND_PACKAGE( PkgConfig QUIET )
-    IF(PKG_CONFIG_FOUND)
-      PKG_CHECK_MODULES( EGL egl )
+    # The EGL backend uses GLFW (which handles EGL context creation internally).
+    # Try the system GLFW package first; fall back to fetching 3.4 from git.
+    IF(NOT FETCH_GLFW)
+      FIND_PACKAGE( glfw3 QUIET )
     ENDIF()
-    IF(NOT EGL_FOUND)
-      # Manual fallback
-      FIND_PATH( EGL_INCLUDE_DIRS EGL/egl.h )
-      FIND_LIBRARY( EGL_LIBRARIES NAMES EGL egl )
-      IF(EGL_INCLUDE_DIRS AND EGL_LIBRARIES)
-        SET(EGL_FOUND TRUE)
-      ELSE()
-        MESSAGE(FATAL_ERROR "EGL not found. Install libegl-dev (or libegl1-mesa-dev).")
-      ENDIF()
+    IF(glfw3_FOUND)
+      MESSAGE(STATUS "GLFW: using system package (${glfw3_VERSION})")
+    ELSE()
+      MESSAGE(STATUS "GLFW: system package not found, fetching 3.4 via FetchContent")
+      SET(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
+      SET(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+      SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+      INCLUDE(FetchContent)
+      FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG        3.4
+        GIT_SHALLOW    TRUE
+      )
+      FetchContent_MakeAvailable(glfw)
     ENDIF()
   ENDIF()
 
@@ -145,7 +150,7 @@ ENDIF()
 INCLUDE_DIRECTORIES( OpenGL_graphics/Include Include )
 
 IF(BICGL_USE_EGL)
-  INCLUDE_DIRECTORIES( EGL_windows/Include X_windows/Include ${EGL_INCLUDE_DIRS} )
+  INCLUDE_DIRECTORIES( EGL_windows/Include X_windows/Include )
 ELSEIF(BICGL_USE_GLUT)
   INCLUDE_DIRECTORIES( GLUT_windows/Include )
 ELSE()
@@ -290,7 +295,7 @@ ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC})
 IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
   IF(BICGL_USE_EGL)
-    TARGET_LINK_LIBRARIES(bicgl ${EGL_LIBRARIES} ${OPENGL_LIBRARIES}
+    TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
         ${X11_X11_LIB}
         ${BICPL_STATIC_LIBRARIES} ${LIBMINC_STATIC_LIBRARIES} )
   ELSEIF(BICGL_USE_GLUT)
@@ -303,7 +308,7 @@ IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
 ELSE(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
   IF(BICGL_USE_EGL)
-    TARGET_LINK_LIBRARIES(bicgl ${EGL_LIBRARIES} ${OPENGL_LIBRARIES}
+    TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
         ${X11_X11_LIB}
         ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
   ELSEIF(BICGL_USE_GLUT)

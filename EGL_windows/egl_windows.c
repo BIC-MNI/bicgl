@@ -1,102 +1,97 @@
 /*
- * egl_windows.c — EGL + X11 windowing backend for bicgl.
+ * egl_windows.c — GLFW+EGL windowing backend for bicgl.
  *
- * Creates X11 windows for display and event handling (works on any X11
- * server, including x2go which has no GLX extension).  OpenGL contexts
- * are created via EGL, which does not require the GLX X11 extension and
- * works with Mesa's software (llvmpipe) renderer on x2go.
+ * Uses GLFW to create windows and OpenGL contexts (via EGL on x2go/X11).
+ * Falls back to GLFW_EGL_CONTEXT_API when the default GLX path fails,
+ * which is exactly the x2go case (no GLX extension on the X server).
  *
- * Font rendering uses stored_font.c (pre-rasterised 8×13 bitmap font
- * uploaded as OpenGL display lists) — no glXUseXFont() required.
+ * Font rendering uses stored_font.c (pre-rasterised 8×13 bitmap font)
+ * plus an optional compact X11 system font loaded via Xlib — no GLX
+ * required.  The X11 display handle is obtained from GLFW after the first
+ * window is created via glfwGetX11Display().
  *
  * This file implements the full WS_* interface declared in
  * EGL_windows/Include/egl_window_prototypes.h.
  */
+
+/* Include GLFW native header FIRST, before any X11 headers that do
+ * #undef Status (WS_graphics.h).  glfw3native.h pulls in Xrandr.h which
+ * uses Status as a function return type; if Status is already undef-ed,
+ * compilation fails.  Including it here keeps Status intact. */
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>  /* glfwGetX11Display(), glfwGetX11Window() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <volume_io.h>
-#include <WS_graphics.h>
+#include <WS_graphics.h>       /* does #undef Status — must come after glfw3native.h */
 
-/* EGL + OpenGL headers */
-#include <EGL/egl.h>
-#include <EGL/eglext.h>    /* EGL_PLATFORM_X11_KHR */
+/* OpenGL */
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 
-/* X11 headers */
+/* X11 — for font loading only (Xlib.h / Xutil.h already pulled in above) */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/keysym.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <sys/select.h>
 #include <unistd.h>
 
 /* Forward declaration of stored_font functions */
-void    create_fixed_font( GLuint fontOffset );
-void    create_sized_font( GLuint fontOffset );
-int     get_fixed_font_n_chars( void );
+void     create_fixed_font( GLuint fontOffset );
+void     create_sized_font( GLuint fontOffset );
+int      get_fixed_font_n_chars( void );
 VIO_Real get_fixed_font_height( void );
 VIO_Real get_fixed_font_width( char ch );
 
-/* Forward declaration — defined later in the font/text section */
+/* Forward declaration — defined in the font section below */
 static VIO_BOOL load_x11_font_glists( GLuint list_base );
 
 /* -----------------------------------------------------------------------
- * EGL globals (one EGL display, shared across all windows)
+ * GLFW globals
  * --------------------------------------------------------------------- */
 
-static Display    *s_display   = NULL;
-static EGLDisplay  s_egl_dpy   = EGL_NO_DISPLAY;
-static EGLConfig   s_egl_cfg   = 0;
-static EGLContext  s_shared_ctx = EGL_NO_CONTEXT;  /* shared GL context  */
-static int         s_screen    = 0;
-static Atom        s_wm_delete_window = None;
-
-/* Per-window EGL data (opaque from outside this file) */
-struct egl_window_data
-{
-    EGLSurface  surface;
-    EGLContext  context;    /* context that owns the surface (shared objs) */
-};
+static Display    *s_x11_display   = NULL;  /* from glfwGetX11Display()  */
+static GLFWwindow *s_first_glfw_win = NULL; /* share target for 2nd+ wins */
 
 /* -----------------------------------------------------------------------
- * Window registry — maps X11 Window → WSwindow
+ * Window registry — maps GLFWwindow* → WSwindow
  * --------------------------------------------------------------------- */
 
 #define  MAX_EGL_WINDOWS  32
 
 static struct {
-    Window    x11;
-    WSwindow  ws;
+    GLFWwindow *glfw;
+    WSwindow    ws;
 } s_windows[MAX_EGL_WINDOWS];
 static int s_n_windows = 0;
 
-/* The window whose EGL context is currently current */
+/* The window whose GL context is currently current */
 static WSwindow  s_current_window = NULL;
 
-static void register_window( Window x11, WSwindow ws )
+static void register_window( GLFWwindow *glfw, WSwindow ws )
 {
     if( s_n_windows < MAX_EGL_WINDOWS )
     {
-        s_windows[s_n_windows].x11 = x11;
-        s_windows[s_n_windows].ws  = ws;
+        s_windows[s_n_windows].glfw = glfw;
+        s_windows[s_n_windows].ws   = ws;
         ++s_n_windows;
     }
 }
 
-static void unregister_window( Window x11 )
+static void unregister_window( GLFWwindow *glfw )
 {
     int i;
     for( i = 0; i < s_n_windows; ++i )
     {
-        if( s_windows[i].x11 == x11 )
+        if( s_windows[i].glfw == glfw )
         {
             s_windows[i] = s_windows[--s_n_windows];
             return;
@@ -104,11 +99,11 @@ static void unregister_window( Window x11 )
     }
 }
 
-static WSwindow lookup_window( Window x11 )
+static WSwindow lookup_window( GLFWwindow *glfw )
 {
     int i;
     for( i = 0; i < s_n_windows; ++i )
-        if( s_windows[i].x11 == x11 )
+        if( s_windows[i].glfw == glfw )
             return s_windows[i].ws;
     return NULL;
 }
@@ -193,210 +188,260 @@ static int          s_n_idles = 0;
 static VIO_BOOL s_quit_loop = FALSE;
 
 /* -----------------------------------------------------------------------
- * Key binding — replicate static bind_special_keys() from x_windows.c
+ * Modifier and key translation helpers
  * --------------------------------------------------------------------- */
 
-static void bind_special_keys( void )
+static int glfw_mods_to_bicgl( int mods )
 {
-    /* No-op: key translation is done directly in translate_key() via
-     * KeySym switch — XRebindKeysym is not used because it can deadlock
-     * on remote X11 servers (x2go, SSH X11 forwarding). */
-    (void)0;
+    return ( (mods & GLFW_MOD_SHIFT)   ? SHIFT_KEY_BIT : 0 )
+         | ( (mods & GLFW_MOD_CONTROL) ? CTRL_KEY_BIT  : 0 )
+         | ( (mods & GLFW_MOD_ALT)     ? ALT_KEY_BIT   : 0 );
 }
 
-/* -----------------------------------------------------------------------
- * Modifier-key extraction from X11 event state mask
- * --------------------------------------------------------------------- */
-
-static int get_modifiers( unsigned int state )
+/* Map GLFW special key codes to bicgl key constants.
+ * Returns TRUE and sets *out when the key is a special (non-printable) key.
+ * Printable keys are handled by the char callback. */
+static VIO_BOOL translate_glfw_special( int key, int *out )
 {
-    int mod = 0;
-    if( state & ShiftMask   ) mod |= SHIFT_KEY_BIT;
-    if( state & ControlMask ) mod |= CTRL_KEY_BIT;
-    if( state & Mod1Mask    ) mod |= ALT_KEY_BIT;   /* Alt / Meta */
-    return mod;
-}
-
-/* -----------------------------------------------------------------------
- * Key translation — maps XEvent to a bicgl key code.
- *
- * We do NOT use XRebindKeysym (it can deadlock on remote X11 servers such
- * as x2go / SSH X11 forwarding).  Instead we:
- *   1. Try XLookupString for printable / ASCII keys.
- *   2. Fall through to a direct KeySym → bicgl-code table for special keys.
- * --------------------------------------------------------------------- */
-
-static VIO_BOOL translate_key( XEvent *xe, int *key )
-{
-    char            buf[10];
-    KeySym          sym;
-    XComposeStatus  comp;
-    int             n;
-
-    n = XLookupString( &xe->xkey, buf, (int)sizeof(buf), &sym, &comp );
-    if( n >= 1 )
+    switch( key )
     {
-        *key = (int)((unsigned char *)buf)[0];
-        return TRUE;
-    }
-
-    /* Special / non-printing keys — map KeySym directly */
-    switch( sym )
-    {
-    case XK_Left:       *key = LEFT_ARROW_KEY;    return TRUE;
-    case XK_Right:      *key = RIGHT_ARROW_KEY;   return TRUE;
-    case XK_Down:       *key = DOWN_ARROW_KEY;    return TRUE;
-    case XK_Up:         *key = UP_ARROW_KEY;      return TRUE;
-    case XK_Shift_L:    *key = LEFT_SHIFT_KEY;    return TRUE;
-    case XK_Shift_R:    *key = RIGHT_SHIFT_KEY;   return TRUE;
-    case XK_Control_L:  *key = LEFT_CTRL_KEY;     return TRUE;
-    case XK_Control_R:  *key = RIGHT_CTRL_KEY;    return TRUE;
-    case XK_Alt_L:      *key = LEFT_ALT_KEY;      return TRUE;
-    case XK_Alt_R:      *key = RIGHT_ALT_KEY;     return TRUE;
-    case XK_F1:         *key = BICGL_F1_KEY;      return TRUE;
-    case XK_F2:         *key = BICGL_F2_KEY;      return TRUE;
-    case XK_F3:         *key = BICGL_F3_KEY;      return TRUE;
-    case XK_F4:         *key = BICGL_F4_KEY;      return TRUE;
-    case XK_F5:         *key = BICGL_F5_KEY;      return TRUE;
-    case XK_F6:         *key = BICGL_F6_KEY;      return TRUE;
-    case XK_F7:         *key = BICGL_F7_KEY;      return TRUE;
-    case XK_F8:         *key = BICGL_F8_KEY;      return TRUE;
-    case XK_F9:         *key = BICGL_F9_KEY;      return TRUE;
-    case XK_F10:        *key = BICGL_F10_KEY;     return TRUE;
-    case XK_F11:        *key = BICGL_F11_KEY;     return TRUE;
-    case XK_F12:        *key = BICGL_F12_KEY;     return TRUE;
-    case XK_Page_Up:    *key = BICGL_PGUP_KEY;    return TRUE;
-    case XK_Page_Down:  *key = BICGL_PGDN_KEY;    return TRUE;
-    case XK_Home:       *key = BICGL_HOME_KEY;    return TRUE;
-    case XK_End:        *key = BICGL_END_KEY;     return TRUE;
-    case XK_Insert:     *key = BICGL_INSERT_KEY;  return TRUE;
-    case XK_Delete:     *key = 127;               return TRUE;
-    default:            return FALSE;
+    case GLFW_KEY_LEFT:          *out = LEFT_ARROW_KEY;   return TRUE;
+    case GLFW_KEY_RIGHT:         *out = RIGHT_ARROW_KEY;  return TRUE;
+    case GLFW_KEY_UP:            *out = UP_ARROW_KEY;     return TRUE;
+    case GLFW_KEY_DOWN:          *out = DOWN_ARROW_KEY;   return TRUE;
+    case GLFW_KEY_LEFT_SHIFT:    *out = LEFT_SHIFT_KEY;   return TRUE;
+    case GLFW_KEY_RIGHT_SHIFT:   *out = RIGHT_SHIFT_KEY;  return TRUE;
+    case GLFW_KEY_LEFT_CONTROL:  *out = LEFT_CTRL_KEY;    return TRUE;
+    case GLFW_KEY_RIGHT_CONTROL: *out = RIGHT_CTRL_KEY;   return TRUE;
+    case GLFW_KEY_LEFT_ALT:      *out = LEFT_ALT_KEY;     return TRUE;
+    case GLFW_KEY_RIGHT_ALT:     *out = RIGHT_ALT_KEY;    return TRUE;
+    case GLFW_KEY_F1:            *out = BICGL_F1_KEY;     return TRUE;
+    case GLFW_KEY_F2:            *out = BICGL_F2_KEY;     return TRUE;
+    case GLFW_KEY_F3:            *out = BICGL_F3_KEY;     return TRUE;
+    case GLFW_KEY_F4:            *out = BICGL_F4_KEY;     return TRUE;
+    case GLFW_KEY_F5:            *out = BICGL_F5_KEY;     return TRUE;
+    case GLFW_KEY_F6:            *out = BICGL_F6_KEY;     return TRUE;
+    case GLFW_KEY_F7:            *out = BICGL_F7_KEY;     return TRUE;
+    case GLFW_KEY_F8:            *out = BICGL_F8_KEY;     return TRUE;
+    case GLFW_KEY_F9:            *out = BICGL_F9_KEY;     return TRUE;
+    case GLFW_KEY_F10:           *out = BICGL_F10_KEY;    return TRUE;
+    case GLFW_KEY_F11:           *out = BICGL_F11_KEY;    return TRUE;
+    case GLFW_KEY_F12:           *out = BICGL_F12_KEY;    return TRUE;
+    case GLFW_KEY_PAGE_UP:       *out = BICGL_PGUP_KEY;   return TRUE;
+    case GLFW_KEY_PAGE_DOWN:     *out = BICGL_PGDN_KEY;   return TRUE;
+    case GLFW_KEY_HOME:          *out = BICGL_HOME_KEY;   return TRUE;
+    case GLFW_KEY_END:           *out = BICGL_END_KEY;    return TRUE;
+    case GLFW_KEY_INSERT:        *out = BICGL_INSERT_KEY; return TRUE;
+    case GLFW_KEY_DELETE:        *out = 127;              return TRUE;
+    case GLFW_KEY_ENTER:         *out = '\r';             return TRUE;
+    case GLFW_KEY_KP_ENTER:      *out = '\r';             return TRUE;
+    case GLFW_KEY_TAB:           *out = '\t';             return TRUE;
+    case GLFW_KEY_BACKSPACE:     *out = '\b';             return TRUE;
+    case GLFW_KEY_ESCAPE:        *out = '\033';           return TRUE;
+    default:                     return FALSE;
     }
 }
 
-/* -----------------------------------------------------------------------
- * Y-coordinate flip (OpenGL is bottom-up, X11 is top-down)
- * --------------------------------------------------------------------- */
-
+/* Y-coordinate flip (OpenGL is bottom-up, GLFW/X11 is top-down) */
 static int flip_y( WSwindow ws, int y )
 {
     return ws->height - 1 - y;
 }
 
 /* -----------------------------------------------------------------------
- * EGL initialisation (called once, lazily, from WS_create_window)
+ * Cursor state (updated in cursor-pos callback; used by other callbacks)
  * --------------------------------------------------------------------- */
 
-static VIO_BOOL egl_init( void )
+static double s_last_cursor_x = 0.0;
+static double s_last_cursor_y = 0.0;
+static int    s_current_mods  = 0;
+
+/* -----------------------------------------------------------------------
+ * GLFW callbacks
+ * --------------------------------------------------------------------- */
+
+static void glfw_error_cb( int code, const char *desc )
 {
-    static VIO_BOOL done = FALSE;
-    if( done ) return TRUE;
+    fprintf( stderr, "GLFW error %d: %s\n", code, desc ? desc : "" );
+}
 
-    s_display = XOpenDisplay( NULL );
-    if( !s_display )
+static void glfw_key_cb( GLFWwindow *w, int key, int sc, int action, int mods )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    (void) sc;
+    if( !ws ) return;
+
+    s_current_mods = glfw_mods_to_bicgl( mods );
+    int bicgl_key = 0;
+    int x = (int) s_last_cursor_x;
+    int y = flip_y( ws, (int) s_last_cursor_y );
+
+    if( action == GLFW_PRESS || action == GLFW_REPEAT )
     {
-        print_error( "EGL backend: cannot open X display.\n" );
-        return FALSE;
-    }
-    s_screen = DefaultScreen( s_display );
-
-    s_wm_delete_window = XInternAtom( s_display, "WM_DELETE_WINDOW", False );
-
-    /* Always set EGL_PLATFORM so the EGL library knows we want X11 surfaces.
-     * Do not force software rendering by default — let EGL use hardware if
-     * available. The user can export LIBGL_ALWAYS_SOFTWARE=1 or
-     * MESA_LOADER_DRIVER_OVERRIDE=swrast manually when hardware EGL fails
-     * (e.g. on x2go / SSH X11 forwarding where DRI3 is unavailable). */
-    setenv( "EGL_PLATFORM", "x11", 0 );
-
-    /* Try eglGetPlatformDisplay first (EGL_EXT_platform_x11 / EGL 1.5)
-     * so the platform is unambiguous even with GLVND dispatch. */
-    s_egl_dpy = EGL_NO_DISPLAY;
-#if defined(EGL_PLATFORM_X11_EXT)
-    {
-        PFNEGLGETPLATFORMDISPLAYEXTPROC fn =
-            (PFNEGLGETPLATFORMDISPLAYEXTPROC)
-            eglGetProcAddress( "eglGetPlatformDisplayEXT" );
-        if( fn )
-            s_egl_dpy = fn( EGL_PLATFORM_X11_EXT, (void *) s_display, NULL );
-    }
-#endif
-    if( s_egl_dpy == EGL_NO_DISPLAY )
-        s_egl_dpy = eglGetDisplay( (EGLNativeDisplayType) s_display );
-
-    if( s_egl_dpy == EGL_NO_DISPLAY )
-    {
-        print_error( "EGL backend: eglGetDisplay failed (EGL error 0x%x).\n",
-                     (unsigned) eglGetError() );
-        return FALSE;
-    }
-
-    EGLint major = 0, minor = 0;
-    if( !eglInitialize( s_egl_dpy, &major, &minor ) )
-    {
-        /* Hardware EGL failed — try Mesa software rasteriser fallback. */
-        fprintf( stderr,
-                 "EGL backend: hardware EGL init failed (0x%x), "
-                 "falling back to Mesa swrast.\n",
-                 (unsigned) eglGetError() );
-        eglTerminate( s_egl_dpy );
-        s_egl_dpy = EGL_NO_DISPLAY;
-
-        setenv( "LIBGL_ALWAYS_SOFTWARE",       "1",      1 );
-        setenv( "MESA_LOADER_DRIVER_OVERRIDE", "swrast", 1 );
-
-        /* Retry with explicit swrast */
-#if defined(EGL_PLATFORM_X11_EXT)
+        if( translate_glfw_special( key, &bicgl_key ) )
         {
-            PFNEGLGETPLATFORMDISPLAYEXTPROC fn =
-                (PFNEGLGETPLATFORMDISPLAYEXTPROC)
-                eglGetProcAddress( "eglGetPlatformDisplayEXT" );
-            if( fn )
-                s_egl_dpy = fn( EGL_PLATFORM_X11_EXT, (void *) s_display, NULL );
+            if( key_down_callback )
+                (*key_down_callback)( ws->window_id, bicgl_key, x, y, s_current_mods );
         }
-#endif
-        if( s_egl_dpy == EGL_NO_DISPLAY )
-            s_egl_dpy = eglGetDisplay( (EGLNativeDisplayType) s_display );
-
-        if( s_egl_dpy == EGL_NO_DISPLAY ||
-            !eglInitialize( s_egl_dpy, &major, &minor ) )
+        else if( (mods & GLFW_MOD_CONTROL) &&
+                 key >= GLFW_KEY_A && key <= GLFW_KEY_Z )
         {
-            print_error( "EGL backend: swrast fallback also failed.\n"
-                         "  Install libegl1-mesa or set DISPLAY correctly.\n" );
-            return FALSE;
+            /* Ctrl+letter — no char event is generated by GLFW */
+            bicgl_key = key - GLFW_KEY_A + 1;
+            if( key_down_callback )
+                (*key_down_callback)( ws->window_id, bicgl_key, x, y, s_current_mods );
         }
-        fprintf( stderr, "EGL backend: using Mesa swrast (software rendering).\n" );
+        /* Printable keys handled by glfw_char_cb */
     }
-
-    if( !eglBindAPI( EGL_OPENGL_API ) )
+    else if( action == GLFW_RELEASE )
     {
-        print_error( "EGL backend: eglBindAPI(EGL_OPENGL_API) failed.\n" );
-        return FALSE;
+        if( translate_glfw_special( key, &bicgl_key ) )
+        {
+            if( key_up_callback )
+                (*key_up_callback)( ws->window_id, bicgl_key, x, y, s_current_mods );
+        }
+        else if( (mods & GLFW_MOD_CONTROL) &&
+                 key >= GLFW_KEY_A && key <= GLFW_KEY_Z )
+        {
+            bicgl_key = key - GLFW_KEY_A + 1;
+            if( key_up_callback )
+                (*key_up_callback)( ws->window_id, bicgl_key, x, y, s_current_mods );
+        }
+        else if( key > 0 && key < 128 )
+        {
+            /* Key-up for printable ASCII */
+            if( key_up_callback )
+                (*key_up_callback)( ws->window_id, key, x, y, s_current_mods );
+        }
     }
+}
 
-    /* Request an OpenGL 2.x-capable RGBA config with depth */
-    EGLint attribs[] = {
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-        EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
-        EGL_RED_SIZE,        8,
-        EGL_GREEN_SIZE,      8,
-        EGL_BLUE_SIZE,       8,
-        EGL_ALPHA_SIZE,      8,
-        EGL_DEPTH_SIZE,      16,
-        EGL_NONE
-    };
+static void glfw_char_cb( GLFWwindow *w, unsigned int codepoint )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    /* Deliver printable key-down via the char callback (correctly composed) */
+    if( codepoint < 256 && key_down_callback )
+        (*key_down_callback)( ws->window_id, (int) codepoint, 0, 0, 0 );
+}
 
-    EGLint n_configs = 0;
-    if( !eglChooseConfig( s_egl_dpy, attribs, &s_egl_cfg, 1, &n_configs )
-        || n_configs < 1 )
+static void glfw_cursor_pos_cb( GLFWwindow *w, double xpos, double ypos )
+{
+    s_last_cursor_x = xpos;
+    s_last_cursor_y = ypos;
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws || !mouse_motion_callback ) return;
+    (*mouse_motion_callback)( ws->window_id, (int) xpos, flip_y( ws, (int) ypos ) );
+}
+
+static void glfw_mouse_button_cb( GLFWwindow *w, int button, int action, int mods )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    Window_id wid = ws->window_id;
+    s_current_mods = glfw_mods_to_bicgl( mods );
+    int x = (int) s_last_cursor_x;
+    int y = flip_y( ws, (int) s_last_cursor_y );
+
+    if( action == GLFW_PRESS )
     {
-        print_error( "EGL backend: eglChooseConfig failed.\n" );
-        return FALSE;
+        switch( button )
+        {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            if( left_down_callback   ) (*left_down_callback)(  wid, x, y, s_current_mods ); break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            if( middle_down_callback ) (*middle_down_callback)(wid, x, y, s_current_mods ); break;
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            if( right_down_callback  ) (*right_down_callback)( wid, x, y, s_current_mods ); break;
+        }
     }
+    else if( action == GLFW_RELEASE )
+    {
+        switch( button )
+        {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            if( left_up_callback   ) (*left_up_callback)(  wid, x, y, s_current_mods ); break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            if( middle_up_callback ) (*middle_up_callback)(wid, x, y, s_current_mods ); break;
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            if( right_up_callback  ) (*right_up_callback)( wid, x, y, s_current_mods ); break;
+        }
+    }
+}
 
-    done = TRUE;
-    return TRUE;
+static void glfw_scroll_cb( GLFWwindow *w, double xoffset, double yoffset )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    Window_id wid = ws->window_id;
+    int x = (int) s_last_cursor_x;
+    int y = flip_y( ws, (int) s_last_cursor_y );
+    (void) xoffset;
+    if( yoffset > 0.0 && scroll_up_callback   ) (*scroll_up_callback)(  wid, x, y, s_current_mods );
+    if( yoffset < 0.0 && scroll_down_callback ) (*scroll_down_callback)(wid, x, y, s_current_mods );
+}
+
+static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    ws->width  = width;
+    ws->height = height;
+    if( resize_callback )
+    {
+        int xpos = 0, ypos = 0;
+        glfwGetWindowPos( w, &xpos, &ypos );
+        (*resize_callback)( ws->window_id, xpos, ypos, width, height );
+    }
+}
+
+static void glfw_refresh_cb( GLFWwindow *w )
+{
+    /* Window contents need redraw (e.g. uncovered after occlusion) */
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( ws ) ws->redisplay_pending = TRUE;
+}
+
+static void glfw_close_cb( GLFWwindow *w )
+{
+    /* Don't let GLFW auto-close; let register decide */
+    glfwSetWindowShouldClose( w, GLFW_FALSE );
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    if( quit_callback )
+        (*quit_callback)( ws->window_id );
+    else
+        s_quit_loop = TRUE;
+}
+
+static void glfw_iconify_cb( GLFWwindow *w, int iconified )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    if( iconified )
+    { if( iconify_callback   ) (*iconify_callback)(   ws->window_id ); }
+    else
+    { if( deiconify_callback ) (*deiconify_callback)( ws->window_id ); }
+}
+
+static void glfw_cursor_enter_cb( GLFWwindow *w, int entered )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    if( entered )
+    { if( enter_callback ) (*enter_callback)( ws->window_id ); }
+    else
+    { if( leave_callback ) (*leave_callback)( ws->window_id ); }
+}
+
+static void glfw_focus_cb( GLFWwindow *w, int focused )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    if( focused )
+    { if( enter_callback ) (*enter_callback)( ws->window_id ); }
+    else
+    { if( leave_callback ) (*leave_callback)( ws->window_id ); }
 }
 
 /* -----------------------------------------------------------------------
@@ -405,8 +450,9 @@ static VIO_BOOL egl_init( void )
 
 void  WS_initialize( void )
 {
-    /* Nothing to do here — EGL is initialised lazily on first
-       WS_create_window() call, once we know a display is needed. */
+    glfwSetErrorCallback( glfw_error_cb );
+    if( !glfwInit() )
+        fprintf( stderr, "GLFW backend: glfwInit() failed.\n" );
 }
 
 /* -----------------------------------------------------------------------
@@ -434,127 +480,73 @@ VIO_Status  WS_create_window(
     (void) double_buffer_flag;
     (void) depth_buffer_flag;
     (void) n_overlay_planes;
-
-    if( !egl_init() )
-        return VIO_ERROR;
+    (void) parent;   /* GLFW parent window not used; child windows are toplevel */
 
     if( initial_x_size <= 0 ) initial_x_size = 600;
     if( initial_y_size <= 0 ) initial_y_size = 600;
     if( initial_x_pos  <  0 ) initial_x_pos  = 0;
     if( initial_y_pos  <  0 ) initial_y_pos  = 0;
 
-    /* Get the X11 visual that EGL chose */
-    EGLint visual_id = 0;
-    eglGetConfigAttrib( s_egl_dpy, s_egl_cfg, EGL_NATIVE_VISUAL_ID, &visual_id );
+    glfwDefaultWindowHints();
+    glfwWindowHint( GLFW_CLIENT_API,   GLFW_OPENGL_API );
+    glfwWindowHint( GLFW_DOUBLEBUFFER, GLFW_TRUE );
+    glfwWindowHint( GLFW_DEPTH_BITS,   16 );
+    glfwWindowHint( GLFW_VISIBLE,      GLFW_FALSE );   /* shown after setup */
 
-    XVisualInfo vi_template;
-    int         n_vi = 0;
-    vi_template.visualid = (VisualID) visual_id;
-    XVisualInfo *vi = XGetVisualInfo( s_display, VisualIDMask, &vi_template, &n_vi );
-    if( !vi || n_vi < 1 )
+    /* Use the first window as the shared-context target for subsequent ones */
+    GLFWwindow *share = s_first_glfw_win;
+
+    /* Try the default context API first (GLX on X11 — uses hardware if available).
+     * Fall back to EGL when GLX fails (x2go, SSH X11 forwarding, no DRI3). */
+    GLFWwindow *gw = glfwCreateWindow( initial_x_size, initial_y_size,
+                                       title ? title : "", NULL, share );
+    if( !gw )
     {
-        /* Fallback: use default visual */
-        vi_template.screen = s_screen;
-        vi_template.depth  = DefaultDepth( s_display, s_screen );
-        vi = XGetVisualInfo( s_display, VisualScreenMask|VisualDepthMask,
-                             &vi_template, &n_vi );
-        if( !vi || n_vi < 1 )
-        {
-            print_error( "EGL backend: cannot find X11 visual.\n" );
-            return VIO_ERROR;
-        }
+        glfwWindowHint( GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API );
+        gw = glfwCreateWindow( initial_x_size, initial_y_size,
+                               title ? title : "", NULL, share );
     }
-
-    Colormap cmap = XCreateColormap( s_display,
-                                     RootWindow( s_display, s_screen ),
-                                     vi->visual, AllocNone );
-
-    XSetWindowAttributes swa;
-    swa.colormap   = cmap;
-    swa.border_pixel = 0;
-    swa.event_mask = KeyPressMask | KeyReleaseMask |
-                     PointerMotionMask |
-                     ButtonPressMask  | ButtonReleaseMask |
-                     ExposureMask     | StructureNotifyMask |
-                     FocusChangeMask  | EnterWindowMask | LeaveWindowMask;
-
-    Window parent_x11 = ( parent != NULL ) ? parent->window_id
-                                           : RootWindow( s_display, s_screen );
-
-    Window x11_win = XCreateWindow( s_display, parent_x11,
-                                    initial_x_pos, initial_y_pos,
-                                    (unsigned)initial_x_size,
-                                    (unsigned)initial_y_size,
-                                    0,
-                                    vi->depth, InputOutput,
-                                    vi->visual,
-                                    CWColormap | CWBorderPixel | CWEventMask,
-                                    &swa );
-    XFree( vi );
-    XFreeColormap( s_display, cmap );
-
-    XStoreName( s_display, x11_win, title ? title : "" );
-
-    /* Register WM_DELETE_WINDOW protocol so we get ClientMessage on close */
-    XSetWMProtocols( s_display, x11_win, &s_wm_delete_window, 1 );
-
-    /* Create EGL surface */
-    EGLSurface egl_surf = eglCreateWindowSurface( s_egl_dpy, s_egl_cfg,
-                                                  (EGLNativeWindowType) x11_win,
-                                                  NULL );
-    if( egl_surf == EGL_NO_SURFACE )
+    if( !gw )
     {
-        print_error( "EGL backend: eglCreateWindowSurface failed.\n" );
-        XDestroyWindow( s_display, x11_win );
+        const char *desc = NULL;
+        glfwGetError( &desc );
+        fprintf( stderr, "GLFW backend: glfwCreateWindow failed: %s\n",
+                 desc ? desc : "unknown error" );
         return VIO_ERROR;
     }
 
-    /* Context attributes: request OpenGL 2.1 */
-    EGLint ctx_attribs[] = {
-        EGL_CONTEXT_MAJOR_VERSION, 2,
-        EGL_CONTEXT_MINOR_VERSION, 1,
-        EGL_NONE
-    };
-
-    EGLContext egl_ctx = eglCreateContext( s_egl_dpy, s_egl_cfg,
-                                           s_shared_ctx, ctx_attribs );
-    if( egl_ctx == EGL_NO_CONTEXT )
+    /* First window: cache X11 display handle for font loading */
+    if( !s_first_glfw_win )
     {
-        /* Some Mesa versions don't support EGL_CONTEXT_MAJOR/MINOR_VERSION
-           with the desktop GL API — fall back to no version hint */
-        EGLint ctx_attribs_simple[] = { EGL_NONE };
-        egl_ctx = eglCreateContext( s_egl_dpy, s_egl_cfg,
-                                    s_shared_ctx, ctx_attribs_simple );
-    }
-    if( egl_ctx == EGL_NO_CONTEXT )
-    {
-        print_error( "EGL backend: eglCreateContext failed.\n" );
-        eglDestroySurface( s_egl_dpy, egl_surf );
-        XDestroyWindow( s_display, x11_win );
-        return VIO_ERROR;
+        s_first_glfw_win = gw;
+#ifdef GLFW_EXPOSE_NATIVE_X11
+        s_x11_display = glfwGetX11Display();
+        if( !s_x11_display )
+            fprintf( stderr, "GLFW backend: glfwGetX11Display() returned NULL "
+                             "(Wayland session?); font loading will use fallback.\n" );
+#endif
     }
 
-    /* First window's context becomes the shared context for subsequent ones */
-    if( s_shared_ctx == EGL_NO_CONTEXT )
-        s_shared_ctx = egl_ctx;
+    glfwSetWindowPos( gw, initial_x_pos, initial_y_pos );
 
-    /* Allocate and fill the opaque EGL data */
-    struct egl_window_data *edata =
-        (struct egl_window_data *) malloc( sizeof(struct egl_window_data) );
-    if( !edata )
+    /* Make the new window's context current */
+    glfwMakeContextCurrent( gw );
+    s_current_window = window;
+
+    /* Get the X11 Window handle — used as Window_id throughout bicgl */
+    Window x11_win = 0;
+#ifdef GLFW_EXPOSE_NATIVE_X11
+    x11_win = glfwGetX11Window( gw );
+#endif
+    if( x11_win == 0 )
     {
-        print_error( "EGL backend: out of memory.\n" );
-        eglDestroyContext( s_egl_dpy, egl_ctx );
-        eglDestroySurface( s_egl_dpy, egl_surf );
-        XDestroyWindow( s_display, x11_win );
-        return VIO_ERROR;
+        /* Wayland or other non-X11 backend: synthesise a unique ID */
+        x11_win = (Window)(size_t) gw;
     }
-    edata->surface = egl_surf;
-    edata->context = egl_ctx;
 
-    /* Fill in the WSwindow fields */
+    /* Fill in WSwindow fields */
+    window->glfw              = gw;
     window->window_id         = x11_win;
-    window->egl               = edata;
     window->width             = initial_x_size;
     window->height            = initial_y_size;
     window->is_visible        = TRUE;
@@ -565,32 +557,36 @@ VIO_Status  WS_create_window(
     window->border_height     = 0;
     window->is_new            = TRUE;
 
-    /* Make context current and load font display lists */
-    eglMakeCurrent( s_egl_dpy, egl_surf, egl_surf, egl_ctx );
-    s_current_window = window;
-
+    /* Load font display lists (context must be current) */
     window->font_list_base = (int) glGenLists( 128 );
     create_fixed_font( (GLuint) window->font_list_base );
 
     window->font_list_base_sized = (int) glGenLists( 128 );
-    /* Try to load a compact X11 system font; fall back to downsampled
-     * stored font if no suitable X font is available. */
     if( !load_x11_font_glists( (GLuint) window->font_list_base_sized ) )
         create_sized_font( (GLuint) window->font_list_base_sized );
 
-    bind_special_keys();
+    /* Register GLFW event callbacks */
+    glfwSetWindowUserPointer(    gw, window );
+    glfwSetKeyCallback(          gw, glfw_key_cb );
+    glfwSetCharCallback(         gw, glfw_char_cb );
+    glfwSetCursorPosCallback(    gw, glfw_cursor_pos_cb );
+    glfwSetMouseButtonCallback(  gw, glfw_mouse_button_cb );
+    glfwSetScrollCallback(       gw, glfw_scroll_cb );
+    glfwSetWindowSizeCallback(   gw, glfw_window_size_cb );
+    glfwSetWindowRefreshCallback(gw, glfw_refresh_cb );
+    glfwSetWindowCloseCallback(  gw, glfw_close_cb );
+    glfwSetWindowIconifyCallback(gw, glfw_iconify_cb );
+    glfwSetCursorEnterCallback(  gw, glfw_cursor_enter_cb );
+    glfwSetWindowFocusCallback(  gw, glfw_focus_cb );
 
-    register_window( x11_win, window );
+    register_window( gw, window );
 
-    /* Map (show) the window */
-    XMapWindow( s_display, x11_win );
-    XFlush( s_display );
+    glfwShowWindow( gw );
 
-    /* Report back what we actually support */
-    if( actual_colour_map_mode      ) *actual_colour_map_mode      = FALSE;
-    if( actual_double_buffer_flag   ) *actual_double_buffer_flag   = TRUE;
-    if( actual_depth_buffer_flag    ) *actual_depth_buffer_flag    = TRUE;
-    if( actual_n_overlay_planes     ) *actual_n_overlay_planes     = 0;
+    if( actual_colour_map_mode    ) *actual_colour_map_mode    = FALSE;
+    if( actual_double_buffer_flag ) *actual_double_buffer_flag = TRUE;
+    if( actual_depth_buffer_flag  ) *actual_depth_buffer_flag  = TRUE;
+    if( actual_n_overlay_planes   ) *actual_n_overlay_planes   = 0;
 
     return VIO_OK;
 }
@@ -613,8 +609,8 @@ VIO_BOOL  WS_set_colour_map_state( WSwindow window, VIO_BOOL flag )
 
 void  WS_set_window_title( WSwindow window, VIO_STR title )
 {
-    if( s_display && window && window->window_id )
-        XStoreName( s_display, window->window_id, title ? title : "" );
+    if( window && window->glfw )
+        glfwSetWindowTitle( window->glfw, title ? title : "" );
 }
 
 void  WS_delete_window( WSwindow window )
@@ -623,22 +619,16 @@ void  WS_delete_window( WSwindow window )
 
     if( s_current_window == window )
     {
-        eglMakeCurrent( s_egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
+        glfwMakeContextCurrent( NULL );
         s_current_window = NULL;
     }
 
-    unregister_window( window->window_id );
-
-    if( window->egl )
+    if( window->glfw )
     {
-        if( window->egl->context != s_shared_ctx )
-            eglDestroyContext( s_egl_dpy, window->egl->context );
-        eglDestroySurface( s_egl_dpy, window->egl->surface );
-        free( window->egl );
-        window->egl = NULL;
+        unregister_window( window->glfw );
+        glfwDestroyWindow( window->glfw );
+        window->glfw = NULL;
     }
-
-    XDestroyWindow( s_display, window->window_id );
     window->window_id = 0;
 }
 
@@ -660,14 +650,10 @@ Window_id  WS_get_window_id( WSwindow window )
 
 void  WS_set_bitplanes( WSwindow window, Bitplane_types bitplanes )
 {
-    (void)bitplanes;   /* No overlay support in EGL backend */
-    if( !window || !window->egl ) return;
+    (void)bitplanes;
+    if( !window || !window->glfw ) return;
     if( s_current_window == window ) return;
-
-    eglMakeCurrent( s_egl_dpy,
-                    window->egl->surface,
-                    window->egl->surface,
-                    window->egl->context );
+    glfwMakeContextCurrent( window->glfw );
     s_current_window = window;
 }
 
@@ -678,11 +664,8 @@ int  WS_get_n_overlay_planes( void )
 
 void  WS_get_window_position( int *x_pos, int *y_pos )
 {
-    if( s_current_window )
-    {
-        *x_pos = s_current_window->init_x;
-        *y_pos = s_current_window->init_y;
-    }
+    if( s_current_window && s_current_window->glfw )
+        glfwGetWindowPos( s_current_window->glfw, x_pos, y_pos );
     else
     {
         *x_pos = 0;
@@ -716,8 +699,8 @@ void  WS_set_overlay_colour_map_entry( WSwindow window, int ind, VIO_Colour col 
 
 void  WS_swap_buffers( void )
 {
-    if( s_current_window && s_current_window->egl )
-        eglSwapBuffers( s_egl_dpy, s_current_window->egl->surface );
+    if( s_current_window && s_current_window->glfw )
+        glfwSwapBuffers( s_current_window->glfw );
 }
 
 /* -----------------------------------------------------------------------
@@ -725,13 +708,13 @@ void  WS_swap_buffers( void )
  *
  * Rasterises each ASCII glyph to an X11 Pixmap, reads the pixels back
  * with XGetImage, and uploads them as GL display lists via glBitmap.
- * No GLX required — uses only Xlib drawing + EGL/OpenGL.
+ * The X11 display is obtained from GLFW via glfwGetX11Display().
  *
  * Returns TRUE on success and sets s_sized_font_advance / _height.
  * Falls back to create_sized_font() (downsampled stored font) on failure.
  * --------------------------------------------------------------------- */
 
-static float s_sized_font_advance = 7.0f;   /* updated on successful load */
+static float s_sized_font_advance = 7.0f;
 static float s_sized_font_height  = 10.0f;
 
 static VIO_BOOL load_x11_font_glists( GLuint list_base )
@@ -750,16 +733,19 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
         NULL
     };
 
+    if( !s_x11_display )
+        return FALSE;
+
     XFontStruct *fs = NULL;
     int fi;
     for( fi = 0; candidates[fi]; ++fi )
     {
-        fs = XLoadQueryFont( s_display, candidates[fi] );
+        fs = XLoadQueryFont( s_x11_display, candidates[fi] );
         if( fs ) break;
     }
     if( !fs )
     {
-        fprintf( stderr, "EGL backend: no compact X11 font found, "
+        fprintf( stderr, "GLFW backend: no compact X11 font found, "
                          "using downsampled fallback.\n" );
         return FALSE;
     }
@@ -767,29 +753,28 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
     int fwidth  = fs->max_bounds.width;
     int fheight = fs->ascent + fs->descent;
     int fascent = fs->ascent;
-    int screen  = DefaultScreen( s_display );
-    int stride  = ( fwidth + 7 ) / 8;   /* bytes per bitmap row */
+    int screen  = DefaultScreen( s_x11_display );
+    int stride  = ( fwidth + 7 ) / 8;
 
-    fprintf( stderr, "EGL backend: SIZED_FONT using X11 font '%s' (%dx%d).\n",
+    fprintf( stderr, "GLFW backend: SIZED_FONT using X11 font '%s' (%dx%d).\n",
              candidates[fi], fwidth, fheight );
 
-    /* Pixmap + GC for off-screen glyph rasterisation */
-    Pixmap pix = XCreatePixmap( s_display,
-                                RootWindow( s_display, screen ),
+    Pixmap pix = XCreatePixmap( s_x11_display,
+                                RootWindow( s_x11_display, screen ),
                                 (unsigned) fwidth, (unsigned) fheight,
-                                (unsigned) DefaultDepth( s_display, screen ) );
-    GC gc = XCreateGC( s_display, pix, 0, NULL );
-    XSetFont( s_display, gc, fs->fid );
+                                (unsigned) DefaultDepth( s_x11_display, screen ) );
+    GC gc = XCreateGC( s_x11_display, pix, 0, NULL );
+    XSetFont( s_x11_display, gc, fs->fid );
 
-    unsigned long black = BlackPixel( s_display, screen );
-    unsigned long white = WhitePixel( s_display, screen );
+    unsigned long black = BlackPixel( s_x11_display, screen );
+    unsigned long white = WhitePixel( s_x11_display, screen );
 
     GLubyte *bits = (GLubyte *) malloc( (size_t)( stride * fheight ) );
     if( !bits )
     {
-        XFreeGC( s_display, gc );
-        XFreePixmap( s_display, pix );
-        XFreeFont( s_display, fs );
+        XFreeGC( s_x11_display, gc );
+        XFreePixmap( s_x11_display, pix );
+        XFreeFont( s_x11_display, fs );
         return FALSE;
     }
 
@@ -800,19 +785,16 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
     {
         char ch = (char) c;
 
-        /* Clear to black, draw glyph in white */
-        XSetForeground( s_display, gc, black );
-        XFillRectangle( s_display, pix, gc, 0, 0,
+        XSetForeground( s_x11_display, gc, black );
+        XFillRectangle( s_x11_display, pix, gc, 0, 0,
                         (unsigned) fwidth, (unsigned) fheight );
-        XSetForeground( s_display, gc, white );
-        XDrawString( s_display, pix, gc, 0, fascent, &ch, 1 );
+        XSetForeground( s_x11_display, gc, white );
+        XDrawString( s_x11_display, pix, gc, 0, fascent, &ch, 1 );
 
-        /* Read back */
-        XImage *img = XGetImage( s_display, pix, 0, 0,
+        XImage *img = XGetImage( s_x11_display, pix, 0, 0,
                                  (unsigned) fwidth, (unsigned) fheight,
                                  AllPlanes, ZPixmap );
 
-        /* Convert to GL bottom-up bitmap, MSB = leftmost pixel */
         memset( bits, 0, (size_t)( stride * fheight ) );
         int row, col;
         for( row = 0; row < fheight; ++row )
@@ -827,7 +809,6 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
         }
         XDestroyImage( img );
 
-        /* Per-character advance width (0 for undefined chars → fwidth) */
         float advance = (float) fwidth;
         if( fs->per_char )
         {
@@ -848,13 +829,13 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
     }
 
     free( bits );
-    XFreeGC( s_display, gc );
-    XFreePixmap( s_display, pix );
+    XFreeGC( s_x11_display, gc );
+    XFreePixmap( s_x11_display, pix );
 
     s_sized_font_advance = (float) fwidth;
     s_sized_font_height  = (float) fheight;
 
-    XFreeFont( s_display, fs );
+    XFreeFont( s_x11_display, fs );
     return TRUE;
 }
 
@@ -867,8 +848,6 @@ void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
     (void)size;
     if( !string || !s_current_window ) return;
 
-    /* Use the compact 6-pixel-advance font for SIZED_FONT so that text
-     * fits within register's fixed-width button areas. */
     if( type == SIZED_FONT )
         glListBase( (GLuint) s_current_window->font_list_base_sized );
     else
@@ -880,9 +859,6 @@ void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 
 VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
 {
-    /* For SIZED_FONT, return the requested size so register's layout
-     * allocates the correct line height for the requested font size.
-     * For FIXED_FONT, return the actual bitmap height (13px). */
     if( type == SIZED_FONT )
         return size;
     return get_fixed_font_height();
@@ -905,10 +881,13 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
 
 void  WS_get_screen_size( int *x_size, int *y_size )
 {
-    if( s_display )
+    GLFWmonitor *mon = glfwGetPrimaryMonitor();
+    if( mon )
     {
-        *x_size = DisplayWidth(  s_display, s_screen );
-        *y_size = DisplayHeight( s_display, s_screen );
+        int mx, my, mw, mh;
+        glfwGetMonitorWorkarea( mon, &mx, &my, &mw, &mh );
+        *x_size = mw;
+        *y_size = mh;
     }
     else
     {
@@ -926,25 +905,25 @@ void  WS_set_mouse_position( int x_screen, int y_screen )
  * Callback registration
  * --------------------------------------------------------------------- */
 
-void WS_set_update_function(         void (*f)(Window_id) )                   { display_callback         = f; }
-void WS_set_update_overlay_function( void (*f)(Window_id) )                   { display_overlay_callback = f; }
-void WS_set_resize_function(         void (*f)(Window_id,int,int,int,int) )   { resize_callback          = f; }
-void WS_set_key_down_function(       void (*f)(Window_id,int,int,int,int) )   { key_down_callback        = f; }
-void WS_set_key_up_function(         void (*f)(Window_id,int,int,int,int) )   { key_up_callback          = f; }
-void WS_set_mouse_movement_function( void (*f)(Window_id,int,int) )           { mouse_motion_callback    = f; }
-void WS_set_left_mouse_down_function(  void (*f)(Window_id,int,int,int) )     { left_down_callback       = f; }
-void WS_set_left_mouse_up_function(    void (*f)(Window_id,int,int,int) )     { left_up_callback         = f; }
-void WS_set_middle_mouse_down_function(void (*f)(Window_id,int,int,int) )     { middle_down_callback     = f; }
-void WS_set_middle_mouse_up_function(  void (*f)(Window_id,int,int,int) )     { middle_up_callback       = f; }
-void WS_set_right_mouse_down_function( void (*f)(Window_id,int,int,int) )     { right_down_callback      = f; }
-void WS_set_right_mouse_up_function(   void (*f)(Window_id,int,int,int) )     { right_up_callback        = f; }
-void WS_set_scroll_up_function(        void (*f)(Window_id,int,int,int) )     { scroll_up_callback       = f; }
-void WS_set_scroll_down_function(      void (*f)(Window_id,int,int,int) )     { scroll_down_callback     = f; }
-void WS_set_iconify_function(          void (*f)(Window_id) )                 { iconify_callback         = f; }
-void WS_set_deiconify_function(        void (*f)(Window_id) )                 { deiconify_callback       = f; }
-void WS_set_enter_function(            void (*f)(Window_id) )                 { enter_callback           = f; }
-void WS_set_leave_function(            void (*f)(Window_id) )                 { leave_callback           = f; }
-void WS_set_quit_function(             void (*f)(Window_id) )                 { quit_callback            = f; }
+void WS_set_update_function(         void (*f)(Window_id) )                 { display_callback         = f; }
+void WS_set_update_overlay_function( void (*f)(Window_id) )                 { display_overlay_callback = f; }
+void WS_set_resize_function(         void (*f)(Window_id,int,int,int,int) ) { resize_callback          = f; }
+void WS_set_key_down_function(       void (*f)(Window_id,int,int,int,int) ) { key_down_callback        = f; }
+void WS_set_key_up_function(         void (*f)(Window_id,int,int,int,int) ) { key_up_callback          = f; }
+void WS_set_mouse_movement_function( void (*f)(Window_id,int,int) )         { mouse_motion_callback    = f; }
+void WS_set_left_mouse_down_function(  void (*f)(Window_id,int,int,int) )   { left_down_callback       = f; }
+void WS_set_left_mouse_up_function(    void (*f)(Window_id,int,int,int) )   { left_up_callback         = f; }
+void WS_set_middle_mouse_down_function(void (*f)(Window_id,int,int,int) )   { middle_down_callback     = f; }
+void WS_set_middle_mouse_up_function(  void (*f)(Window_id,int,int,int) )   { middle_up_callback       = f; }
+void WS_set_right_mouse_down_function( void (*f)(Window_id,int,int,int) )   { right_down_callback      = f; }
+void WS_set_right_mouse_up_function(   void (*f)(Window_id,int,int,int) )   { right_up_callback        = f; }
+void WS_set_scroll_up_function(        void (*f)(Window_id,int,int,int) )   { scroll_up_callback       = f; }
+void WS_set_scroll_down_function(      void (*f)(Window_id,int,int,int) )   { scroll_down_callback     = f; }
+void WS_set_iconify_function(          void (*f)(Window_id) )               { iconify_callback         = f; }
+void WS_set_deiconify_function(        void (*f)(Window_id) )               { deiconify_callback       = f; }
+void WS_set_enter_function(            void (*f)(Window_id) )               { enter_callback           = f; }
+void WS_set_leave_function(            void (*f)(Window_id) )               { leave_callback           = f; }
+void WS_set_quit_function(             void (*f)(Window_id) )               { quit_callback            = f; }
 
 /* -----------------------------------------------------------------------
  * Timer and idle management
@@ -955,7 +934,6 @@ void  WS_add_timer_function( VIO_Real seconds, void (*func)(void*), void *data )
     int i;
     timer_entry *te;
 
-    /* Find a free slot */
     for( i = 0; i < s_n_timers; ++i )
         if( !s_timers[i].active ) break;
 
@@ -992,136 +970,11 @@ void  WS_remove_idle_function( void (*func)(void*), void *data )
 }
 
 /* -----------------------------------------------------------------------
- * Dispatch a single X event
- * --------------------------------------------------------------------- */
-
-static void dispatch_xevent( XEvent *xe )
-{
-    WSwindow   ws;
-    Window_id  wid;
-    int        x, y, mod, key;
-
-    wid = xe->xany.window;
-    ws  = lookup_window( wid );
-
-    switch( xe->type )
-    {
-    case KeyPress:
-        if( !key_down_callback ) break;
-        if( translate_key( xe, &key ) )
-        {
-            mod = get_modifiers( xe->xkey.state );
-            x   = xe->xkey.x;
-            y   = ws ? flip_y( ws, xe->xkey.y ) : xe->xkey.y;
-            (*key_down_callback)( wid, key, x, y, mod );
-        }
-        break;
-
-    case KeyRelease:
-        if( !key_up_callback ) break;
-        if( translate_key( xe, &key ) )
-        {
-            mod = get_modifiers( xe->xkey.state );
-            x   = xe->xkey.x;
-            y   = ws ? flip_y( ws, xe->xkey.y ) : xe->xkey.y;
-            (*key_up_callback)( wid, key, x, y, mod );
-        }
-        break;
-
-    case MotionNotify:
-        if( !mouse_motion_callback ) break;
-        x = xe->xmotion.x;
-        y = ws ? flip_y( ws, xe->xmotion.y ) : xe->xmotion.y;
-        (*mouse_motion_callback)( wid, x, y );
-        break;
-
-    case ButtonPress:
-        mod = get_modifiers( xe->xbutton.state );
-        x   = xe->xbutton.x;
-        y   = ws ? flip_y( ws, xe->xbutton.y ) : xe->xbutton.y;
-        switch( xe->xbutton.button )
-        {
-        case Button1: if( left_down_callback   ) (*left_down_callback)(  wid,x,y,mod); break;
-        case Button2: if( middle_down_callback ) (*middle_down_callback)(wid,x,y,mod); break;
-        case Button3: if( right_down_callback  ) (*right_down_callback)( wid,x,y,mod); break;
-        case Button4: if( scroll_up_callback   ) (*scroll_up_callback)(  wid,x,y,mod); break;
-        case Button5: if( scroll_down_callback ) (*scroll_down_callback)(wid,x,y,mod); break;
-        }
-        break;
-
-    case ButtonRelease:
-        mod = get_modifiers( xe->xbutton.state );
-        x   = xe->xbutton.x;
-        y   = ws ? flip_y( ws, xe->xbutton.y ) : xe->xbutton.y;
-        switch( xe->xbutton.button )
-        {
-        case Button1: if( left_up_callback   ) (*left_up_callback)(  wid,x,y,mod); break;
-        case Button2: if( middle_up_callback ) (*middle_up_callback)(wid,x,y,mod); break;
-        case Button3: if( right_up_callback  ) (*right_up_callback)( wid,x,y,mod); break;
-        }
-        break;
-
-    case ConfigureNotify:
-        if( ws )
-        {
-            ws->width  = xe->xconfigure.width;
-            ws->height = xe->xconfigure.height;
-        }
-        if( resize_callback )
-            (*resize_callback)( wid,
-                                xe->xconfigure.x, xe->xconfigure.y,
-                                xe->xconfigure.width, xe->xconfigure.height );
-        break;
-
-    case Expose:
-        if( xe->xexpose.count == 0 && ws )
-            ws->redisplay_pending = TRUE;
-        break;
-
-    case MapNotify:
-        if( deiconify_callback ) (*deiconify_callback)( wid );
-        break;
-
-    case UnmapNotify:
-        if( iconify_callback ) (*iconify_callback)( wid );
-        break;
-
-    case EnterNotify:
-    case FocusIn:
-        if( enter_callback ) (*enter_callback)( wid );
-        break;
-
-    case LeaveNotify:
-    case FocusOut:
-        if( leave_callback ) (*leave_callback)( wid );
-        break;
-
-    case DestroyNotify:
-        if( quit_callback ) (*quit_callback)( wid );
-        break;
-
-    case ClientMessage:
-        if( (Atom)xe->xclient.data.l[0] == s_wm_delete_window )
-        {
-            if( quit_callback )
-                (*quit_callback)( wid );
-            else
-                s_quit_loop = TRUE;
-        }
-        break;
-
-    default:
-        break;
-    }
-}
-
-/* -----------------------------------------------------------------------
  * Fire expired timers (two-pass to handle callbacks that re-register).
  *
  * Problem: timer_function() deactivates itself then re-registers into the
- * same slot via G_add_timer_function().  A combined fire+scan loop misses
- * the re-registered entry because it already passed that index, returns -1,
- * and the event loop blocks indefinitely in select().
+ * same slot.  A combined fire+scan loop misses the re-registered entry,
+ * returns -1, and the event loop blocks indefinitely.
  *
  * Solution: first pass fires all expired timers; second pass (after all
  * callbacks have run) scans for the soonest upcoming deadline.
@@ -1130,8 +983,7 @@ static void dispatch_xevent( XEvent *xe )
 static void fire_timers( void )
 {
     int i;
-    /* Snapshot s_n_timers before firing — callbacks may grow the array. */
-    int n = s_n_timers;
+    int n = s_n_timers;   /* snapshot before firing — callbacks may grow array */
     for( i = 0; i < n; ++i )
     {
         if( !s_timers[i].active ) continue;
@@ -1171,7 +1023,6 @@ static void fire_redraws( void )
         if( ws && ws->redisplay_pending && ws->is_visible )
         {
             ws->redisplay_pending = FALSE;
-            /* Make the window's GL context current before invoking callback */
             WS_set_bitplanes( ws, NORMAL_PLANES );
             if( display_callback )
                 (*display_callback)( ws->window_id );
@@ -1180,28 +1031,17 @@ static void fire_redraws( void )
 }
 
 /* -----------------------------------------------------------------------
- * WS_event_loop — select()-based to avoid busy-waiting
+ * WS_event_loop — GLFW poll/wait loop
  * --------------------------------------------------------------------- */
 
 void  WS_event_loop( void )
 {
-    int x11_fd;
-
-    if( !s_display ) return;
-    x11_fd = ConnectionNumber( s_display );
-
     s_quit_loop = FALSE;
 
     while( !s_quit_loop )
     {
-        /* 1. Drain all pending X events */
-        while( XPending( s_display ) )
-        {
-            XEvent xe;
-            XNextEvent( s_display, &xe );
-            dispatch_xevent( &xe );
-            if( s_quit_loop ) break;
-        }
+        /* 1. Dispatch all pending GLFW/X11 events via registered callbacks */
+        glfwPollEvents();
         if( s_quit_loop ) break;
 
         /* 2. Call idle functions */
@@ -1212,45 +1052,36 @@ void  WS_event_loop( void )
                 (*s_idles[i].func)( s_idles[i].data );
         }
 
-        /* 3. Fire any expired timers */
+        /* 3. Fire expired timers */
         fire_timers();
 
         /* 4. Fire pending redraws */
         fire_redraws();
 
-        /* 5. Wait for next X event or next timer, whichever comes first.
-              Use zero timeout when idle functions are active or any window
-              has a pending redraw (matching GLUT's immediate-callback model).
-              Scan for the next timer AFTER firing (callbacks may re-register). */
+        /* 5. Block until next event or next timer, whichever comes first.
+              Use zero timeout (keep looping) when idle functions are active
+              or any window has a pending redraw. */
         if( !s_quit_loop )
         {
-            struct timeval tv;
-            struct timeval *tvp = NULL;
             VIO_BOOL any_pending = FALSE;
             int pi;
-            long deadline_usec = next_timer_usec();
-
             for( pi = 0; pi < s_n_windows; ++pi )
                 if( s_windows[pi].ws && s_windows[pi].ws->redisplay_pending )
                     { any_pending = TRUE; break; }
 
             if( s_n_idles > 0 || any_pending )
             {
-                tv.tv_sec  = 0;
-                tv.tv_usec = 0;
-                tvp = &tv;
+                /* Busy — glfwPollEvents() at the top of the loop already
+                 * yields to the OS, so we don't busy-spin at 100% CPU. */
             }
-            else if( deadline_usec > 0 )
+            else
             {
-                tv.tv_sec  = deadline_usec / 1000000L;
-                tv.tv_usec = deadline_usec % 1000000L;
-                tvp = &tv;
+                long deadline_usec = next_timer_usec();
+                if( deadline_usec > 0 )
+                    glfwWaitEventsTimeout( (double)deadline_usec / 1e6 );
+                else
+                    glfwWaitEvents();
             }
-
-            fd_set fds;
-            FD_ZERO( &fds );
-            FD_SET( x11_fd, &fds );
-            select( x11_fd + 1, &fds, NULL, NULL, tvp );
         }
     }
 }
@@ -1258,6 +1089,7 @@ void  WS_event_loop( void )
 void  WS_exit_loop( void )
 {
     s_quit_loop = TRUE;
+    glfwPostEmptyEvent();   /* wake up glfwWaitEvents() if currently blocking */
 }
 
 /* -----------------------------------------------------------------------
@@ -1274,38 +1106,25 @@ void  WS_set_visibility( WSwindow window, VIO_BOOL is_visible )
 {
     if( !window ) return;
     window->is_visible = is_visible;
-    if( s_display && window->window_id )
+    if( window->glfw )
     {
         if( is_visible )
-            XMapWindow(   s_display, window->window_id );
+            glfwShowWindow( window->glfw );
         else
-            XUnmapWindow( s_display, window->window_id );
-        XFlush( s_display );
+            glfwHideWindow( window->glfw );
     }
 }
 
 void  WS_set_geometry( WSwindow window, int x, int y, int cx, int cy )
 {
-    if( !window || !s_display ) return;
-
-    unsigned int mask = 0;
-    XWindowChanges wc;
-    memset( &wc, 0, sizeof(wc) );
+    if( !window || !window->glfw ) return;
 
     if( x >= 0 && y >= 0 )
-    {
-        wc.x    = x;
-        wc.y    = y;
-        mask   |= CWX | CWY;
-    }
+        glfwSetWindowPos( window->glfw, x, y );
     if( cx > 0 && cy > 0 )
     {
-        wc.width  = cx;
-        wc.height = cy;
-        mask     |= CWWidth | CWHeight;
+        glfwSetWindowSize( window->glfw, cx, cy );
         window->width  = cx;
         window->height = cy;
     }
-    if( mask )
-        XConfigureWindow( s_display, window->window_id, mask, &wc );
 }
