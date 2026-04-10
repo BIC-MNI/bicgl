@@ -60,6 +60,8 @@ static GLFWwindow *s_first_glfw_win = NULL;  /* share target for 2nd+ wins */
 static int         s_context_api    = 0;     /* GLFW_NATIVE_CONTEXT_API or
                                                 GLFW_EGL_CONTEXT_API; 0 = not
                                                 yet determined               */
+static VIO_BOOL    s_is_native_wayland = FALSE; /* TRUE when running native
+                                                   Wayland (not XWayland)    */
 
 /* -----------------------------------------------------------------------
  * Window registry — maps GLFWwindow* → WSwindow
@@ -471,6 +473,16 @@ static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
     if( !ws ) return;
     ws->width  = fb_w;
     ws->height = fb_h;
+    /* On native Wayland the fb callback fires BEFORE the window_size
+     * callback, so ws->logical_width/height may still hold stale values.
+     * Query the fresh logical size now to compute the correct DPI ratio. */
+    if( s_is_native_wayland )
+    {
+        int log_w = 0, log_h = 0;
+        glfwGetWindowSize( w, &log_w, &log_h );
+        if( log_w > 0 ) ws->logical_width  = log_w;
+        if( log_h > 0 ) ws->logical_height = log_h;
+    }
     if( ws->logical_width  > 0 ) ws->dpi_scale_x = (float) fb_w / ws->logical_width;
     if( ws->logical_height > 0 ) ws->dpi_scale_y = (float) fb_h / ws->logical_height;
     fprintf( stderr, "HIDPI: glfw_framebuffer_size_cb fb=(%d,%d) logical=(%d,%d) "
@@ -548,6 +560,11 @@ void  WS_initialize( void )
         fprintf( stderr, "GLFW backend: glfwInit() failed.\n" );
 }
 
+VIO_BOOL  WS_is_native_wayland( void )
+{
+    return s_is_native_wayland;
+}
+
 /* -----------------------------------------------------------------------
  * WS_create_window
  * --------------------------------------------------------------------- */
@@ -599,6 +616,23 @@ VIO_Status  WS_create_window(
             glfwWindowHint( GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API );
     }
 
+    /* On native Wayland the dimensions passed to glfwCreateWindow become the
+     * compositor's "restore geometry" (used when un-maximising).  Clamp them
+     * to the work area BEFORE window creation so un-maximize never produces a
+     * window bigger than the screen.  This only works for 2nd+ windows since
+     * glfwGetPrimaryMonitor() returns NULL before the first window exists. */
+    if( s_is_native_wayland )
+    {
+        GLFWmonitor *mon = glfwGetPrimaryMonitor();
+        if( mon )
+        {
+            int mx, my, mw, mh;
+            glfwGetMonitorWorkarea( mon, &mx, &my, &mw, &mh );
+            if( mw > 0 && initial_x_size > mw ) initial_x_size = mw;
+            if( mh > 0 && initial_y_size > mh ) initial_y_size = mh;
+        }
+    }
+
     GLFWwindow *gw = glfwCreateWindow( initial_x_size, initial_y_size,
                                        title ? title : "", NULL, share );
     if( !gw && s_context_api == 0 )
@@ -634,8 +668,11 @@ VIO_Status  WS_create_window(
         s_x11_display = glfwGetX11Display();
         glfwSetErrorCallback( glfw_error_cb );
         if( !s_x11_display )
+        {
             fprintf( stderr, "GLFW backend: glfwGetX11Display() returned NULL "
                              "(Wayland session?); font loading will use fallback.\n" );
+            s_is_native_wayland = TRUE;
+        }
 #endif
     }
 
@@ -732,13 +769,14 @@ VIO_Status  WS_create_window(
     fprintf( stderr, "HIDPI: after glfwShowWindow ws=(%d,%d)\n",
              window->width, window->height );
 
-    /* On Wayland, glfwSetWindowSize on a hidden (not-yet-mapped) window is
-     * ignored by the compositor — it records the glfwCreateWindow dimensions
-     * as the "restore" geometry instead.  Re-apply the clamped size after
-     * the window is mapped so the compositor sees it on a live surface. */
-    if( did_clamp )
+    /* On X11, glfwSetWindowSize on a hidden window may be ignored, so
+     * re-apply the clamped size after the window is mapped.  On native
+     * Wayland skip this — the pre-creation clamp already set the correct
+     * restore geometry, and calling glfwSetWindowSize after map fights
+     * with the compositor's configure events. */
+    if( did_clamp && !s_is_native_wayland )
     {
-        glfwPollEvents();   /* complete Wayland xdg_surface configure round-trip */
+        glfwPollEvents();   /* complete xdg_surface configure round-trip */
         glfwSetWindowSize( gw, clamped_x, clamped_y );
     }
 
@@ -880,7 +918,17 @@ void  WS_set_overlay_colour_map_entry( WSwindow window, int ind, VIO_Colour col 
 void  WS_swap_buffers( void )
 {
     if( s_current_window && s_current_window->glfw )
+    {
         glfwSwapBuffers( s_current_window->glfw );
+        /* On native Wayland the new back buffer contents are UNDEFINED after
+         * swap (EGL spec).  Schedule a redisplay so fire_redraws() will
+         * repaint the back buffer on the next loop iteration.  This creates
+         * continuous ~60fps rendering — matching new_register's approach.
+         * On X11 the old front buffer is copied into the new back buffer
+         * (GLX copy-swap), so this is unnecessary and skipped. */
+        if( s_is_native_wayland )
+            s_current_window->redisplay_pending = TRUE;
+    }
 }
 
 /* -----------------------------------------------------------------------

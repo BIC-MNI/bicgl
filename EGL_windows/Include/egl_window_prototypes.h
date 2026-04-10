@@ -3,6 +3,8 @@
 
   void  WS_initialize( void );
 
+  VIO_BOOL  WS_is_native_wayland( void );
+
   VIO_Status  WS_create_window(
     VIO_STR                 title,
     int                    initial_x_pos,

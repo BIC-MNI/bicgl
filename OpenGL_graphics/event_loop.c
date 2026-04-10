@@ -168,3 +168,8 @@ void GS_exit_loop( void )
 {
     return( FALSE );
 }
+
+  VIO_BOOL  GS_is_native_wayland( void )
+{
+    return WS_is_native_wayland();
+}
