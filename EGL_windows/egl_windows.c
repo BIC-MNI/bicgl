@@ -51,9 +51,6 @@ int      get_fixed_font_n_chars( void );
 VIO_Real get_fixed_font_height( void );
 VIO_Real get_fixed_font_width( char ch );
 
-/* Forward declaration — defined in the font section below */
-static VIO_BOOL load_x11_font_glists( GLuint list_base );
-
 /* -----------------------------------------------------------------------
  * GLFW globals
  * --------------------------------------------------------------------- */
@@ -549,6 +546,7 @@ VIO_Status  WS_create_window(
     window->window_id         = x11_win;
     window->width             = initial_x_size;
     window->height            = initial_y_size;
+    window->font_cache_count  = 0;
     window->is_visible        = TRUE;
     window->redisplay_pending = TRUE;
     window->init_x            = initial_x_pos;
@@ -557,13 +555,7 @@ VIO_Status  WS_create_window(
     window->border_height     = 0;
     window->is_new            = TRUE;
 
-    /* Load font display lists (context must be current) */
-    window->font_list_base = (int) glGenLists( 128 );
-    create_fixed_font( (GLuint) window->font_list_base );
-
-    window->font_list_base_sized = (int) glGenLists( 128 );
-    if( !load_x11_font_glists( (GLuint) window->font_list_base_sized ) )
-        create_sized_font( (GLuint) window->font_list_base_sized );
+    /* Font display lists are loaded lazily on first draw call */
 
     /* Register GLFW event callbacks */
     glfwSetWindowUserPointer(    gw, window );
@@ -625,6 +617,17 @@ void  WS_delete_window( WSwindow window )
 
     if( window->glfw )
     {
+        /* Free cached font display lists before destroying the GL context */
+        glfwMakeContextCurrent( window->glfw );
+        int i;
+        for( i = 0; i < window->font_cache_count; ++i )
+        {
+            EglFontEntry *e = &window->font_cache[i];
+            if( e->valid )
+                glDeleteLists( e->list_base, 128 );
+        }
+        window->font_cache_count = 0;
+
         unregister_window( window->glfw );
         glfwDestroyWindow( window->glfw );
         window->glfw = NULL;
@@ -704,23 +707,71 @@ void  WS_swap_buffers( void )
 }
 
 /* -----------------------------------------------------------------------
- * X11 system font → OpenGL display-list loader (SIZED_FONT path)
+ * Per-window font cache — GLX-equivalent behaviour
  *
- * Rasterises each ASCII glyph to an X11 Pixmap, reads the pixels back
- * with XGetImage, and uploads them as GL display lists via glBitmap.
- * The X11 display is obtained from GLFW via glfwGetX11Display().
+ * For SIZED_FONT: search for Helvetica at the requested point size via
+ * XListFonts (spiral ±5pt, DPI 100 then 75), then fall back to compact
+ * misc-fixed candidates, then to the downsampled stored bitmaps.
  *
- * Returns TRUE on success and sets s_sized_font_advance / _height.
- * Falls back to create_sized_font() (downsampled stored font) on failure.
+ * For FIXED_FONT: try the X11 "fixed" font, then fall back to the stored
+ * 8×13 bitmaps.
+ *
+ * Fonts are loaded lazily into a per-window cache of EGL_FONT_CACHE_SIZE
+ * entries and reused on subsequent draw calls with the same (type, size).
  * --------------------------------------------------------------------- */
 
-static float s_sized_font_advance = 7.0f;
-static float s_sized_font_height  = 10.0f;
-
-static VIO_BOOL load_x11_font_glists( GLuint list_base )
+/* -----------------------------------------------------------------------
+ * find_x11_font_for_size — load an XFontStruct for the given (type,size).
+ * Returns NULL if no X11 display is available or no matching font found.
+ * Caller must XFreeFont() the result.
+ * --------------------------------------------------------------------- */
+static XFontStruct *find_x11_font_for_size( Font_types type, int size )
 {
-    /* Preferred fonts, tried in order.  6x10 / 6x12 give a good balance
-     * between readability and fitting within the register button width. */
+    if( !s_x11_display )
+        return NULL;
+
+    if( type == FIXED_FONT )
+    {
+        /* GLX uses the X11 "fixed" font for FIXED_FONT */
+        XFontStruct *fs = XLoadQueryFont( s_x11_display, "fixed" );
+        return fs;   /* NULL is fine — caller falls back to stored bitmaps */
+    }
+
+    /* SIZED_FONT: try Helvetica at requested size ± 5pt (spiral search),
+     * matching the GLX backend's X_get_font_name() logic. */
+    int offset;
+    for( offset = 0; offset <= 5; offset = (offset <= 0) ? (-offset + 1) : (-offset) )
+    {
+        int s = size + offset;
+        if( s <= 0 ) continue;
+
+        /* Try DPI 100 first, then 75 — same as GLX */
+        static const char *dpis[] = { "100", "75", NULL };
+        int di;
+        for( di = 0; dpis[di]; ++di )
+        {
+            char pattern[256];
+            int n;
+            char **names;
+
+            snprintf( pattern, sizeof(pattern),
+                      "*-helvetica-medium-r-normal--\?\?-%d-%s-*",
+                      s * 10, dpis[di] );
+            names = XListFonts( s_x11_display, pattern, 1, &n );
+            if( n > 0 )
+            {
+                XFontStruct *fs = XLoadQueryFont( s_x11_display, names[0] );
+                XFreeFontNames( names );
+                if( fs ) return fs;
+            }
+            else if( names )
+            {
+                XFreeFontNames( names );
+            }
+        }
+    }
+
+    /* Helvetica not available — fall back to compact misc-fixed candidates */
     static const char *candidates[] = {
         "6x10",
         "-misc-fixed-medium-r-normal--10-100-75-75-c-60-iso8859-1",
@@ -732,24 +783,23 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
         "-misc-fixed-medium-r-normal--7-70-75-75-c-50-iso8859-1",
         NULL
     };
-
-    if( !s_x11_display )
-        return FALSE;
-
-    XFontStruct *fs = NULL;
     int fi;
     for( fi = 0; candidates[fi]; ++fi )
     {
-        fs = XLoadQueryFont( s_x11_display, candidates[fi] );
-        if( fs ) break;
-    }
-    if( !fs )
-    {
-        fprintf( stderr, "GLFW backend: no compact X11 font found, "
-                         "using downsampled fallback.\n" );
-        return FALSE;
+        XFontStruct *fs = XLoadQueryFont( s_x11_display, candidates[fi] );
+        if( fs ) return fs;
     }
 
+    return NULL;
+}
+
+/* -----------------------------------------------------------------------
+ * rasterise_x11_font — bake an XFontStruct into GL display lists starting
+ * at list_base.  Stores per-char widths and metrics into *entry.
+ * --------------------------------------------------------------------- */
+static void rasterise_x11_font( XFontStruct *fs, GLuint list_base,
+                                 EglFontEntry *entry )
+{
     int fwidth  = fs->max_bounds.width;
     int fheight = fs->ascent + fs->descent;
     int fascent = fs->ascent;
@@ -771,8 +821,7 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
     {
         XFreeGC( s_x11_display, gc );
         XFreePixmap( s_x11_display, pix );
-        XFreeFont( s_x11_display, fs );
-        return FALSE;
+        return;
     }
 
     glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
@@ -806,6 +855,7 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
         }
         XDestroyImage( img );
 
+        /* Per-character advance — use per_char table when available */
         float advance = (float) fwidth;
         if( fs->per_char )
         {
@@ -823,53 +873,142 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
                   advance, 0.0f,
                   bits );
         glEndList();
+
+        /* Store per-char width for WS_get_text_length */
+        if( c >= 0 && c < 128 )
+            entry->char_widths[c] = (short) advance;
     }
 
     free( bits );
     XFreeGC( s_x11_display, gc );
     XFreePixmap( s_x11_display, pix );
 
-    s_sized_font_advance = (float) fwidth;
-    s_sized_font_height  = (float) fheight;
-
-    XFreeFont( s_x11_display, fs );
-    return TRUE;
+    entry->advance = (float) fwidth;
+    entry->height  = (float) fascent;
 }
 
 /* -----------------------------------------------------------------------
- * Font / text — uses stored_font.c display lists
+ * load_font_into_cache — return (or lazily load) the cache entry for the
+ * given (type, size) in the current window.
+ * Never returns NULL: falls back to stored bitmaps on all failure paths.
+ * --------------------------------------------------------------------- */
+static EglFontEntry *load_font_into_cache( WS_window_struct *window,
+                                           Font_types type, int size )
+{
+    int i;
+
+    /* Search existing entries */
+    for( i = 0; i < window->font_cache_count; ++i )
+    {
+        EglFontEntry *e = &window->font_cache[i];
+        if( e->valid && e->type == type && e->size == size )
+            return e;
+    }
+
+    /* Choose a slot — evict oldest (slot 0, rotate) when cache is full */
+    EglFontEntry *entry;
+    if( window->font_cache_count < EGL_FONT_CACHE_SIZE )
+    {
+        entry = &window->font_cache[window->font_cache_count];
+        window->font_cache_count++;
+    }
+    else
+    {
+        /* Evict slot 0: free its GL lists, then rotate the array */
+        EglFontEntry *evict = &window->font_cache[0];
+        if( evict->valid )
+            glDeleteLists( evict->list_base, 128 );
+        /* Shift entries down */
+        for( i = 0; i < EGL_FONT_CACHE_SIZE - 1; ++i )
+            window->font_cache[i] = window->font_cache[i + 1];
+        entry = &window->font_cache[EGL_FONT_CACHE_SIZE - 1];
+    }
+
+    /* Initialise the entry */
+    memset( entry, 0, sizeof(*entry) );
+    entry->type = type;
+    entry->size = size;
+    entry->list_base = glGenLists( 128 );
+
+    /* Try to load from X11 */
+    XFontStruct *fs = find_x11_font_for_size( type, size );
+    if( fs )
+    {
+        rasterise_x11_font( fs, entry->list_base, entry );
+        XFreeFont( s_x11_display, fs );
+    }
+    else
+    {
+        /* No X11 font — use stored bitmaps as fallback */
+        if( type == SIZED_FONT )
+        {
+            create_sized_font( entry->list_base );
+            entry->advance = 7.0f;
+            entry->height  = 10.0f;
+        }
+        else
+        {
+            create_fixed_font( entry->list_base );
+            entry->advance = 8.0f;
+            entry->height  = 13.0f;
+        }
+        /* char_widths stays zero — WS_get_text_length will use advance */
+    }
+
+    entry->valid = 1;
+    return entry;
+}
+
+/* -----------------------------------------------------------------------
+ * Font / text — lazy per-window cache, GLX-equivalent behaviour
  * --------------------------------------------------------------------- */
 
 void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 {
-    (void)size;
     if( !string || !s_current_window ) return;
 
-    if( type == SIZED_FONT )
-        glListBase( (GLuint) s_current_window->font_list_base_sized );
-    else
-        glListBase( (GLuint) s_current_window->font_list_base );
-
+    EglFontEntry *fe = load_font_into_cache( s_current_window,
+                                             type, (int) size );
+    glListBase( fe->list_base );
     glCallLists( (GLsizei) strlen(string), GL_UNSIGNED_BYTE,
                  (const GLubyte *) string );
 }
 
 VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
 {
-    if( type == SIZED_FONT )
-        return size;
-    return get_fixed_font_height();
+    if( !s_current_window )
+        return ( type == SIZED_FONT ) ? size : get_fixed_font_height();
+
+    EglFontEntry *fe = load_font_into_cache( s_current_window,
+                                             type, (int) size );
+    return (VIO_Real) fe->height;
 }
 
 VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
 {
-    (void)size;
     if( !str ) return 0.0;
 
-    if( type == SIZED_FONT )
-        return (VIO_Real) strlen(str) * (VIO_Real) s_sized_font_advance;
-    else
-        return (VIO_Real) strlen(str) * get_fixed_font_width( str[0] );
+    if( !s_current_window )
+    {
+        if( type == SIZED_FONT )
+            return (VIO_Real) strlen(str) * 7.0;
+        else
+            return (VIO_Real) strlen(str) * get_fixed_font_width( str[0] );
+    }
+
+    EglFontEntry *fe = load_font_into_cache( s_current_window,
+                                             type, (int) size );
+    VIO_Real len = 0.0;
+    const unsigned char *p = (const unsigned char *) str;
+    while( *p )
+    {
+        unsigned char c = *p++;
+        if( c < 128 && fe->char_widths[c] > 0 )
+            len += (VIO_Real) fe->char_widths[c];
+        else
+            len += (VIO_Real) fe->advance;
+    }
+    return len;
 }
 
 /* -----------------------------------------------------------------------

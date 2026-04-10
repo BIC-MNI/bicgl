@@ -17,14 +17,36 @@
 
 typedef  Window   Window_id;
 
+/* -----------------------------------------------------------------------
+ * Per-window font cache
+ *
+ * Each entry holds one loaded (Font_types, size) combination as a bank
+ * of 128 GL bitmap display lists.  Metrics (height, per-char widths) are
+ * stored so that WS_get_character_height / WS_get_text_length can return
+ * accurate values matching the GLX backend.
+ * --------------------------------------------------------------------- */
+#define EGL_FONT_CACHE_SIZE 8
+
+typedef struct
+{
+    Font_types    type;
+    int           size;                /* rounded point size                 */
+    unsigned int  list_base;           /* base of 128 GL display lists       */
+    float         advance;             /* fallback advance (max glyph width) */
+    float         height;              /* true ascent from X11 font          */
+    short         char_widths[128];    /* per-char widths, index = char-0    */
+                                       /* 0 means "use advance"              */
+    int           valid;
+} EglFontEntry;
+
 typedef  struct
 {
     Window_id    window_id;
-    GLFWwindow  *glfw;                /* GLFW window handle                  */
+    GLFWwindow  *glfw;                 /* GLFW window handle                 */
     int          width;
     int          height;
-    int          font_list_base;       /* FIXED_FONT GL lists (8px advance)  */
-    int          font_list_base_sized; /* SIZED_FONT GL lists (6px advance)  */
+    EglFontEntry font_cache[EGL_FONT_CACHE_SIZE]; /* lazy font cache        */
+    int          font_cache_count;     /* number of valid entries            */
     VIO_BOOL     is_visible;
     VIO_BOOL     redisplay_pending;
     /* Fields expected by GS_window_struct (via OpenGL_graphics/windows.c) */
