@@ -282,18 +282,12 @@ static void update_window_scale( WSwindow ws, GLFWwindow *gw,
 {
     int fb_w = logical_w, fb_h = logical_h;
     glfwGetFramebufferSize( gw, &fb_w, &fb_h );
-    float csx = 1.0f, csy = 1.0f;
-    glfwGetWindowContentScale( gw, &csx, &csy );
     ws->logical_width  = logical_w;
     ws->logical_height = logical_h;
     ws->width          = fb_w;
     ws->height         = fb_h;
     ws->dpi_scale_x    = ( logical_w > 0 ) ? (float) fb_w / logical_w : 1.0f;
     ws->dpi_scale_y    = ( logical_h > 0 ) ? (float) fb_h / logical_h : 1.0f;
-    fprintf( stderr, "HIDPI: update_window_scale logical=(%d,%d) fb=(%d,%d)"
-             " content_scale=(%.2f,%.2f) -> ws=(%d,%d) dpi=(%.2f,%.2f)\n",
-             logical_w, logical_h, fb_w, fb_h, csx, csy,
-             ws->width, ws->height, ws->dpi_scale_x, ws->dpi_scale_y );
 }
 
 /* -----------------------------------------------------------------------
@@ -445,27 +439,35 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 {
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    update_window_scale( ws, w, width, height );
+    /* Store the logical size.  ws->width/height (physical framebuffer pixels)
+     * are maintained by glfw_framebuffer_size_cb, which is the authoritative
+     * source and fires alongside this callback.  We must NOT call
+     * glfwGetFramebufferSize here — on XWayland that returns physical pixels,
+     * and using them as the logical size would trigger a resize feedback loop
+     * (layout engine resizes window to physical size → new window-size event
+     * → glfwGetFramebufferSize returns 4× size → ...). */
+    ws->logical_width  = width;
+    ws->logical_height = height;
+    /* Update dpi_scale from the framebuffer size already stored. */
+    if( width  > 0 ) ws->dpi_scale_x = (float) ws->width  / width;
+    if( height > 0 ) ws->dpi_scale_y = (float) ws->height / height;
     if( resize_callback )
     {
         int xpos = 0, ypos = 0;
         glfwSetErrorCallback( NULL );
         glfwGetWindowPos( w, &xpos, &ypos );
         glfwSetErrorCallback( glfw_error_cb );
-        fprintf( stderr, "HIDPI: glfw_window_size_cb -> resize_callback"
-                 " ws=(%d,%d) pos=(%d,%d)\n",
-                 ws->width, ws->height, xpos, ypos );
         (*resize_callback)( ws->window_id, xpos, ypos, ws->width, ws->height );
     }
 }
 
 static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
 {
+    /* Authoritative physical pixel dimensions.  On XWayland this fires after
+     * glfwShowWindow with the true 2× framebuffer size; on native X11 it
+     * fires with fb == logical (scale=1.0).  Always trust this value. */
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    fprintf( stderr, "HIDPI: glfw_framebuffer_size_cb fb=(%d,%d)"
-             " logical=(%d,%d)\n", fb_w, fb_h,
-             ws->logical_width, ws->logical_height );
     ws->width  = fb_w;
     ws->height = fb_h;
     if( ws->logical_width  > 0 ) ws->dpi_scale_x = (float) fb_w / ws->logical_width;
