@@ -713,6 +713,7 @@ VIO_Status  WS_create_window(
     window->font_cache_count  = 0;
     window->is_visible        = TRUE;
     window->redisplay_pending = TRUE;
+    window->in_redisplay      = FALSE;
     window->init_x            = initial_x_pos;
     window->init_y            = initial_y_pos;
     window->border_width      = 0;
@@ -928,8 +929,17 @@ void  WS_swap_buffers( void )
          * back buffer on the next loop iteration.  With double buffering
          * both buffers must be kept up-to-date; without this, an
          * intermittent stale-buffer issue causes the window to appear
-         * frozen until the next user interaction forces a full redraw. */
-        s_current_window->redisplay_pending = TRUE;
+         * frozen until the next user interaction forces a full redraw.
+         *
+         * Skip the re-arm when we are already inside fire_redraws'
+         * display_callback (in_redisplay == TRUE).  The callback path
+         * goes through set_clear_and_update_flags() which re-dirties
+         * BOTH buffer flags; if we set redisplay_pending here too, the
+         * next fire_redraws re-dirties them again, creating an infinite
+         * render loop and ~30 % CPU.  One full redisplay cycle after the
+         * original swap is enough — the timer path handles the rest. */
+        if( !s_current_window->in_redisplay )
+            s_current_window->redisplay_pending = TRUE;
     }
 }
 
@@ -1389,9 +1399,11 @@ static void fire_redraws( void )
         if( ws && ws->redisplay_pending && ws->is_visible )
         {
             ws->redisplay_pending = FALSE;
+            ws->in_redisplay = TRUE;
             WS_set_bitplanes( ws, NORMAL_PLANES );
             if( display_callback )
                 (*display_callback)( ws->window_id );
+            ws->in_redisplay = FALSE;
         }
     }
 }
