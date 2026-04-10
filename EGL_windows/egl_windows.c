@@ -248,6 +248,14 @@ static int flip_y( WSwindow ws, int y )
     return ws->height - 1 - y;
 }
 
+/* Scale a logical cursor coordinate to framebuffer (physical) pixels.
+ * GLFW delivers cursor positions in logical pixels; all internal bicgl
+ * coordinates are in framebuffer pixels (matching glViewport). */
+static int cursor_px( float scale, double logical )
+{
+    return (int)( logical * scale );
+}
+
 /* -----------------------------------------------------------------------
  * Cursor state (updated in cursor-pos callback; used by other callbacks)
  * --------------------------------------------------------------------- */
@@ -273,8 +281,8 @@ static void glfw_key_cb( GLFWwindow *w, int key, int sc, int action, int mods )
 
     s_current_mods = glfw_mods_to_bicgl( mods );
     int bicgl_key = 0;
-    int x = (int) s_last_cursor_x;
-    int y = flip_y( ws, (int) s_last_cursor_y );
+    int x = cursor_px( ws->dpi_scale_x, s_last_cursor_x );
+    int y = flip_y( ws, cursor_px( ws->dpi_scale_y, s_last_cursor_y ) );
 
     if( action == GLFW_PRESS || action == GLFW_REPEAT )
     {
@@ -331,7 +339,9 @@ static void glfw_cursor_pos_cb( GLFWwindow *w, double xpos, double ypos )
     s_last_cursor_y = ypos;
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws || !mouse_motion_callback ) return;
-    (*mouse_motion_callback)( ws->window_id, (int) xpos, flip_y( ws, (int) ypos ) );
+    int px = cursor_px( ws->dpi_scale_x, xpos );
+    int py = flip_y( ws, cursor_px( ws->dpi_scale_y, ypos ) );
+    (*mouse_motion_callback)( ws->window_id, px, py );
 }
 
 static void glfw_mouse_button_cb( GLFWwindow *w, int button, int action, int mods )
@@ -340,8 +350,8 @@ static void glfw_mouse_button_cb( GLFWwindow *w, int button, int action, int mod
     if( !ws ) return;
     Window_id wid = ws->window_id;
     s_current_mods = glfw_mods_to_bicgl( mods );
-    int x = (int) s_last_cursor_x;
-    int y = flip_y( ws, (int) s_last_cursor_y );
+    int x = cursor_px( ws->dpi_scale_x, s_last_cursor_x );
+    int y = flip_y( ws, cursor_px( ws->dpi_scale_y, s_last_cursor_y ) );
 
     if( action == GLFW_PRESS )
     {
@@ -374,8 +384,8 @@ static void glfw_scroll_cb( GLFWwindow *w, double xoffset, double yoffset )
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
     Window_id wid = ws->window_id;
-    int x = (int) s_last_cursor_x;
-    int y = flip_y( ws, (int) s_last_cursor_y );
+    int x = cursor_px( ws->dpi_scale_x, s_last_cursor_x );
+    int y = flip_y( ws, cursor_px( ws->dpi_scale_y, s_last_cursor_y ) );
     (void) xoffset;
     if( yoffset > 0.0 && scroll_up_callback   ) (*scroll_up_callback)(  wid, x, y, s_current_mods );
     if( yoffset < 0.0 && scroll_down_callback ) (*scroll_down_callback)(wid, x, y, s_current_mods );
@@ -385,14 +395,28 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 {
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    ws->width  = width;
-    ws->height = height;
+    ws->logical_width  = width;
+    ws->logical_height = height;
     if( resize_callback )
     {
         int xpos = 0, ypos = 0;
+        /* Wayland does not provide window position; suppress the error */
+        glfwSetErrorCallback( NULL );
         glfwGetWindowPos( w, &xpos, &ypos );
+        glfwSetErrorCallback( glfw_error_cb );
         (*resize_callback)( ws->window_id, xpos, ypos, width, height );
     }
+}
+
+static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
+{
+    WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
+    if( !ws ) return;
+    ws->width  = fb_w;
+    ws->height = fb_h;
+    if( ws->logical_width  > 0 ) ws->dpi_scale_x = (float) fb_w / ws->logical_width;
+    if( ws->logical_height > 0 ) ws->dpi_scale_y = (float) fb_h / ws->logical_height;
+    /* resize_callback is fired from glfw_window_size_cb (logical coords) */
 }
 
 static void glfw_refresh_cb( GLFWwindow *w )
@@ -534,14 +558,22 @@ VIO_Status  WS_create_window(
     {
         s_first_glfw_win = gw;
 #ifdef GLFW_EXPOSE_NATIVE_X11
+        /* Suppress the "X11: Platform not initialized" error that GLFW emits
+         * when running on a Wayland backend (glfwGetX11Display is a no-op
+         * there).  The null-check + warning below already handles that case. */
+        glfwSetErrorCallback( NULL );
         s_x11_display = glfwGetX11Display();
+        glfwSetErrorCallback( glfw_error_cb );
         if( !s_x11_display )
             fprintf( stderr, "GLFW backend: glfwGetX11Display() returned NULL "
                              "(Wayland session?); font loading will use fallback.\n" );
 #endif
     }
 
+    /* Wayland does not allow apps to set window position; suppress the error */
+    glfwSetErrorCallback( NULL );
     glfwSetWindowPos( gw, initial_x_pos, initial_y_pos );
+    glfwSetErrorCallback( glfw_error_cb );
 
     /* Make the new window's context current */
     glfwMakeContextCurrent( gw );
@@ -550,7 +582,10 @@ VIO_Status  WS_create_window(
     /* Get the X11 Window handle — used as Window_id throughout bicgl */
     Window x11_win = 0;
 #ifdef GLFW_EXPOSE_NATIVE_X11
+    /* Suppress the "X11: Platform not initialized" error on Wayland */
+    glfwSetErrorCallback( NULL );
     x11_win = glfwGetX11Window( gw );
+    glfwSetErrorCallback( glfw_error_cb );
 #endif
     if( x11_win == 0 )
     {
@@ -561,8 +596,21 @@ VIO_Status  WS_create_window(
     /* Fill in WSwindow fields */
     window->glfw              = gw;
     window->window_id         = x11_win;
-    window->width             = initial_x_size;
-    window->height            = initial_y_size;
+    /* Store framebuffer (physical) pixel dimensions for all GL operations.
+     * On HiDPI / Wayland compositors the framebuffer may be larger than the
+     * logical window size reported by glfwCreateWindow. */
+    {
+        int fb_w = initial_x_size, fb_h = initial_y_size;
+        glfwGetFramebufferSize( gw, &fb_w, &fb_h );
+        window->width          = fb_w;
+        window->height         = fb_h;
+        window->logical_width  = initial_x_size;
+        window->logical_height = initial_y_size;
+        window->dpi_scale_x    = ( fb_w > 0 && initial_x_size > 0 )
+                                  ? (float) fb_w / initial_x_size : 1.0f;
+        window->dpi_scale_y    = ( fb_h > 0 && initial_y_size > 0 )
+                                  ? (float) fb_h / initial_y_size : 1.0f;
+    }
     window->font_cache_count  = 0;
     window->is_visible        = TRUE;
     window->redisplay_pending = TRUE;
@@ -581,8 +629,9 @@ VIO_Status  WS_create_window(
     glfwSetCursorPosCallback(    gw, glfw_cursor_pos_cb );
     glfwSetMouseButtonCallback(  gw, glfw_mouse_button_cb );
     glfwSetScrollCallback(       gw, glfw_scroll_cb );
-    glfwSetWindowSizeCallback(   gw, glfw_window_size_cb );
-    glfwSetWindowRefreshCallback(gw, glfw_refresh_cb );
+    glfwSetWindowSizeCallback(       gw, glfw_window_size_cb );
+    glfwSetFramebufferSizeCallback(  gw, glfw_framebuffer_size_cb );
+    glfwSetWindowRefreshCallback(    gw, glfw_refresh_cb );
     glfwSetWindowCloseCallback(  gw, glfw_close_cb );
     glfwSetWindowIconifyCallback(gw, glfw_iconify_cb );
     glfwSetCursorEnterCallback(  gw, glfw_cursor_enter_cb );
@@ -685,7 +734,12 @@ int  WS_get_n_overlay_planes( void )
 void  WS_get_window_position( int *x_pos, int *y_pos )
 {
     if( s_current_window && s_current_window->glfw )
+    {
+        /* Wayland does not provide window position; suppress the error */
+        glfwSetErrorCallback( NULL );
         glfwGetWindowPos( s_current_window->glfw, x_pos, y_pos );
+        glfwSetErrorCallback( glfw_error_cb );
+    }
     else
     {
         *x_pos = 0;
@@ -1039,8 +1093,11 @@ void  WS_get_screen_size( int *x_size, int *y_size )
     {
         int mx, my, mw, mh;
         glfwGetMonitorWorkarea( mon, &mx, &my, &mw, &mh );
-        *x_size = mw;
-        *y_size = mh;
+        /* glfwGetMonitorWorkarea returns logical pixels; scale to physical. */
+        float sx = 1.0f, sy = 1.0f;
+        glfwGetMonitorContentScale( mon, &sx, &sy );
+        *x_size = (int)( mw * sx );
+        *y_size = (int)( mh * sy );
     }
     else
     {
@@ -1273,11 +1330,23 @@ void  WS_set_geometry( WSwindow window, int x, int y, int cx, int cy )
     if( !window || !window->glfw ) return;
 
     if( x >= 0 && y >= 0 )
+    {
+        /* Wayland does not allow apps to set window position; suppress the error */
+        glfwSetErrorCallback( NULL );
         glfwSetWindowPos( window->glfw, x, y );
+        glfwSetErrorCallback( glfw_error_cb );
+    }
     if( cx > 0 && cy > 0 )
     {
         glfwSetWindowSize( window->glfw, cx, cy );
-        window->width  = cx;
-        window->height = cy;
+        /* Read back framebuffer (physical) pixels — may differ from cx/cy on HiDPI */
+        int fb_w = cx, fb_h = cy;
+        glfwGetFramebufferSize( window->glfw, &fb_w, &fb_h );
+        window->width          = fb_w;
+        window->height         = fb_h;
+        window->logical_width  = cx;
+        window->logical_height = cy;
+        window->dpi_scale_x    = ( fb_w > 0 ) ? (float) fb_w / cx : 1.0f;
+        window->dpi_scale_y    = ( fb_h > 0 ) ? (float) fb_h / cy : 1.0f;
     }
 }

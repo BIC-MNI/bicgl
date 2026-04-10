@@ -43,8 +43,12 @@ typedef  struct
 {
     Window_id    window_id;
     GLFWwindow  *glfw;                 /* GLFW window handle                 */
-    int          width;
-    int          height;
+    int          width;                /* framebuffer (physical) pixels      */
+    int          height;               /* framebuffer (physical) pixels      */
+    int          logical_width;        /* window (logical) pixels            */
+    int          logical_height;       /* window (logical) pixels            */
+    float        dpi_scale_x;          /* width  / logical_width             */
+    float        dpi_scale_y;          /* height / logical_height            */
     EglFontEntry font_cache[EGL_FONT_CACHE_SIZE]; /* lazy font cache        */
     int          font_cache_count;     /* number of valid entries            */
     VIO_BOOL     is_visible;
