@@ -436,7 +436,13 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
         glfwSetErrorCallback( NULL );
         glfwGetWindowPos( w, &xpos, &ypos );
         glfwSetErrorCallback( glfw_error_cb );
-        (*resize_callback)( ws->window_id, xpos, ypos, width, height );
+        /* Pass PHYSICAL pixel dimensions (ws->width/height, set by
+         * update_window_scale above) so that global_resize_function stores
+         * the correct framebuffer size into window->x_size/y_size.  On
+         * XWayland the GLFW-reported width/height are logical pixels and
+         * would cause glViewport and resize_layout to use the wrong size,
+         * rendering everything into the bottom-left quarter of the window. */
+        (*resize_callback)( ws->window_id, xpos, ypos, ws->width, ws->height );
     }
 }
 
