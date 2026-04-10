@@ -756,9 +756,6 @@ static VIO_BOOL load_x11_font_glists( GLuint list_base )
     int screen  = DefaultScreen( s_x11_display );
     int stride  = ( fwidth + 7 ) / 8;
 
-    fprintf( stderr, "GLFW backend: SIZED_FONT using X11 font '%s' (%dx%d).\n",
-             candidates[fi], fwidth, fheight );
-
     Pixmap pix = XCreatePixmap( s_x11_display,
                                 RootWindow( s_x11_display, screen ),
                                 (unsigned) fwidth, (unsigned) fheight,
