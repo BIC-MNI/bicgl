@@ -712,7 +712,8 @@ VIO_Status  WS_create_window(
     update_window_scale( window, gw, initial_x_size, initial_y_size );
     window->font_cache_count  = 0;
     window->is_visible        = TRUE;
-    window->redisplay_pending = TRUE;
+    window->redisplay_pending     = TRUE;
+    window->extra_redraws_needed  = 0;
     window->init_x            = initial_x_pos;
     window->init_y            = initial_y_pos;
     window->border_width      = 0;
@@ -924,12 +925,17 @@ void  WS_swap_buffers( void )
     if( s_current_window && s_current_window->glfw )
     {
         glfwSwapBuffers( s_current_window->glfw );
-        /* Schedule a redisplay so fire_redraws() will repaint the other
-         * back buffer on the next loop iteration.  With double buffering
-         * both buffers must be kept up-to-date; without this, an
-         * intermittent stale-buffer issue causes the window to appear
-         * frozen until the next user interaction forces a full redraw. */
-        s_current_window->redisplay_pending = TRUE;
+        /* After a buffer swap the other back buffer may still have a
+         * dirty update_flag (set_viewport_update_flag sets BOTH [0]
+         * and [1]).  Rather than setting redisplay_pending — which
+         * goes through fire_redraws / set_clear_and_update_flags and
+         * re-dirties BOTH buffers, creating an infinite render loop
+         * and ~30 % CPU — we set a counter that keeps the event loop
+         * awake for one extra tick.  The timer-driven paint path
+         * (timer_function -> make_windows_up_to_date) will see the
+         * other buffer's flag, render it, and swap again.  After two
+         * ticks both flags are consumed and the loop blocks normally. */
+        s_current_window->extra_redraws_needed = 1;
     }
 }
 
@@ -1470,8 +1476,17 @@ void  WS_event_loop( void )
             VIO_BOOL any_pending = FALSE;
             int pi;
             for( pi = 0; pi < s_n_windows; ++pi )
-                if( s_windows[pi].ws && s_windows[pi].ws->redisplay_pending )
+            {
+                WS_window_struct *ws = s_windows[pi].ws;
+                if( ws && ws->redisplay_pending )
                     { any_pending = TRUE; break; }
+                if( ws && ws->extra_redraws_needed > 0 )
+                {
+                    ws->extra_redraws_needed--;
+                    any_pending = TRUE;
+                    /* don't break — decrement all windows */
+                }
+            }
 
             if( s_n_idles > 0 || any_pending )
             {

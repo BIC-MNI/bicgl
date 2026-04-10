@@ -53,6 +53,7 @@ typedef  struct
     int          font_cache_count;     /* number of valid entries            */
     VIO_BOOL     is_visible;
     VIO_BOOL     redisplay_pending;
+    int          extra_redraws_needed;   /* ticks to stay awake after swap */
     /* Fields expected by GS_window_struct (via OpenGL_graphics/windows.c) */
     int          init_x, init_y;
     int          border_width, border_height;
