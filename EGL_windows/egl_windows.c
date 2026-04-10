@@ -459,7 +459,7 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
      * platforms.  update_window_scale multiplies by the per-window content
      * scale (from glfwGetWindowContentScale) to obtain physical pixels:
      *   - XWayland 2×: scale=2.0 → ws->width = 2 * logical_width  (correct)
-     *   - Native X11:  scale=1.0 → ws->width = logical_width       (correct)
+     *   - Native X11:  scale=2.0 → ws->width = 2 * logical_width  (correct)
      * ws->width/height are then passed to resize_callback so that
      * global_resize_function stores the right framebuffer size in
      * window->x_size/y_size, which drives glViewport and resize_layout. */
@@ -477,17 +477,40 @@ static void glfw_window_size_cb( GLFWwindow *w, int width, int height )
 
 static void glfw_framebuffer_size_cb( GLFWwindow *w, int fb_w, int fb_h )
 {
-    /* On XWayland, fb_w/fb_h == logical window size (no help for HiDPI).
-     * Content-scale-based physical dimensions are maintained by
-     * glfw_window_size_cb via update_window_scale().  This callback exists
-     * only to catch true framebuffer changes on platforms where they differ
-     * (e.g. native Wayland with a future GLFW that reports real fb pixels). */
+    /* On native X11 HiDPI and XWayland, GLFW reports fb_w/fb_h in logical
+     * screen coordinates (1:1 with the logical window size), not in physical
+     * pixels.  Physical dimensions are correctly maintained by
+     * glfw_window_size_cb via update_window_scale() using glfwGetWindowContentScale.
+     *
+     * We only want to override ws->width/height from the framebuffer size when
+     * the framebuffer is genuinely at a higher pixel density than logical — i.e.
+     * on native Wayland or other platforms where GLFW reports true physical
+     * framebuffer pixels.  The threshold is: fb must be at least 90% of
+     * logical * content_scale on each axis; if it is merely 1-2 pixels larger
+     * than logical (rounding noise on X11), we leave ws->width/height alone. */
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
-    /* Only update if the framebuffer is genuinely larger than the logical
-     * window size (i.e. NOT the XWayland 1:1 case). */
-    if( ws->logical_width > 0 && ws->logical_height > 0 &&
-        ( fb_w > ws->logical_width || fb_h > ws->logical_height ) )
+    if( ws->logical_width <= 0 || ws->logical_height <= 0 ) return;
+
+    /* Expected physical size from content scale */
+    int expected_w = (int)( ws->logical_width  * ws->dpi_scale_x );
+    int expected_h = (int)( ws->logical_height * ws->dpi_scale_y );
+
+    /* Only treat the framebuffer as genuinely HiDPI if it is within 10% of the
+     * content-scale-derived physical size AND larger than the logical size by
+     * more than a 1-pixel rounding margin. */
+    int threshold_w = (int)( ws->logical_width  * 0.1f );
+    int threshold_h = (int)( ws->logical_height * 0.1f );
+    if( threshold_w < 2 ) threshold_w = 2;
+    if( threshold_h < 2 ) threshold_h = 2;
+
+    int fb_close_to_expected_w = ( fb_w >= expected_w - threshold_w );
+    int fb_close_to_expected_h = ( fb_h >= expected_h - threshold_h );
+    int fb_genuinely_larger_w  = ( fb_w > ws->logical_width  + 2 );
+    int fb_genuinely_larger_h  = ( fb_h > ws->logical_height + 2 );
+
+    if( ( fb_genuinely_larger_w || fb_genuinely_larger_h ) &&
+        fb_close_to_expected_w && fb_close_to_expected_h )
     {
         ws->width       = fb_w;
         ws->height      = fb_h;
