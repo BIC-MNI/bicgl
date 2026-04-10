@@ -678,6 +678,19 @@ VIO_Status  WS_create_window(
 
     glfwShowWindow( gw );
 
+    /* Re-query the content scale now that the window is visible and the
+     * compositor has associated it with a monitor.  Before glfwShowWindow the
+     * window is unmapped and glfwGetPrimaryMonitor() may return a stale or
+     * wrong scale (especially on XWayland at 2×).  A single poll lets pending
+     * window-manager events (including the initial configure/map) be processed
+     * so the monitor association is valid when we read the content scale. */
+    glfwPollEvents();
+    {
+        int lw, lh;
+        glfwGetWindowSize( gw, &lw, &lh );
+        update_window_scale( window, lw, lh );
+    }
+
     if( actual_colour_map_mode    ) *actual_colour_map_mode    = FALSE;
     if( actual_double_buffer_flag ) *actual_double_buffer_flag = TRUE;
     if( actual_depth_buffer_flag  ) *actual_depth_buffer_flag  = TRUE;
