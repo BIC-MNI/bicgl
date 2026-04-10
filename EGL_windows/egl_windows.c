@@ -924,14 +924,12 @@ void  WS_swap_buffers( void )
     if( s_current_window && s_current_window->glfw )
     {
         glfwSwapBuffers( s_current_window->glfw );
-        /* On native Wayland the new back buffer contents are UNDEFINED after
-         * swap (EGL spec).  Schedule a redisplay so fire_redraws() will
-         * repaint the back buffer on the next loop iteration.  This creates
-         * continuous ~60fps rendering — matching new_register's approach.
-         * On X11 the old front buffer is copied into the new back buffer
-         * (GLX copy-swap), so this is unnecessary and skipped. */
-        if( s_is_native_wayland )
-            s_current_window->redisplay_pending = TRUE;
+        /* Schedule a redisplay so fire_redraws() will repaint the other
+         * back buffer on the next loop iteration.  With double buffering
+         * both buffers must be kept up-to-date; without this, an
+         * intermittent stale-buffer issue causes the window to appear
+         * frozen until the next user interaction forces a full redraw. */
+        s_current_window->redisplay_pending = TRUE;
     }
 }
 
