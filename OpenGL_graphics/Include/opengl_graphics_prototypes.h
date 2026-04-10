@@ -192,6 +192,8 @@ void GS_exit_loop(void);
 
   VIO_BOOL  GS_are_mouse_coordinates_in_screen_space( void );
 
+  VIO_BOOL  GS_is_native_wayland( void );
+
   void  GS_initialize_lights(
     GSwindow        window );
 

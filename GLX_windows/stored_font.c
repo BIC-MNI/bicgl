@@ -157,10 +157,81 @@ static   GLubyte rasters[][13] = {
 
     for (i = 32; i < 127; i++) {
 	glNewList(i+fontOffset, GL_COMPILE);
-	glBitmap(8, 13, 0.0f, 2.0f, 10.0f, 0.0f, rasters[i-32]);
+	glBitmap(8, 13, 0.0f, 2.0f, 8.0f, 0.0f, rasters[i-32]);
 	glEndList();
     }
 }
+
+/* Scaled-down variant for SIZED_FONT: area-averaged downsample of the
+ * 8×13 bitmaps to 6×10, with a 7-pixel advance (1px gap between glyphs).
+ *
+ * For each output pixel the corresponding input region [x0,x1)×[y0,y1)
+ * is integrated with fractional (bilinear) weights. The output pixel is
+ * set when the weighted coverage fraction exceeds COVERAGE_THRESHOLD,
+ * which preserves thin strokes far better than nearest-neighbour. */
+#define COVERAGE_THRESHOLD 0.32f
+
+  void create_sized_font(
+    GLuint fontOffset )
+{
+    GLuint i;
+    int    oy, ox;
+    const int   out_w = 6, out_h = 10;
+    const float scale_x = 8.0f / out_w;   /* input pixels per output pixel */
+    const float scale_y = 13.0f / out_h;
+    GLubyte scaled[10];
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    for (i = 32; i < 127; i++) {
+        const GLubyte *src = rasters[i - 32];
+
+        for (oy = 0; oy < out_h; oy++) {
+            float y0 = oy       * scale_y;
+            float y1 = (oy + 1) * scale_y;
+            GLubyte row = 0;
+
+            for (ox = 0; ox < out_w; ox++) {
+                float x0 = ox       * scale_x;
+                float x1 = (ox + 1) * scale_x;
+
+                /* Integrate over all input pixels that overlap [x0,x1)×[y0,y1) */
+                float coverage = 0.0f, total = 0.0f;
+                int iy, ix;
+                int iy0 = (int)y0, iy1 = (int)y1; if (iy1 > 12) iy1 = 12;
+                int ix0 = (int)x0, ix1 = (int)x1; if (ix1 > 7)  ix1 = 7;
+
+                for (iy = iy0; iy <= iy1; iy++) {
+                    float top    = (float) iy,       bottom = top    + 1.0f;
+                    float wy = ( (bottom < y1 ? bottom : y1) -
+                                 (top    > y0 ? top    : y0) );
+                    if (wy <= 0.0f) continue;
+
+                    for (ix = ix0; ix <= ix1; ix++) {
+                        float left  = (float) ix,   right  = left   + 1.0f;
+                        float wx = ( (right < x1 ? right : x1) -
+                                     (left  > x0 ? left  : x0) );
+                        if (wx <= 0.0f) continue;
+
+                        float w = wx * wy;
+                        if ((src[iy] >> (7 - ix)) & 1)
+                            coverage += w;
+                        total += w;
+                    }
+                }
+
+                if (total > 0.0f && coverage / total >= COVERAGE_THRESHOLD)
+                    row |= (GLubyte)(0x80 >> ox);
+            }
+            scaled[oy] = row;
+        }
+
+	glNewList(i+fontOffset, GL_COMPILE);
+	glBitmap(out_w, out_h, 0.0f, 1.0f, 7.0f, 0.0f, scaled);
+	glEndList();
+    }
+}
+#undef COVERAGE_THRESHOLD
 
   int  get_fixed_font_n_chars( void )
 {
@@ -177,5 +248,5 @@ static   GLubyte rasters[][13] = {
   VIO_Real  get_fixed_font_width(
     char   ch )
 {
-    return( 10.0 );
+    return( 8.0 );
 }

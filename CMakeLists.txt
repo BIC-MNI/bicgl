@@ -8,7 +8,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 SET(BICGL_PACKAGE_VERSION_MAJOR 2)
 SET(BICGL_PACKAGE_VERSION_MINOR 0)
 SET(BICGL_PACKAGE_VERSION_PATCH 1)
-SET(BICGL_USE_GLUT ON)
 
 
 IF(NOT MINC_TOOLKIT_BUILD)
@@ -19,12 +18,49 @@ IF(NOT MINC_TOOLKIT_BUILD)
   SET(CPACK_PACKAGE_VERSION_PATCH ${BICGL_PACKAGE_VERSION_PATCH})
   INCLUDE(CPack)
 
+  OPTION(BICGL_USE_GLUT "Build the GLUT windowing backend (default)" ON)
+  # Set BICGL_USE_GLFW=ON (and BICGL_USE_GLUT=OFF) to build the GLFW backend.
+  # The GLFW backend does not require GLX and works on x2go / SSH X11 sessions.
+  OPTION(BICGL_USE_GLFW "Build GLFW windowing backend (no GLX required)" OFF)
+
+  # Mutual exclusion: EGL overrides GLUT
+  IF(BICGL_USE_GLFW)
+    SET(BICGL_USE_GLUT OFF)
+  ENDIF()
+
   FIND_PACKAGE( LIBMINC )
   FIND_PACKAGE( BICPL )
   FIND_PACKAGE( Threads )
+
   FIND_PACKAGE( OpenGL REQUIRED )
-  FIND_PACKAGE( GLUT REQUIRED )
   FIND_PACKAGE( X11 QUIET )
+
+  IF(BICGL_USE_GLFW)
+    # The EGL backend uses GLFW (which handles EGL context creation internally).
+    # Try the system GLFW package first; fall back to fetching 3.4 from git.
+    IF(NOT FETCH_GLFW)
+      FIND_PACKAGE( glfw3 QUIET )
+    ENDIF()
+
+    IF(glfw3_FOUND)
+      MESSAGE(STATUS "GLFW: using system package (${glfw3_VERSION})")
+    ELSE()
+      MESSAGE(STATUS "GLFW: system package not found, fetching 3.4 via FetchContent")
+      SET(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
+      SET(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+      SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+      INCLUDE(FetchContent)
+      FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG        3.4
+        GIT_SHALLOW    TRUE
+      )
+      FetchContent_MakeAvailable(glfw)
+    ENDIF()
+  ELSE()
+    FIND_PACKAGE( GLUT REQUIRED )
+  ENDIF()
 
   OPTION(BICGL_BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
@@ -52,7 +88,7 @@ SET(PACKAGE_STRING  "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 IF(NOT APPLE)
-  ADD_DEFINITIONS(-D_XOPEN_SOURCE=500)
+  ADD_DEFINITIONS(-D_XOPEN_SOURCE=700)
 ENDIF(NOT APPLE)
 
 # aliases
@@ -109,13 +145,17 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/epm-header.in  ${CMAKE_CURRENT_BINARY_DIR}/epm-header)
 
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
-INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIRS} )
+IF(NOT BICGL_USE_GLFW)
+  INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIRS} )
+ENDIF()
 INCLUDE_DIRECTORIES( OpenGL_graphics/Include Include )
 
-IF(BICGL_USE_GLUT)
+IF(BICGL_USE_GLFW)
+  INCLUDE_DIRECTORIES( EGL_windows/Include X_windows/Include )
+ELSEIF(BICGL_USE_GLUT)
   INCLUDE_DIRECTORIES( GLUT_windows/Include )
 ELSE()
-  INCLUDE_DIRECTORIES(  X_windows/Include GLX_windows/Include )
+  INCLUDE_DIRECTORIES( X_windows/Include GLX_windows/Include )
 ENDIF()
 
 INCLUDE_DIRECTORIES( User_interface/Include Functionality/Include UI_calls_F/Include  )
@@ -134,6 +174,17 @@ SET(GLX_SRC
 SET(GLX_headers
   GLX_windows/Include/glx_window_prototypes.h
   GLX_windows/Include/WS_windows.h
+)
+
+SET(EGL_SRC
+    EGL_windows/egl_windows.c
+    GLX_windows/stored_font.c   # shared font — no GLX dependency
+  )
+
+SET(EGL_headers
+  EGL_windows/Include/WS_graphics.h
+  EGL_windows/Include/WS_windows.h
+  EGL_windows/Include/egl_window_prototypes.h
 )
 
 SET(GLUT_SRC
@@ -182,7 +233,11 @@ SET(G_SRC
     G_graphics/windows.c
   )
 
-IF(BICGL_USE_GLUT)
+IF(BICGL_USE_GLFW)
+SET(bicgl_HEADERS
+  ${EGL_headers}
+)
+ELSEIF(BICGL_USE_GLUT)
 SET(bicgl_HEADERS
   ${GLUT_headers}
 )
@@ -215,7 +270,9 @@ SET(bicgl_HEADERS
  )
 
 
-IF(BICGL_USE_GLUT)
+IF(BICGL_USE_GLFW)
+  SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${EGL_SRC} ${bicgl_HEADERS})
+ELSEIF(BICGL_USE_GLUT)
   SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLUT_SRC} ${bicgl_HEADERS})
 ELSE()
   SET(OPENGL_X_SRC ${G_SRC} ${OPENGL_SRC} ${GLX_SRC} ${bicgl_HEADERS})
@@ -238,7 +295,12 @@ ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC})
 
 IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
-  IF(BICGL_USE_GLUT)
+  IF(BICGL_USE_GLFW)
+    message(STATUS "Linking bicgl with static libraries and GLFW")
+    TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
+        ${X11_X11_LIB}
+        ${BICPL_STATIC_LIBRARIES} ${LIBMINC_STATIC_LIBRARIES} )
+  ELSEIF(BICGL_USE_GLUT)
     TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES}
         ${BICPL_STATIC_LIBRARIES}  ${LIBMINC_STATIC_LIBRARIES} )
   ELSE()
@@ -247,7 +309,12 @@ IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
   ENDIF()
 
 ELSE(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
-  IF(BICGL_USE_GLUT)
+  IF(BICGL_USE_GLFW)
+    message(STATUS "Linking bicgl with shared libraries and GLFW")  
+    TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
+        ${X11_X11_LIB}
+        ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
+  ELSEIF(BICGL_USE_GLUT)
     TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES}
         ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
   ELSE()
@@ -271,10 +338,17 @@ INSTALL(FILES ${bicgl_HEADERS}
    DESTINATION include/bicgl)
 
 
-set(BICGL_INCLUDE_DIRS_CONFIG
-    ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/GLUT_windows/Include )
+IF(BICGL_USE_GLFW)
+  set(BICGL_INCLUDE_DIRS_CONFIG
+      ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include
+      ${CMAKE_CURRENT_SOURCE_DIR}/Include
+      ${CMAKE_CURRENT_SOURCE_DIR}/EGL_windows/Include )
+ELSE()
+  set(BICGL_INCLUDE_DIRS_CONFIG
+      ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include
+      ${CMAKE_CURRENT_SOURCE_DIR}/Include
+      ${CMAKE_CURRENT_SOURCE_DIR}/GLUT_windows/Include )
+ENDIF()
 
 set(BICGL_LIBRARY_DIRS_CONFIG   ${CMAKE_CURRENT_BINARY_DIR} )
 set(BICGL_LIBRARIES_CONFIG      bicgl )
