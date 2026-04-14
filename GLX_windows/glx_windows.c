@@ -555,3 +555,9 @@ static  void  set_window_overlay_planes(
 {
     X_get_screen_size( x_size, y_size );
 }
+
+/* GLX backend always uses X11/GLX, never native Wayland. */
+VIO_BOOL  WS_is_native_wayland( void )
+{
+    return( FALSE );
+}

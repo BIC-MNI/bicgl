@@ -99,4 +99,7 @@
 
   VIO_Real  get_fixed_font_width(
     char   ch );
+
+  VIO_BOOL  WS_is_native_wayland( void );
+
 #endif

@@ -947,3 +947,10 @@ void WS_set_visibility(WSwindow window, VIO_BOOL is_visible)
     glutHideWindow();
   }
 }
+
+
+/* GLUT backend always uses X11/GLX, never native Wayland. */
+VIO_BOOL  WS_is_native_wayland( void )
+{
+    return( FALSE );
+}

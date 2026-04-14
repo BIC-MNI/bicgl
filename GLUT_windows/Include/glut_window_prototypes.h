@@ -182,4 +182,7 @@ void  WS_set_geometry(WSwindow window, int x, int y, int width, int height);
 
   void  copy_X_colours(
     int  n_colours_to_copy );
+
+  VIO_BOOL  WS_is_native_wayland( void );
+
 #endif

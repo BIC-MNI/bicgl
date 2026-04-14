@@ -344,10 +344,13 @@ IF(BICGL_USE_GLFW)
       ${CMAKE_CURRENT_SOURCE_DIR}/Include
       ${CMAKE_CURRENT_SOURCE_DIR}/EGL_windows/Include )
 ELSE()
+  # Include the GLUT headers so consumers (ray_trace, Display, Register) can
+  # find <GL/freeglut.h> pulled in transitively via GLUT_windows/Include/WS_graphics.h.
   set(BICGL_INCLUDE_DIRS_CONFIG
       ${CMAKE_CURRENT_SOURCE_DIR}/OpenGL_graphics/Include
       ${CMAKE_CURRENT_SOURCE_DIR}/Include
-      ${CMAKE_CURRENT_SOURCE_DIR}/GLUT_windows/Include )
+      ${CMAKE_CURRENT_SOURCE_DIR}/GLUT_windows/Include
+      ${GLUT_INCLUDE_DIR} )
 ENDIF()
 
 set(BICGL_LIBRARY_DIRS_CONFIG   ${CMAKE_CURRENT_BINARY_DIR} )
