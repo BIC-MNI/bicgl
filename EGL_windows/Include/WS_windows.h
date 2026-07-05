@@ -13,7 +13,11 @@
 #include  <volume_io.h>
 
 /* OpenGL function prototypes (no GLX, no EGL here) */
+#ifdef HAVE_APPLE_OPENGL_FRAMEWORK
+#include  <OpenGL/gl.h>
+#else
 #include  <GL/gl.h>
+#endif
 
 /* Pull in the EGL-backend WSwindow definition */
 #include  <WS_graphics.h>

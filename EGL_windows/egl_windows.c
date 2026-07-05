@@ -17,11 +17,17 @@
 /* Include GLFW native header FIRST, before any X11 headers that do
  * #undef Status (WS_graphics.h).  glfw3native.h pulls in Xrandr.h which
  * uses Status as a function return type; if Status is already undef-ed,
- * compilation fails.  Including it here keeps Status intact. */
+ * compilation fails.  Including it here keeps Status intact.
+ *
+ * None of this applies on macOS: GLFW has no X11 backend there (Cocoa only),
+ * so GLFW_EXPOSE_NATIVE_X11 is never defined and the native/X11 font-loading
+ * path below compiles out, falling back to the stored bitmap font. */
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#if !defined(__APPLE__)
 #define GLFW_EXPOSE_NATIVE_X11
 #include <GLFW/glfw3native.h>  /* glfwGetX11Display(), glfwGetX11Window() */
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -32,11 +38,17 @@
 
 /* OpenGL */
 #define GL_GLEXT_PROTOTYPES
+#ifdef HAVE_APPLE_OPENGL_FRAMEWORK
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
+#if !defined(__APPLE__)
 /* X11 — for font loading only (Xlib.h / Xutil.h already pulled in above) */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +67,11 @@ VIO_Real get_fixed_font_width( char ch );
  * GLFW globals
  * --------------------------------------------------------------------- */
 
+#if defined(__APPLE__)
+static void       *s_x11_display    = NULL;  /* always NULL on macOS       */
+#else
 static Display    *s_x11_display    = NULL;  /* from glfwGetX11Display()  */
+#endif
 static GLFWwindow *s_first_glfw_win = NULL;  /* share target for 2nd+ wins */
 static int         s_context_api    = 0;     /* GLFW_NATIVE_CONTEXT_API or
                                                 GLFW_EGL_CONTEXT_API; 0 = not
@@ -541,8 +557,9 @@ static void glfw_focus_cb( GLFWwindow *w, int focused )
 
 void  WS_initialize( void )
 {
-#if GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4)
-    /* GLFW 3.4+: native Wayland path is broken; force X11 (XWayland). */
+#if !defined(__APPLE__) && (GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4))
+    /* GLFW 3.4+: native Wayland path is broken; force X11 (XWayland).
+     * Not applicable on macOS, which only has the native Cocoa platform. */
     glfwInitHint( GLFW_PLATFORM, GLFW_PLATFORM_X11 );
 #endif
     glfwSetErrorCallback( glfw_error_cb );
@@ -676,7 +693,7 @@ VIO_Status  WS_create_window(
     s_current_window = window;
 
     /* Get the X11 Window handle — used as Window_id throughout bicgl */
-    Window x11_win = 0;
+    Window_id x11_win = 0;
 #ifdef GLFW_EXPOSE_NATIVE_X11
     /* Suppress the "X11: Platform not initialized" error on Wayland */
     glfwSetErrorCallback( NULL );
@@ -685,8 +702,9 @@ VIO_Status  WS_create_window(
 #endif
     if( x11_win == 0 )
     {
-        /* Wayland or other non-X11 backend: synthesise a unique ID */
-        x11_win = (Window)(size_t) gw;
+        /* Wayland, macOS/Cocoa, or other non-X11 backend: synthesise a
+         * unique ID from the GLFWwindow* pointer. */
+        x11_win = (Window_id)(size_t) gw;
     }
 
     /* Fill in WSwindow fields */
@@ -923,10 +941,15 @@ void  WS_swap_buffers( void )
  * entries and reused on subsequent draw calls with the same (type, size).
  * --------------------------------------------------------------------- */
 
+#if !defined(__APPLE__)
 /* -----------------------------------------------------------------------
  * find_x11_font_for_size — load an XFontStruct for the given (type,size).
  * Returns NULL if no X11 display is available or no matching font found.
  * Caller must XFreeFont() the result.
+ *
+ * Not built on macOS: there is no X11 display to query (see the call site
+ * in load_font_into_cache, which skips straight to the stored bitmap font
+ * fallback on that platform).
  * --------------------------------------------------------------------- */
 static XFontStruct *find_x11_font_for_size( Font_types type, int size )
 {
@@ -1089,6 +1112,7 @@ static void rasterise_x11_font( XFontStruct *fs, GLuint list_base,
     entry->advance = (float) fwidth;
     entry->height  = (float) fascent;
 }
+#endif /* !defined(__APPLE__) */
 
 /* -----------------------------------------------------------------------
  * load_font_into_cache — return (or lazily load) the cache entry for the
@@ -1133,6 +1157,7 @@ static EglFontEntry *load_font_into_cache( WS_window_struct *window,
     entry->size = size;
     entry->list_base = glGenLists( 128 );
 
+#if !defined(__APPLE__)
     /* Try to load from X11 */
     XFontStruct *fs = find_x11_font_for_size( type, size );
     if( fs )
@@ -1141,6 +1166,7 @@ static EglFontEntry *load_font_into_cache( WS_window_struct *window,
         XFreeFont( s_x11_display, fs );
     }
     else
+#endif
     {
         /* No X11 font — use stored bitmaps as fallback */
         if( type == SIZED_FONT )

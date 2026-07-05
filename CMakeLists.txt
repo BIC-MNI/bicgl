@@ -10,6 +10,46 @@ SET(BICGL_PACKAGE_VERSION_MINOR 0)
 SET(BICGL_PACKAGE_VERSION_PATCH 1)
 
 
+OPTION(BICGL_USE_GLUT "Build the GLUT windowing backend (default)" ON)
+# Set BICGL_USE_GLFW=ON (and BICGL_USE_GLUT=OFF) to build the GLFW backend.
+# The GLFW backend does not require GLX and works on x2go / SSH X11 sessions;
+# it is also the only backend usable on macOS (native Cocoa via GLFW — GLUT
+# is deprecated there and GLFW has no X11 backend on that platform either).
+# In the superbuild, the top-level CMakeLists.txt sets this cache variable
+# before ADD_SUBDIRECTORY(bicgl) when MT_VISUAL_TOOLS_USE_GLFW is enabled.
+OPTION(BICGL_USE_GLFW "Build GLFW windowing backend (no GLX required)" OFF)
+
+# Mutual exclusion: GLFW overrides GLUT
+IF(BICGL_USE_GLFW)
+  SET(BICGL_USE_GLUT OFF)
+ENDIF()
+
+# The glfw3 find/fetch logic must run regardless of MINC_TOOLKIT_BUILD: the
+# superbuild also needs the `glfw` target to exist before linking bicgl below.
+IF(BICGL_USE_GLFW)
+  # Try the system GLFW package first; fall back to fetching 3.4 from git.
+  IF(NOT FETCH_GLFW)
+    FIND_PACKAGE( glfw3 QUIET )
+  ENDIF()
+
+  IF(glfw3_FOUND)
+    MESSAGE(STATUS "GLFW: using system package (${glfw3_VERSION})")
+  ELSE()
+    MESSAGE(STATUS "GLFW: system package not found, fetching 3.4 via FetchContent")
+    SET(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
+    SET(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+    SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    INCLUDE(FetchContent)
+    FetchContent_Declare(
+      glfw
+      GIT_REPOSITORY https://github.com/glfw/glfw.git
+      GIT_TAG        3.4
+      GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(glfw)
+  ENDIF()
+ENDIF()
+
 IF(NOT MINC_TOOLKIT_BUILD)
   # Packaging defines
   SET(CPACK_GENERATOR TGZ)
@@ -18,16 +58,6 @@ IF(NOT MINC_TOOLKIT_BUILD)
   SET(CPACK_PACKAGE_VERSION_PATCH ${BICGL_PACKAGE_VERSION_PATCH})
   INCLUDE(CPack)
 
-  OPTION(BICGL_USE_GLUT "Build the GLUT windowing backend (default)" ON)
-  # Set BICGL_USE_GLFW=ON (and BICGL_USE_GLUT=OFF) to build the GLFW backend.
-  # The GLFW backend does not require GLX and works on x2go / SSH X11 sessions.
-  OPTION(BICGL_USE_GLFW "Build GLFW windowing backend (no GLX required)" OFF)
-
-  # Mutual exclusion: EGL overrides GLUT
-  IF(BICGL_USE_GLFW)
-    SET(BICGL_USE_GLUT OFF)
-  ENDIF()
-
   FIND_PACKAGE( LIBMINC )
   FIND_PACKAGE( BICPL )
   FIND_PACKAGE( Threads )
@@ -35,30 +65,7 @@ IF(NOT MINC_TOOLKIT_BUILD)
   FIND_PACKAGE( OpenGL REQUIRED )
   FIND_PACKAGE( X11 QUIET )
 
-  IF(BICGL_USE_GLFW)
-    # The EGL backend uses GLFW (which handles EGL context creation internally).
-    # Try the system GLFW package first; fall back to fetching 3.4 from git.
-    IF(NOT FETCH_GLFW)
-      FIND_PACKAGE( glfw3 QUIET )
-    ENDIF()
-
-    IF(glfw3_FOUND)
-      MESSAGE(STATUS "GLFW: using system package (${glfw3_VERSION})")
-    ELSE()
-      MESSAGE(STATUS "GLFW: system package not found, fetching 3.4 via FetchContent")
-      SET(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
-      SET(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
-      SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-      INCLUDE(FetchContent)
-      FetchContent_Declare(
-        glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG        3.4
-        GIT_SHALLOW    TRUE
-      )
-      FetchContent_MakeAvailable(glfw)
-    ENDIF()
-  ELSE()
+  IF(NOT BICGL_USE_GLFW)
     FIND_PACKAGE( GLUT REQUIRED )
   ENDIF()
 
@@ -293,12 +300,22 @@ SET(BICGL_SRC
 
 ADD_LIBRARY(bicgl ${LIBRARY_TYPE}  ${BICGL_SRC})
 
+# X11 is optional for the GLFW backend: needed for font loading on Linux/x2go,
+# never needed on macOS (GLFW uses native Cocoa there, and all X11 code paths
+# in EGL_windows/egl_windows.c are compiled out via __APPLE__ guards) even if
+# an X11 install happens to be present on the build machine (e.g. XQuartz).
+IF(BICGL_USE_GLFW AND X11_FOUND AND NOT APPLE)
+  SET(BICGL_GLFW_X11_LIBS ${X11_X11_LIB})
+ELSE()
+  SET(BICGL_GLFW_X11_LIBS "")
+ENDIF()
+
 IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
   IF(BICGL_USE_GLFW)
     message(STATUS "Linking bicgl with static libraries and GLFW")
     TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
-        ${X11_X11_LIB}
+        ${BICGL_GLFW_X11_LIBS}
         ${BICPL_STATIC_LIBRARIES} ${LIBMINC_STATIC_LIBRARIES} )
   ELSEIF(BICGL_USE_GLUT)
     TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES}
@@ -310,9 +327,9 @@ IF(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
 
 ELSE(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
   IF(BICGL_USE_GLFW)
-    message(STATUS "Linking bicgl with shared libraries and GLFW")  
+    message(STATUS "Linking bicgl with shared libraries and GLFW")
     TARGET_LINK_LIBRARIES(bicgl glfw ${OPENGL_LIBRARIES}
-        ${X11_X11_LIB}
+        ${BICGL_GLFW_X11_LIBS}
         ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES} )
   ELSEIF(BICGL_USE_GLUT)
     TARGET_LINK_LIBRARIES(bicgl ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES}

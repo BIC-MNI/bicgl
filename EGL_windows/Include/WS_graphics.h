@@ -3,6 +3,12 @@
 
 #include  <graphics_base.h>
 
+#if defined(__APPLE__)
+/* No X11 on macOS (native Cocoa via GLFW) — Window_id just needs to match
+ * X11's Window (unsigned long) in size so it can still hold the synthesized
+ * ids produced by the EGL_windows backend on non-X11 platforms. */
+typedef  unsigned long   Window_id;
+#else
 /* X11 — provides typedef Window Window_id; also used for font loading */
 #include  <X11/Xlib.h>
 #include  <X11/Xutil.h>
@@ -11,11 +17,12 @@
 #undef  Status
 #endif
 
+typedef  Window   Window_id;
+#endif
+
 /* GLFW — for GLFWwindow* field in WS_window_struct */
 #define GLFW_INCLUDE_NONE
 #include  <GLFW/glfw3.h>
-
-typedef  Window   Window_id;
 
 /* -----------------------------------------------------------------------
  * Per-window font cache
