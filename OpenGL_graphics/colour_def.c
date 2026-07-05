@@ -64,3 +64,53 @@
 
     return( (int) b[3] );
 }
+
+/* The [0,1]-range wrapper functions below only exist as compiled code
+ * inside libminc2's shared library (volume_io has no static archive in
+ * this build) -- so on macOS, calls to them from statically-linked code
+ * (e.g. bicpl's get_colour_code()) bind, via Mach-O two-level namespace
+ * rules, to *that dylib's own* internal calls to make_rgba_Colour()/
+ * get_Colour_r/g/b/a(), which were fixed at the dylib's build time
+ * (before bicgl existed) to volume_io's generic byte order -- silently
+ * bypassing the override above. (On Linux/ELF this isn't an issue: ELF's
+ * default symbol interposition lets the override reach across shared
+ * library boundaries, which is why this was never seen there.)
+ * Overriding these wrapper functions here too, in the same translation
+ * unit as the int-based override above, makes the linker satisfy them
+ * statically instead, avoiding the dylib entirely. */
+
+  VIO_Colour  make_rgba_Colour_0_1(
+    VIO_Real   r,
+    VIO_Real   g,
+    VIO_Real   b,
+    VIO_Real   a )
+{
+    return( make_rgba_Colour( (int) (r * 255.0 + 0.5),
+                               (int) (g * 255.0 + 0.5),
+                               (int) (b * 255.0 + 0.5),
+                               (int) (a * 255.0 + 0.5) ) );
+}
+
+  VIO_Real  get_Colour_r_0_1(
+    VIO_Colour   colour )
+{
+    return( (VIO_Real) get_Colour_r(colour) / 255.0 );
+}
+
+  VIO_Real  get_Colour_g_0_1(
+    VIO_Colour   colour )
+{
+    return( (VIO_Real) get_Colour_g(colour) / 255.0 );
+}
+
+  VIO_Real  get_Colour_b_0_1(
+    VIO_Colour   colour )
+{
+    return( (VIO_Real) get_Colour_b(colour) / 255.0 );
+}
+
+  VIO_Real  get_Colour_a_0_1(
+    VIO_Colour   colour )
+{
+    return( (VIO_Real) get_Colour_a(colour) / 255.0 );
+}
