@@ -114,3 +114,28 @@
 {
     return( (VIO_Real) get_Colour_a(colour) / 255.0 );
 }
+
+/* Same dylib-boundary issue as above, for the two remaining functions from
+ * volume_io/Geometry/colour.c: all of bicpl's named UI colour constants
+ * (bicpl/Include/bicpl/colours.h, e.g. DARK_SLATE_BLUE) are built via
+ * make_Colour_0_1(), which -- unoverridden -- calls make_Colour() and then
+ * make_rgba_Colour() entirely within libminc2.dylib, using its frozen
+ * generic byte order regardless of the overrides above. */
+
+  VIO_Colour  make_Colour(
+    int   r,
+    int   g,
+    int   b )
+{
+    return( make_rgba_Colour( r, g, b, 255 ) );
+}
+
+  VIO_Colour  make_Colour_0_1(
+    VIO_Real   r,
+    VIO_Real   g,
+    VIO_Real   b )
+{
+    return( make_Colour( (int) (r * 255.0 + 0.5),
+                          (int) (g * 255.0 + 0.5),
+                          (int) (b * 255.0 + 0.5) ) );
+}
