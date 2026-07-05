@@ -1196,8 +1196,11 @@ void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 {
     if( !string || !s_current_window ) return;
 
+    /* Scale the requested (logical/X11-era) point size up to physical pixels
+     * so glyphs match the physical-pixel-based window/layout math on Retina
+     * displays (dpi_scale is 1.0 on X11, so this is a no-op there). */
     EglFontEntry *fe = load_font_into_cache( s_current_window,
-                                             type, (int) size );
+                        type, (int)( size * s_current_window->dpi_scale_y ) );
     glListBase( fe->list_base );
     glCallLists( (GLsizei) strlen(string), GL_UNSIGNED_BYTE,
                  (const GLubyte *) string );
@@ -1209,7 +1212,7 @@ VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
         return ( type == SIZED_FONT ) ? size : get_fixed_font_height();
 
     EglFontEntry *fe = load_font_into_cache( s_current_window,
-                                             type, (int) size );
+                        type, (int)( size * s_current_window->dpi_scale_y ) );
     return (VIO_Real) fe->height;
 }
 
@@ -1226,7 +1229,7 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
     }
 
     EglFontEntry *fe = load_font_into_cache( s_current_window,
-                                             type, (int) size );
+                        type, (int)( size * s_current_window->dpi_scale_y ) );
     VIO_Real len = 0.0;
     const unsigned char *p = (const unsigned char *) str;
     while( *p )
