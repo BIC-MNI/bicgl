@@ -366,6 +366,8 @@ void GS_exit_loop(void);
     int        *x_size,
     int        *y_size );
 
+  int  GS_get_window_content_scale( void );
+
   void  GS_get_window_position(
     int        *x_position,
     int        *y_position );

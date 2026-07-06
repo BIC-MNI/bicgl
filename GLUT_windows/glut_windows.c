@@ -319,6 +319,11 @@ void  WS_get_window_position(
     *y_size = glutGet( (GLenum) GLUT_WINDOW_HEIGHT );
 }
 
+  int  WS_get_window_content_scale( void )
+{
+    return( 1 );   /* GLUT has no HiDPI backing-store concept */
+}
+
 void  glut_set_colour_entry(
     int      ind,
     VIO_Real     r,

@@ -48,6 +48,8 @@
 
 #include  <volume_io.h>
 #include  <WS_windows.h>
+#include  <stdlib.h>
+#include  <string.h>
 
 static   GLubyte rasters[][13] = {
 {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 
@@ -148,17 +150,57 @@ static   GLubyte rasters[][13] = {
 };
 
 
+/* scale is the integer Retina backing-scale factor (1 on X11/GLX and on
+ * non-Retina displays -- byte-identical to the original unscaled bitmaps
+ * in that case). On Retina displays the EGL/GLFW backend passes the
+ * rounded dpi_scale so glyphs are legible at the actual physical pixel
+ * density, since these bitmaps are otherwise a fixed pixel count
+ * regardless of the requested font "size". */
   void create_fixed_font(
-    GLuint fontOffset )
+    GLuint fontOffset,
+    int    scale )
 {
     GLuint i;
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    for (i = 32; i < 127; i++) {
-	glNewList(i+fontOffset, GL_COMPILE);
-	glBitmap(8, 13, 0.0f, 2.0f, 8.0f, 0.0f, rasters[i-32]);
-	glEndList();
+    if( scale <= 1 )
+    {
+        for (i = 32; i < 127; i++) {
+            glNewList(i+fontOffset, GL_COMPILE);
+            glBitmap(8, 13, 0.0f, 2.0f, 8.0f, 0.0f, rasters[i-32]);
+            glEndList();
+        }
+        return;
+    }
+
+    {
+        int out_w = 8 * scale, out_h = 13 * scale;
+        int stride = (out_w + 7) / 8;
+        GLubyte *bits = (GLubyte *) malloc( (size_t) stride * out_h );
+
+        for (i = 32; i < 127; i++) {
+            const GLubyte *src = rasters[i-32];
+            int ox, oy;
+
+            memset( bits, 0, (size_t) stride * out_h );
+            for( oy = 0; oy < out_h; oy++ )
+            {
+                int iy = oy / scale;
+                for( ox = 0; ox < out_w; ox++ )
+                {
+                    int ix = ox / scale;
+                    if( (src[iy] >> (7 - ix)) & 1 )
+                        bits[oy*stride + ox/8] |= (GLubyte)(0x80 >> (ox % 8));
+                }
+            }
+
+            glNewList(i+fontOffset, GL_COMPILE);
+            glBitmap((GLsizei) out_w, (GLsizei) out_h,
+                     0.0f, 2.0f * scale, 8.0f * scale, 0.0f, bits);
+            glEndList();
+        }
+        free( bits );
     }
 }
 
@@ -171,25 +213,34 @@ static   GLubyte rasters[][13] = {
  * which preserves thin strokes far better than nearest-neighbour. */
 #define COVERAGE_THRESHOLD 0.32f
 
+/* scale generalises the target resolution to (6*scale)x(10*scale) instead
+ * of a hardcoded 6x10 -- the weighted-coverage algorithm below already
+ * computes an arbitrary out_w x out_h mapping from the 8x13 source, so
+ * this needs no algorithmic change, just parametrising the output size
+ * (and widening the per-row storage from a single GLubyte to a proper
+ * stride-based buffer, since out_w can now exceed 8 bits). scale=1
+ * reproduces the original 6x10 bitmap exactly. */
   void create_sized_font(
-    GLuint fontOffset )
+    GLuint fontOffset,
+    int    scale )
 {
     GLuint i;
     int    oy, ox;
-    const int   out_w = 6, out_h = 10;
+    const int   out_w = 6 * scale, out_h = 10 * scale;
     const float scale_x = 8.0f / out_w;   /* input pixels per output pixel */
     const float scale_y = 13.0f / out_h;
-    GLubyte scaled[10];
+    const int   stride = (out_w + 7) / 8;
+    GLubyte *scaled = (GLubyte *) malloc( (size_t) stride * out_h );
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     for (i = 32; i < 127; i++) {
         const GLubyte *src = rasters[i - 32];
 
+        memset( scaled, 0, (size_t) stride * out_h );
         for (oy = 0; oy < out_h; oy++) {
             float y0 = oy       * scale_y;
             float y1 = (oy + 1) * scale_y;
-            GLubyte row = 0;
 
             for (ox = 0; ox < out_w; ox++) {
                 float x0 = ox       * scale_x;
@@ -221,15 +272,15 @@ static   GLubyte rasters[][13] = {
                 }
 
                 if (total > 0.0f && coverage / total >= COVERAGE_THRESHOLD)
-                    row |= (GLubyte)(0x80 >> ox);
+                    scaled[oy*stride + ox/8] |= (GLubyte)(0x80 >> (ox % 8));
             }
-            scaled[oy] = row;
         }
 
 	glNewList(i+fontOffset, GL_COMPILE);
-	glBitmap(out_w, out_h, 0.0f, 1.0f, 7.0f, 0.0f, scaled);
+	glBitmap(out_w, out_h, 0.0f, 1.0f * scale, 7.0f * scale, 0.0f, scaled);
 	glEndList();
     }
+    free( scaled );
 }
 #undef COVERAGE_THRESHOLD
 

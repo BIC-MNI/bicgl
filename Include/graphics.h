@@ -8,8 +8,9 @@
 typedef  struct   window_struct
 {
     GSwindow               GS_window;
-    int                    x_origin, y_origin;          
-    int                    x_size, y_size;          
+    int                    x_origin, y_origin;
+    int                    x_size, y_size;
+    int                    content_scale;   /* backing-store DPI scale (1, or 2 on Retina) */
     VIO_Colour                 background_colour;
     VIO_Colour                 background_colour_index;
     View_types             current_view_type;

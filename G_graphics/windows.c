@@ -163,6 +163,7 @@ static  void  initialize_window(
 #endif
 
     GS_get_window_size( &window->x_size, &window->y_size );
+    window->content_scale = GS_get_window_content_scale();
     GS_get_window_position( &window->x_origin, &window->y_origin );
 
     G_set_automatic_clear_state( window, TRUE );
@@ -567,6 +568,23 @@ VIO_Status G_create_window(
 {
     *x_size = window->x_size;
     *y_size = window->y_size;
+}
+
+/* ----------------------------- MNI Header -----------------------------------
+@NAME       : G_get_window_content_scale
+@INPUT      : window
+@RETURNS    : integer backing-store scale factor (1 normally, 2 on Retina)
+@DESCRIPTION: bicgl lays out UI geometry in framebuffer (physical) pixels;
+              on a HiDPI/Retina display those are 2x the logical points, and
+              the stored bitmap fonts are DPI-scaled to match.  Applications
+              use this factor to scale their own fixed-pixel widget geometry
+              so it stays consistent with the fonts.  Always 1 on X11/GLUT.
+---------------------------------------------------------------------------- */
+
+  int  G_get_window_content_scale(
+    Gwindow        window )
+{
+    return( window->content_scale );
 }
 
 /* ----------------------------- MNI Header -----------------------------------

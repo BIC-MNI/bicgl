@@ -641,6 +641,15 @@ VIO_Real G_get_monitor_widths_to_eye( void );
 void G_get_window_size( Gwindow window, int *x_size, int *y_size );
 
 /**
+ * Get the integer backing-store DPI scale of the window (1 normally, 2 on a
+ * Retina display).  bicgl lays out UI geometry in framebuffer pixels and
+ * DPI-scales its fonts to match; applications use this to scale their own
+ * fixed-pixel widget geometry consistently.  Always 1 on X11/GLUT.
+ * \param window The window's handle.
+ */
+int G_get_window_content_scale( Gwindow window );
+
+/**
  * Get the location in pixels of the window.
  * \param window The window's handle.
  * \param x_pos A pointer to the variable which will hold the column position.

@@ -58,6 +58,8 @@
     int          *x_size,
     int          *y_size );
 
+  int   WS_get_window_content_scale( void );
+
   void  glut_set_colour_entry(
     int      ind,
     VIO_Real     r,

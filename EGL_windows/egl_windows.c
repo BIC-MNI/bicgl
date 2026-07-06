@@ -57,8 +57,8 @@
 #include <unistd.h>
 
 /* Forward declaration of stored_font functions */
-void     create_fixed_font( GLuint fontOffset );
-void     create_sized_font( GLuint fontOffset );
+void     create_fixed_font( GLuint fontOffset, int scale );
+void     create_sized_font( GLuint fontOffset, int scale );
 int      get_fixed_font_n_chars( void );
 VIO_Real get_fixed_font_height( void );
 VIO_Real get_fixed_font_width( char ch );
@@ -909,6 +909,21 @@ void  WS_get_window_size( int *x_size, int *y_size )
     }
 }
 
+/* Integer backing-store scale factor of the current window (1 on non-HiDPI
+ * / X11, 2 on a Retina Mac).  Applications lay out their fixed-pixel UI
+ * geometry in framebuffer pixels (see WS_get_window_size), so they use this
+ * to scale those constants to match the DPI-scaled fonts. */
+int  WS_get_window_content_scale( void )
+{
+    int scale;
+
+    if( !s_current_window )
+        return 1;
+
+    scale = (int)( s_current_window->dpi_scale_y + 0.5f );
+    return ( scale < 1 ) ? 1 : scale;
+}
+
 void  WS_set_colour_map_entry( WSwindow window, Bitplane_types bp, int ind, VIO_Colour col )
 {
     (void)window; (void)bp; (void)ind; (void)col;
@@ -1168,18 +1183,33 @@ static EglFontEntry *load_font_into_cache( WS_window_struct *window,
     else
 #endif
     {
-        /* No X11 font — use stored bitmaps as fallback */
+        /* No X11 font — use stored bitmaps as fallback. These bitmaps are a
+         * fixed pixel count regardless of the requested "size", so scale the
+         * actual glBitmap raster (baked into the display list below) by the
+         * window's Retina backing scale factor to stay legible on HiDPI
+         * displays (dpi_scale is 1.0 on X11, so scale is always 1 there).
+         *
+         * bicgl's whole layout engine works in framebuffer (physical) pixels
+         * — WS_get_window_size returns the 2x-on-Retina framebuffer size, and
+         * every widget is positioned in that space. So the metrics returned to
+         * layout code (WS_get_text_length / WS_get_character_height, used for
+         * button sizing and text centring) must be the *physical* size of the
+         * now-2x glyphs, i.e. scaled to match the rasters above. (On X11 scale
+         * is 1, so this is a no-op there.) */
+        int scale = (int)( window->dpi_scale_y + 0.5f );
+        if( scale < 1 ) scale = 1;
+
         if( type == SIZED_FONT )
         {
-            create_sized_font( entry->list_base );
-            entry->advance = 7.0f;
-            entry->height  = 10.0f;
+            create_sized_font( entry->list_base, scale );
+            entry->advance = 7.0f * scale;
+            entry->height  = 10.0f * scale;
         }
         else
         {
-            create_fixed_font( entry->list_base );
-            entry->advance = 8.0f;
-            entry->height  = 13.0f;
+            create_fixed_font( entry->list_base, scale );
+            entry->advance = 8.0f * scale;
+            entry->height  = 13.0f * scale;
         }
         /* char_widths stays zero — WS_get_text_length will use advance */
     }
@@ -1196,11 +1226,8 @@ void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 {
     if( !string || !s_current_window ) return;
 
-    /* Scale the requested (logical/X11-era) point size up to physical pixels
-     * so glyphs match the physical-pixel-based window/layout math on Retina
-     * displays (dpi_scale is 1.0 on X11, so this is a no-op there). */
     EglFontEntry *fe = load_font_into_cache( s_current_window,
-                        type, (int)( size * s_current_window->dpi_scale_y ) );
+                                             type, (int) size );
     glListBase( fe->list_base );
     glCallLists( (GLsizei) strlen(string), GL_UNSIGNED_BYTE,
                  (const GLubyte *) string );
@@ -1212,7 +1239,7 @@ VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
         return ( type == SIZED_FONT ) ? size : get_fixed_font_height();
 
     EglFontEntry *fe = load_font_into_cache( s_current_window,
-                        type, (int)( size * s_current_window->dpi_scale_y ) );
+                                             type, (int) size );
     return (VIO_Real) fe->height;
 }
 
@@ -1229,7 +1256,7 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
     }
 
     EglFontEntry *fe = load_font_into_cache( s_current_window,
-                        type, (int)( size * s_current_window->dpi_scale_y ) );
+                                             type, (int) size );
     VIO_Real len = 0.0;
     const unsigned char *p = (const unsigned char *) str;
     while( *p )

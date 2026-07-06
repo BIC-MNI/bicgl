@@ -579,6 +579,11 @@ static  void  reinitialize_after_switching_configuration(
     WS_get_window_size( x_size, y_size );
 }
 
+  int  GS_get_window_content_scale( void )
+{
+    return( WS_get_window_content_scale() );
+}
+
   void  GS_get_window_position(
     int        *x_position,
     int        *y_position )

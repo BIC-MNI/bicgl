@@ -44,6 +44,8 @@
     int               *x_size,
     int               *y_size );
 
+  int   WS_get_window_content_scale( void );
+
   void  WS_set_colour_map_entry(
     WS_window_struct  *window,
     int               ind,
@@ -91,7 +93,8 @@
     int   *y_size  );
 
   void create_fixed_font(
-    GLuint fontOffset );
+    GLuint fontOffset,
+    int    scale );
 
   int  get_fixed_font_n_chars( void );
 

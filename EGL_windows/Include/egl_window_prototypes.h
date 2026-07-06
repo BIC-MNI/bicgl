@@ -60,6 +60,8 @@
     int          *x_size,
     int          *y_size );
 
+  int   WS_get_window_content_scale( void );
+
   void  WS_set_colour_map_entry(
     WSwindow          window,
     Bitplane_types    bitplane,

@@ -350,6 +350,11 @@ static  void  set_window_overlay_planes(
     X_get_window_geometry( &window->x_window, &x_pos, &y_pos, x_size, y_size );
 }
 
+  int  WS_get_window_content_scale( void )
+{
+    return( 1 );   /* GLX/X11 has no HiDPI backing-store concept */
+}
+
   void  WS_set_colour_map_entry(
     WS_window_struct  *window,
     int               ind,
@@ -440,7 +445,7 @@ static  void  set_window_overlay_planes(
     else
     {
         if( use_stored_font_only() )
-            create_fixed_font( (GLuint) listBase );
+            create_fixed_font( (GLuint) listBase, 1 );
         else
         {
             x_font = XLoadFont( X_get_display(), font_info->font_name );
