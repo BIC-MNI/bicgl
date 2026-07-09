@@ -268,6 +268,19 @@ static  VIO_BOOL  check_redraw_viewport(
 
     drawn = viewport->bitplanes[NORMAL_PLANES].update_flag[current_buffer];;
 
+    if( viewport->x_max < viewport->x_min || viewport->y_max < viewport->y_min )
+    {
+        /* Undefined (still at the INT_MAX/INT_MIN sentinel from
+         * initialize_viewport()) or degenerate viewport: it covers no pixels,
+         * so there is nothing to draw.  Redrawing it would feed the sentinel
+         * bounds into G_set_viewport()/GS_set_viewport(), where computing
+         * x_max - x_min + 1 overflows (undefined behavior).  Clear the update
+         * flags so it is not reprocessed every frame, and report nothing drawn. */
+        for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
+            viewport->bitplanes[bitplane].update_flag[current_buffer] = FALSE;
+        return( FALSE );
+    }
+
     for_enum( bitplane, N_BITPLANE_TYPES, Bitplane_types )
     {
         if( (bitplane != OVERLAY_PLANES ||

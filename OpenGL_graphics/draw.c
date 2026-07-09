@@ -237,16 +237,19 @@
     int             y_max,
     VIO_Colour          pixels[] )
 {
+    int  width  = (x_max >= x_min) ? (x_max - x_min + 1) : 0;
+    int  height = (y_max >= y_min) ? (y_max - y_min + 1) : 0;
+
     glReadBuffer( GL_FRONT );
 
     if( colour_map_state )
     {
-        glReadPixels( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1,
+        glReadPixels( x_min, y_min, width, height,
                       GL_COLOR_INDEX, GL_UNSIGNED_INT, pixels );
     }
     else
     {
-        glReadPixels( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1,
+        glReadPixels( x_min, y_min, width, height,
                       GL_RGBA, GL_UNSIGNED_BYTE, pixels );
     }
 }

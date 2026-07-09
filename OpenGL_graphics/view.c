@@ -169,7 +169,12 @@ static  void  make_matrix(
     int            y_min,
     int            y_max )
 {
-    glViewport( x_min, y_min, x_max - x_min + 1, y_max - y_min + 1 );
+    /* Guard against an empty/undefined viewport (x_max < x_min): compute the
+     * extents without overflowing signed int, and pass a zero-size viewport. */
+    int  width  = (x_max >= x_min) ? (x_max - x_min + 1) : 0;
+    int  height = (y_max >= y_min) ? (y_max - y_min + 1) : 0;
+
+    glViewport( x_min, y_min, width, height );
 }
 
   void  clear_overlay_planes( void )

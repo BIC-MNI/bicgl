@@ -382,8 +382,12 @@ static  void  define_pixel_view(
 
     GS_set_matrix_mode( PROJECTION_MATRIX );
 
-    GS_ortho_2d( 0, window->x_viewport_max - window->x_viewport_min,
-                 0, window->y_viewport_max - window->y_viewport_min );
+    /* Guard against an empty/undefined viewport so the extent subtraction
+     * does not overflow signed int (see GS_set_viewport). */
+    GS_ortho_2d( 0, (window->x_viewport_max >= window->x_viewport_min) ?
+                        (window->x_viewport_max - window->x_viewport_min) : 0,
+                 0, (window->y_viewport_max >= window->y_viewport_min) ?
+                        (window->y_viewport_max - window->y_viewport_min) : 0 );
 
     GS_get_transform( &window->projection_matrices[PIXEL_VIEW] );
 
