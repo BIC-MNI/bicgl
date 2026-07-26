@@ -301,3 +301,13 @@ void font_render_gl_draw_text( const FontAtlas *atlas, const char *s )
      * old renderer, in case a caller chains further draws off of it. */
     glRasterPos4f( cursor_x, anchor[1], anchor[2], anchor[3] );
 }
+
+float font_render_gl_pixel_height( float size, float dpi_scale )
+{
+    float legacy;
+
+    if( dpi_scale < 1.0f ) dpi_scale = 1.0f;
+    legacy = ( dpi_scale <= 1.0f ) ? FONT_RENDER_GL_LEGACY_POINT_SCALE : 1.0f;
+
+    return size * legacy * dpi_scale;
+}

@@ -347,25 +347,17 @@ static FontAtlasCache *get_font_atlas_cache( void )
     return s_font_atlas_cache;
 }
 
-/* Callers already pass a real point/pixel size here (e.g. Display's
- * Slice_readout_text_font_size=12, Colour_bar_text_size=10) -- honour it
- * directly; do not apply any extra guessed scaling per Font_types here. */
-static float nominal_point_size( Font_types type, VIO_Real size )
-{
-    (void) type;
-    return (float) size;
-}
-
   void  WS_draw_text(
     Font_types   type,
     VIO_Real     size,
     VIO_STR      string )
 {
+    (void) type;
     if( !string )
         return;
 
     FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
-                                              nominal_point_size( type, size ) );
+                                              font_render_gl_pixel_height( (float) size, 1.0f ) );
     if( !atlas )
         return;
 
@@ -376,10 +368,11 @@ static float nominal_point_size( Font_types type, VIO_Real size )
     Font_types   type,
     VIO_Real     size )
 {
+    (void) type;
     FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
-                                              nominal_point_size( type, size ) );
+                                              font_render_gl_pixel_height( (float) size, 1.0f ) );
     if( !atlas )
-        return (VIO_Real) nominal_point_size( type, size );
+        return (VIO_Real) font_render_gl_pixel_height( (float) size, 1.0f );
 
     return (VIO_Real) atlas->ascent;
 }
@@ -389,13 +382,14 @@ static float nominal_point_size( Font_types type, VIO_Real size )
     Font_types   type,
     VIO_Real     size )
 {
+    (void) type;
     if( !str )
         return 0.0;
 
     FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
-                                              nominal_point_size( type, size ) );
+                                              font_render_gl_pixel_height( (float) size, 1.0f ) );
     if( !atlas )
-        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
+        return (VIO_Real) strlen(str) * font_render_gl_pixel_height( (float) size, 1.0f ) * 0.6;
 
     return (VIO_Real) strlen(str) * (VIO_Real) atlas->advance_width;
 }

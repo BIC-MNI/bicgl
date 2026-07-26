@@ -953,24 +953,12 @@ static FontAtlasCache *get_font_atlas_cache( void )
     return s_font_atlas_cache;
 }
 
-/* Callers already pass a real point/pixel size here (e.g. Display's
- * Slice_readout_text_font_size=12, Colour_bar_text_size=10) -- the old
- * bitmap renderer just silently ignored it on this backend (no X11 to
- * query a variable-size font from, so it always fell back to its fixed
- * 8x13/6x10 raster regardless of what was requested). Honour it directly;
- * do not apply any extra guessed scaling per Font_types here. */
-static float nominal_point_size( Font_types type, VIO_Real size )
-{
-    (void) type;
-    return (float) size;
-}
-
 static FontAtlas *get_atlas_for( Font_types type, VIO_Real size )
 {
     float dpi_scale = s_current_window ? s_current_window->dpi_scale_y : 1.0f;
-    if( dpi_scale < 1.0f ) dpi_scale = 1.0f;
+    (void) type;
 
-    float pixel_height = nominal_point_size( type, size ) * dpi_scale;
+    float pixel_height = font_render_gl_pixel_height( (float) size, dpi_scale );
     return font_atlas_cache_get( get_font_atlas_cache(), pixel_height );
 }
 
@@ -987,11 +975,11 @@ void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
 {
     if( !s_current_window )
-        return (VIO_Real) nominal_point_size( type, size );
+        return (VIO_Real) font_render_gl_pixel_height( (float) size, 1.0f );
 
     FontAtlas *atlas = get_atlas_for( type, size );
     if( !atlas )
-        return (VIO_Real) nominal_point_size( type, size );
+        return (VIO_Real) font_render_gl_pixel_height( (float) size, 1.0f );
 
     return (VIO_Real) atlas->ascent;
 }
@@ -1001,11 +989,11 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
     if( !str ) return 0.0;
 
     if( !s_current_window )
-        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
+        return (VIO_Real) strlen(str) * font_render_gl_pixel_height( (float) size, 1.0f ) * 0.6;
 
     FontAtlas *atlas = get_atlas_for( type, size );
     if( !atlas )
-        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
+        return (VIO_Real) strlen(str) * font_render_gl_pixel_height( (float) size, 1.0f ) * 0.6;
 
     return (VIO_Real) strlen(str) * (VIO_Real) atlas->advance_width;
 }
