@@ -381,8 +381,10 @@ static void glfw_char_cb( GLFWwindow *w, unsigned int codepoint )
     WSwindow ws = (WSwindow) glfwGetWindowUserPointer( w );
     if( !ws ) return;
     /* Deliver printable key-down via the char callback (correctly composed) */
+    int x = cursor_px( ws->dpi_scale_x, s_last_cursor_x );
+    int y = flip_y( ws, cursor_px( ws->dpi_scale_y, s_last_cursor_y ) );
     if( codepoint < 256 && key_down_callback )
-        (*key_down_callback)( ws->window_id, (int) codepoint, 0, 0, 0 );
+        (*key_down_callback)( ws->window_id, (int) codepoint, x, y, s_current_mods );
 }
 
 static void glfw_cursor_pos_cb( GLFWwindow *w, double xpos, double ypos )
