@@ -19,17 +19,8 @@ typedef  struct
     VIO_BOOL           overlay_present;
     X_window_struct   overlay_window;
     GLXContext        overlay_context;
-    int               n_fonts;
-    GLint             *font_list_bases;
 }
 WS_window_struct;
-
-typedef  struct
-{
-    VIO_STR        font_name;
-    XFontStruct   *x_font_info;
-}  WS_font_info;
-
 
 #include  <glx_window_prototypes.h>
 

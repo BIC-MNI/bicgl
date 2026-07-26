@@ -5,6 +5,12 @@
 #include  <volume_io.h>
 #include  <WS_graphics.h>
 
+#include <font_atlas.h>
+#include <font_render_gl.h>
+#include <jetbrains_mono_ttf.h>  /* generated: embedded font bytes, see CMakeLists.txt */
+
+#include <string.h>
+
 #define  DEFAULT_WINDOW_X_SIZE    300
 #define  DEFAULT_WINDOW_Y_SIZE    300
 
@@ -358,57 +364,35 @@ void  WS_set_colour_map_entry(
       glutSwapBuffers();
 }
 
-static  struct
-        {
-            int     height;
-            void    *font;
-        }        known_fonts[] =
-              {
-                {10, GLUT_BITMAP_HELVETICA_10},
-                {12, GLUT_BITMAP_HELVETICA_12},
-                {13,  GLUT_BITMAP_8_BY_13},
-                {15 , GLUT_BITMAP_9_BY_15},
-                {18, GLUT_BITMAP_HELVETICA_18},
-                {24, GLUT_BITMAP_TIMES_ROMAN_24},
-                {10, GLUT_BITMAP_TIMES_ROMAN_10}
-              };
+/* -----------------------------------------------------------------------
+ * Font / text — shared stb_truetype pipeline (font_atlas + font_render_gl)
+ *
+ * Same bundled JetBrains Mono / font_atlas / font_render_gl pipeline as
+ * the EGL/GLFW and GLX backends, so text looks identical everywhere.
+ * GLUT is used here only as a window/context manager -- glutBitmapCharacter
+ * and the built-in GLUT stroke/bitmap fonts are no longer used at all.
+ * WS_get_window_content_scale() is hardcoded to 1 in this backend (below),
+ * so -- like GLX -- there is no runtime DPI change to react to; one atlas
+ * per nominal size is cached and reused for the process lifetime.
+ * --------------------------------------------------------------------- */
 
+static FontAtlasCache *s_font_atlas_cache = NULL;
 
-static  void  *lookup_font(
-    Font_types       type,
-    VIO_Real             size,
-    int              *actual_height )
+static FontAtlasCache *get_font_atlas_cache( void )
 {
-    VIO_Real    diff, min_diff;
-    int     which, best;
-    void    *font;
+    if( !s_font_atlas_cache )
+        s_font_atlas_cache = font_atlas_cache_create(
+            jetbrains_mono_ttf, jetbrains_mono_ttf_len, 8 );
+    return s_font_atlas_cache;
+}
 
-    if( type == FIXED_FONT )
-    {
-        font = GLUT_BITMAP_8_BY_13;
-        if( actual_height != NULL )
-            *actual_height = 13;
-    }
-    else
-    {
-        min_diff = 0.0;
-        best = 0;
-        for_less( which, 0, VIO_SIZEOF_STATIC_ARRAY(known_fonts) )
-        {
-            diff = VIO_FABS( (VIO_Real) known_fonts[which].height - size );
-            if( which == 0 || diff < min_diff )
-            {
-                best = which;
-                min_diff = diff;
-            }
-        }
-
-        font = known_fonts[best].font;
-        if( actual_height != NULL )
-            *actual_height = known_fonts[best].height;
-    }
-
-    return( font );
+/* Callers already pass a real point/pixel size here (e.g. Display's
+ * Slice_readout_text_font_size=12, Colour_bar_text_size=10) -- honour it
+ * directly; do not apply any extra guessed scaling per Font_types here. */
+static float nominal_point_size( Font_types type, VIO_Real size )
+{
+    (void) type;
+    return (float) size;
 }
 
   void  WS_draw_text(
@@ -416,24 +400,25 @@ static  void  *lookup_font(
     VIO_Real        size,
     VIO_STR      string )
 {
-    int   i;
-    void  *font;
+    if( !string ) return;
 
-    font = lookup_font( type, size, NULL );
+    FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
+                                              nominal_point_size( type, size ) );
+    if( !atlas ) return;
 
-    for_less( i, 0, string_length( string ) )
-        glutBitmapCharacter( font, (int) string[i] );
+    font_render_gl_draw_text( atlas, (const char *) string );
 }
 
   VIO_Real  WS_get_character_height(
     Font_types       type,
     VIO_Real             size )
 {
-    int   height;
+    FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
+                                              nominal_point_size( type, size ) );
+    if( !atlas )
+        return (VIO_Real) nominal_point_size( type, size );
 
-    (void) lookup_font( type, size, &height );
-
-    return( (VIO_Real) height );
+    return (VIO_Real) atlas->ascent;
 }
 
   VIO_Real  WS_get_text_length(
@@ -441,16 +426,14 @@ static  void  *lookup_font(
     Font_types       type,
     VIO_Real             size )
 {
-    int    i, len;
-    void   *font;
+    if( !str ) return 0.0;
 
-    font = lookup_font( type, size, NULL );
+    FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
+                                              nominal_point_size( type, size ) );
+    if( !atlas )
+        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
 
-    len = 0;
-    for_less( i, 0, (int) strlen( str ) )
-        len += glutBitmapWidth( font, (int) str[i] );
-
-    return( (VIO_Real) len );
+    return (VIO_Real) strlen(str) * (VIO_Real) atlas->advance_width;
 }
 
   void  WS_get_screen_size(

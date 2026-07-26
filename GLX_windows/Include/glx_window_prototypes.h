@@ -59,49 +59,23 @@
   void  WS_swap_buffers(
     WS_window_struct  *window );
 
-  VIO_BOOL  WS_get_font(
-    Font_types       type,
-    VIO_Real             size,
-    WS_font_info     *font_info );
-
-  void  WS_build_font_in_window(
-    WS_window_struct  *window,
-    int               font_index,
-    WS_font_info      *font_info );
-
-  void  WS_delete_font_in_window(
-    WS_window_struct     *window,
-    int                  font_index,
-    WS_font_info         *font_info );
-
-  VIO_BOOL  WS_set_font(
-    WS_window_struct     *window,
-    int                  font_index );
-
-  void  WS_delete_font(
-    WS_font_info  *info );
+  void  WS_draw_text(
+    Font_types   type,
+    VIO_Real     size,
+    VIO_STR      string );
 
   VIO_Real  WS_get_character_height(
-    WS_font_info  *font_info );
+    Font_types   type,
+    VIO_Real     size );
 
   VIO_Real  WS_get_text_length(
-    WS_font_info     *font_info,
-    VIO_STR           str );
+    VIO_STR      str,
+    Font_types   type,
+    VIO_Real     size );
 
   void  WS_get_screen_size(
-    int   *x_size, 
+    int   *x_size,
     int   *y_size  );
-
-  void create_fixed_font(
-    GLuint fontOffset,
-    int    scale );
-
-  int  get_fixed_font_n_chars( void );
-
-  VIO_Real  get_fixed_font_height( void );
-
-  VIO_Real  get_fixed_font_width(
-    char   ch );
 
   VIO_BOOL  WS_is_native_wayland( void );
 

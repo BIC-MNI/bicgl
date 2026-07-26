@@ -5,10 +5,11 @@
  * Falls back to GLFW_EGL_CONTEXT_API when the default GLX path fails,
  * which is exactly the x2go case (no GLX extension on the X server).
  *
- * Font rendering uses stored_font.c (pre-rasterised 8×13 bitmap font)
- * plus an optional compact X11 system font loaded via Xlib — no GLX
- * required.  The X11 display handle is obtained from GLFW after the first
- * window is created via glfwGetX11Display().
+ * Font rendering uses the shared font_atlas/font_render_gl stb_truetype
+ * pipeline (bundled JetBrains Mono, baked natively at the window's actual
+ * backing-scale pixel density) -- the same rendering path used by the GLX
+ * and GLUT backends, so text looks identical across all three and across
+ * both Linux and macOS.
  *
  * This file implements the full WS_* interface declared in
  * EGL_windows/Include/egl_window_prototypes.h.
@@ -45,7 +46,8 @@
 #endif
 
 #if !defined(__APPLE__)
-/* X11 — for font loading only (Xlib.h / Xutil.h already pulled in above) */
+/* X11 — needed for the Window_id type and native-Wayland detection below
+ * (Xlib.h / Xutil.h already pulled in above via WS_graphics.h) */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #endif
@@ -56,12 +58,9 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-/* Forward declaration of stored_font functions */
-void     create_fixed_font( GLuint fontOffset, int scale );
-void     create_sized_font( GLuint fontOffset, int scale );
-int      get_fixed_font_n_chars( void );
-VIO_Real get_fixed_font_height( void );
-VIO_Real get_fixed_font_width( char ch );
+#include <font_atlas.h>
+#include <font_render_gl.h>
+#include <jetbrains_mono_ttf.h>  /* generated: embedded font bytes, see CMakeLists.txt */
 
 /* -----------------------------------------------------------------------
  * GLFW globals
@@ -70,7 +69,9 @@ VIO_Real get_fixed_font_width( char ch );
 #if defined(__APPLE__)
 static void       *s_x11_display    = NULL;  /* always NULL on macOS       */
 #else
-static Display    *s_x11_display    = NULL;  /* from glfwGetX11Display()  */
+static Display    *s_x11_display    = NULL;  /* from glfwGetX11Display(); NULL
+                                                 result also drives native-
+                                                 Wayland detection below     */
 #endif
 static GLFWwindow *s_first_glfw_win = NULL;  /* share target for 2nd+ wins */
 static int         s_context_api    = 0;     /* GLFW_NATIVE_CONTEXT_API or
@@ -665,7 +666,7 @@ VIO_Status  WS_create_window(
     if( s_context_api == 0 )
         s_context_api = GLFW_NATIVE_CONTEXT_API;
 
-    /* First window: cache X11 display handle for font loading */
+    /* First window: probe X11 display availability to detect native Wayland */
     if( !s_first_glfw_win )
     {
         s_first_glfw_win = gw;
@@ -679,7 +680,7 @@ VIO_Status  WS_create_window(
         if( !s_x11_display )
         {
             fprintf( stderr, "GLFW backend: glfwGetX11Display() returned NULL "
-                             "(Wayland session?); font loading will use fallback.\n" );
+                             "(Wayland session?).\n" );
             s_is_native_wayland = TRUE;
         }
 #endif
@@ -716,7 +717,6 @@ VIO_Status  WS_create_window(
      * On XWayland: use content_scale * logical (compositor handles scaling).
      * On native X11: use glfwGetFramebufferSize (== logical, scale=1.0). */
     update_window_scale( window, gw, initial_x_size, initial_y_size );
-    window->font_cache_count  = 0;
     window->is_visible        = TRUE;
     window->redisplay_pending = TRUE;
     window->init_x            = initial_x_pos;
@@ -724,8 +724,6 @@ VIO_Status  WS_create_window(
     window->border_width      = 0;
     window->border_height     = 0;
     window->is_new            = TRUE;
-
-    /* Font display lists are loaded lazily on first draw call */
 
     /* Register GLFW event callbacks */
     glfwSetWindowUserPointer(    gw, window );
@@ -833,17 +831,6 @@ void  WS_delete_window( WSwindow window )
 
     if( window->glfw )
     {
-        /* Free cached font display lists before destroying the GL context */
-        glfwMakeContextCurrent( window->glfw );
-        int i;
-        for( i = 0; i < window->font_cache_count; ++i )
-        {
-            EglFontEntry *e = &window->font_cache[i];
-            if( e->valid )
-                glDeleteLists( e->list_base, 128 );
-        }
-        window->font_cache_count = 0;
-
         unregister_window( window->glfw );
         glfwDestroyWindow( window->glfw );
         window->glfw = NULL;
@@ -945,304 +932,68 @@ void  WS_swap_buffers( void )
 }
 
 /* -----------------------------------------------------------------------
- * Per-window font cache — GLX-equivalent behaviour
+ * Font / text — shared stb_truetype pipeline (font_atlas + font_render_gl)
  *
- * For SIZED_FONT: search for Helvetica at the requested point size via
- * XListFonts (spiral ±5pt, DPI 100 then 75), then fall back to compact
- * misc-fixed candidates, then to the downsampled stored bitmaps.
- *
- * For FIXED_FONT: try the X11 "fixed" font, then fall back to the stored
- * 8×13 bitmaps.
- *
- * Fonts are loaded lazily into a per-window cache of EGL_FONT_CACHE_SIZE
- * entries and reused on subsequent draw calls with the same (type, size).
+ * One process-wide FontAtlasCache, built from the embedded JetBrains Mono
+ * bytes. Cache key is the physical (framebuffer) pixel_height the atlas
+ * should be baked at -- requested "size" scaled by the window's current
+ * dpi_scale_y, continuously (not rounded to an integer scale the way the
+ * old bitmap-upscaling code had to). This is what actually fixes the
+ * Retina blur: the glyphs are rasterised natively at the display's real
+ * pixel density instead of being upscaled after the fact.
  * --------------------------------------------------------------------- */
 
-#if !defined(__APPLE__)
-/* -----------------------------------------------------------------------
- * find_x11_font_for_size — load an XFontStruct for the given (type,size).
- * Returns NULL if no X11 display is available or no matching font found.
- * Caller must XFreeFont() the result.
- *
- * Not built on macOS: there is no X11 display to query (see the call site
- * in load_font_into_cache, which skips straight to the stored bitmap font
- * fallback on that platform).
- * --------------------------------------------------------------------- */
-static XFontStruct *find_x11_font_for_size( Font_types type, int size )
+static FontAtlasCache *s_font_atlas_cache = NULL;
+
+static FontAtlasCache *get_font_atlas_cache( void )
 {
-    if( !s_x11_display )
-        return NULL;
-
-    if( type == FIXED_FONT )
-    {
-        /* GLX uses the X11 "fixed" font for FIXED_FONT */
-        XFontStruct *fs = XLoadQueryFont( s_x11_display, "fixed" );
-        return fs;   /* NULL is fine — caller falls back to stored bitmaps */
-    }
-
-    /* SIZED_FONT: try Helvetica at requested size ± 5pt (spiral search),
-     * matching the GLX backend's X_get_font_name() logic. */
-    int offset;
-    for( offset = 0; offset <= 5; offset = (offset <= 0) ? (-offset + 1) : (-offset) )
-    {
-        int s = size + offset;
-        if( s <= 0 ) continue;
-
-        /* Try DPI 100 first, then 75 — same as GLX */
-        static const char *dpis[] = { "100", "75", NULL };
-        int di;
-        for( di = 0; dpis[di]; ++di )
-        {
-            char pattern[256];
-            int n;
-            char **names;
-
-            snprintf( pattern, sizeof(pattern),
-                      "*-helvetica-medium-r-normal--\?\?-%d-%s-*",
-                      s * 10, dpis[di] );
-            names = XListFonts( s_x11_display, pattern, 1, &n );
-            if( n > 0 )
-            {
-                XFontStruct *fs = XLoadQueryFont( s_x11_display, names[0] );
-                XFreeFontNames( names );
-                if( fs ) return fs;
-            }
-            else if( names )
-            {
-                XFreeFontNames( names );
-            }
-        }
-    }
-
-    /* Helvetica not available — fall back to compact misc-fixed candidates */
-    static const char *candidates[] = {
-        "6x10",
-        "-misc-fixed-medium-r-normal--10-100-75-75-c-60-iso8859-1",
-        "6x12",
-        "-misc-fixed-medium-r-normal--12-120-75-75-c-70-iso8859-1",
-        "5x8",
-        "-misc-fixed-medium-r-normal--8-80-75-75-c-50-iso8859-1",
-        "5x7",
-        "-misc-fixed-medium-r-normal--7-70-75-75-c-50-iso8859-1",
-        NULL
-    };
-    int fi;
-    for( fi = 0; candidates[fi]; ++fi )
-    {
-        XFontStruct *fs = XLoadQueryFont( s_x11_display, candidates[fi] );
-        if( fs ) return fs;
-    }
-
-    return NULL;
+    if( !s_font_atlas_cache )
+        s_font_atlas_cache = font_atlas_cache_create(
+            jetbrains_mono_ttf, jetbrains_mono_ttf_len, 8 );
+    return s_font_atlas_cache;
 }
 
-/* -----------------------------------------------------------------------
- * rasterise_x11_font — bake an XFontStruct into GL display lists starting
- * at list_base.  Stores per-char widths and metrics into *entry.
- * --------------------------------------------------------------------- */
-static void rasterise_x11_font( XFontStruct *fs, GLuint list_base,
-                                 EglFontEntry *entry )
+/* Callers already pass a real point/pixel size here (e.g. Display's
+ * Slice_readout_text_font_size=12, Colour_bar_text_size=10) -- the old
+ * bitmap renderer just silently ignored it on this backend (no X11 to
+ * query a variable-size font from, so it always fell back to its fixed
+ * 8x13/6x10 raster regardless of what was requested). Honour it directly;
+ * do not apply any extra guessed scaling per Font_types here. */
+static float nominal_point_size( Font_types type, VIO_Real size )
 {
-    int fwidth  = fs->max_bounds.width;
-    int fheight = fs->ascent + fs->descent;
-    int fascent = fs->ascent;
-    int screen  = DefaultScreen( s_x11_display );
-    int stride  = ( fwidth + 7 ) / 8;
-
-    Pixmap pix = XCreatePixmap( s_x11_display,
-                                RootWindow( s_x11_display, screen ),
-                                (unsigned) fwidth, (unsigned) fheight,
-                                (unsigned) DefaultDepth( s_x11_display, screen ) );
-    GC gc = XCreateGC( s_x11_display, pix, 0, NULL );
-    XSetFont( s_x11_display, gc, fs->fid );
-
-    unsigned long black = BlackPixel( s_x11_display, screen );
-    unsigned long white = WhitePixel( s_x11_display, screen );
-
-    GLubyte *bits = (GLubyte *) malloc( (size_t)( stride * fheight ) );
-    if( !bits )
-    {
-        XFreeGC( s_x11_display, gc );
-        XFreePixmap( s_x11_display, pix );
-        return;
-    }
-
-    glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-
-    int c;
-    for( c = 32; c < 127; ++c )
-    {
-        char ch = (char) c;
-
-        XSetForeground( s_x11_display, gc, black );
-        XFillRectangle( s_x11_display, pix, gc, 0, 0,
-                        (unsigned) fwidth, (unsigned) fheight );
-        XSetForeground( s_x11_display, gc, white );
-        XDrawString( s_x11_display, pix, gc, 0, fascent, &ch, 1 );
-
-        XImage *img = XGetImage( s_x11_display, pix, 0, 0,
-                                 (unsigned) fwidth, (unsigned) fheight,
-                                 AllPlanes, ZPixmap );
-
-        memset( bits, 0, (size_t)( stride * fheight ) );
-        int row, col;
-        for( row = 0; row < fheight; ++row )
-        {
-            int gl_row = fheight - 1 - row;
-            for( col = 0; col < fwidth; ++col )
-            {
-                if( XGetPixel( img, col, row ) != black )
-                    bits[ gl_row * stride + col / 8 ] |=
-                        (GLubyte)( 0x80u >> ( col % 8 ) );
-            }
-        }
-        XDestroyImage( img );
-
-        /* Per-character advance — use per_char table when available */
-        float advance = (float) fwidth;
-        if( fs->per_char )
-        {
-            int idx = c - (int) fs->min_char_or_byte2;
-            if( idx >= 0 && c <= (int) fs->max_char_or_byte2 )
-            {
-                int w = fs->per_char[idx].width;
-                if( w > 0 ) advance = (float) w;
-            }
-        }
-
-        glNewList( (GLuint) c + list_base, GL_COMPILE );
-        glBitmap( (GLsizei) fwidth, (GLsizei) fheight,
-                  0.0f, (float) fs->descent,
-                  advance, 0.0f,
-                  bits );
-        glEndList();
-
-        /* Store per-char width for WS_get_text_length */
-        if( c >= 0 && c < 128 )
-            entry->char_widths[c] = (short) advance;
-    }
-
-    free( bits );
-    XFreeGC( s_x11_display, gc );
-    XFreePixmap( s_x11_display, pix );
-
-    entry->advance = (float) fwidth;
-    entry->height  = (float) fascent;
-}
-#endif /* !defined(__APPLE__) */
-
-/* -----------------------------------------------------------------------
- * load_font_into_cache — return (or lazily load) the cache entry for the
- * given (type, size) in the current window.
- * Never returns NULL: falls back to stored bitmaps on all failure paths.
- * --------------------------------------------------------------------- */
-static EglFontEntry *load_font_into_cache( WS_window_struct *window,
-                                           Font_types type, int size )
-{
-    int i;
-
-    /* Search existing entries */
-    for( i = 0; i < window->font_cache_count; ++i )
-    {
-        EglFontEntry *e = &window->font_cache[i];
-        if( e->valid && e->type == type && e->size == size )
-            return e;
-    }
-
-    /* Choose a slot — evict oldest (slot 0, rotate) when cache is full */
-    EglFontEntry *entry;
-    if( window->font_cache_count < EGL_FONT_CACHE_SIZE )
-    {
-        entry = &window->font_cache[window->font_cache_count];
-        window->font_cache_count++;
-    }
-    else
-    {
-        /* Evict slot 0: free its GL lists, then rotate the array */
-        EglFontEntry *evict = &window->font_cache[0];
-        if( evict->valid )
-            glDeleteLists( evict->list_base, 128 );
-        /* Shift entries down */
-        for( i = 0; i < EGL_FONT_CACHE_SIZE - 1; ++i )
-            window->font_cache[i] = window->font_cache[i + 1];
-        entry = &window->font_cache[EGL_FONT_CACHE_SIZE - 1];
-    }
-
-    /* Initialise the entry */
-    memset( entry, 0, sizeof(*entry) );
-    entry->type = type;
-    entry->size = size;
-    entry->list_base = glGenLists( 128 );
-
-#if !defined(__APPLE__)
-    /* Try to load from X11 */
-    XFontStruct *fs = find_x11_font_for_size( type, size );
-    if( fs )
-    {
-        rasterise_x11_font( fs, entry->list_base, entry );
-        XFreeFont( s_x11_display, fs );
-    }
-    else
-#endif
-    {
-        /* No X11 font — use stored bitmaps as fallback. These bitmaps are a
-         * fixed pixel count regardless of the requested "size", so scale the
-         * actual glBitmap raster (baked into the display list below) by the
-         * window's Retina backing scale factor to stay legible on HiDPI
-         * displays (dpi_scale is 1.0 on X11, so scale is always 1 there).
-         *
-         * bicgl's whole layout engine works in framebuffer (physical) pixels
-         * — WS_get_window_size returns the 2x-on-Retina framebuffer size, and
-         * every widget is positioned in that space. So the metrics returned to
-         * layout code (WS_get_text_length / WS_get_character_height, used for
-         * button sizing and text centring) must be the *physical* size of the
-         * now-2x glyphs, i.e. scaled to match the rasters above. (On X11 scale
-         * is 1, so this is a no-op there.) */
-        int scale = (int)( window->dpi_scale_y + 0.5f );
-        if( scale < 1 ) scale = 1;
-
-        if( type == SIZED_FONT )
-        {
-            create_sized_font( entry->list_base, scale );
-            entry->advance = 7.0f * scale;
-            entry->height  = 10.0f * scale;
-        }
-        else
-        {
-            create_fixed_font( entry->list_base, scale );
-            entry->advance = 8.0f * scale;
-            entry->height  = 13.0f * scale;
-        }
-        /* char_widths stays zero — WS_get_text_length will use advance */
-    }
-
-    entry->valid = 1;
-    return entry;
+    (void) type;
+    return (float) size;
 }
 
-/* -----------------------------------------------------------------------
- * Font / text — lazy per-window cache, GLX-equivalent behaviour
- * --------------------------------------------------------------------- */
+static FontAtlas *get_atlas_for( Font_types type, VIO_Real size )
+{
+    float dpi_scale = s_current_window ? s_current_window->dpi_scale_y : 1.0f;
+    if( dpi_scale < 1.0f ) dpi_scale = 1.0f;
+
+    float pixel_height = nominal_point_size( type, size ) * dpi_scale;
+    return font_atlas_cache_get( get_font_atlas_cache(), pixel_height );
+}
 
 void  WS_draw_text( Font_types type, VIO_Real size, VIO_STR string )
 {
     if( !string || !s_current_window ) return;
 
-    EglFontEntry *fe = load_font_into_cache( s_current_window,
-                                             type, (int) size );
-    glListBase( fe->list_base );
-    glCallLists( (GLsizei) strlen(string), GL_UNSIGNED_BYTE,
-                 (const GLubyte *) string );
+    FontAtlas *atlas = get_atlas_for( type, size );
+    if( !atlas ) return;
+
+    font_render_gl_draw_text( atlas, (const char *) string );
 }
 
 VIO_Real  WS_get_character_height( Font_types type, VIO_Real size )
 {
     if( !s_current_window )
-        return ( type == SIZED_FONT ) ? size : get_fixed_font_height();
+        return (VIO_Real) nominal_point_size( type, size );
 
-    EglFontEntry *fe = load_font_into_cache( s_current_window,
-                                             type, (int) size );
-    return (VIO_Real) fe->height;
+    FontAtlas *atlas = get_atlas_for( type, size );
+    if( !atlas )
+        return (VIO_Real) nominal_point_size( type, size );
+
+    return (VIO_Real) atlas->ascent;
 }
 
 VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
@@ -1250,26 +1001,13 @@ VIO_Real  WS_get_text_length( VIO_STR str, Font_types type, VIO_Real size )
     if( !str ) return 0.0;
 
     if( !s_current_window )
-    {
-        if( type == SIZED_FONT )
-            return (VIO_Real) strlen(str) * 7.0;
-        else
-            return (VIO_Real) strlen(str) * get_fixed_font_width( str[0] );
-    }
+        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
 
-    EglFontEntry *fe = load_font_into_cache( s_current_window,
-                                             type, (int) size );
-    VIO_Real len = 0.0;
-    const unsigned char *p = (const unsigned char *) str;
-    while( *p )
-    {
-        unsigned char c = *p++;
-        if( c < 128 && fe->char_widths[c] > 0 )
-            len += (VIO_Real) fe->char_widths[c];
-        else
-            len += (VIO_Real) fe->advance;
-    }
-    return len;
+    FontAtlas *atlas = get_atlas_for( type, size );
+    if( !atlas )
+        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
+
+    return (VIO_Real) strlen(str) * (VIO_Real) atlas->advance_width;
 }
 
 /* -----------------------------------------------------------------------

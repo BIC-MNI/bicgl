@@ -156,6 +156,7 @@ IF(NOT BICGL_USE_GLFW)
   INCLUDE_DIRECTORIES( ${GLUT_INCLUDE_DIRS} )
 ENDIF()
 INCLUDE_DIRECTORIES( OpenGL_graphics/Include Include )
+INCLUDE_DIRECTORIES( font_atlas/Include third_party )
 
 IF(BICGL_USE_GLFW)
   INCLUDE_DIRECTORIES( EGL_windows/Include X_windows/Include )
@@ -175,7 +176,6 @@ SET(PRINT_X_COLOURS print_X_colours)
 
 SET(GLX_SRC
     GLX_windows/glx_windows.c
-    GLX_windows/stored_font.c
   )
 
 SET(GLX_headers
@@ -185,7 +185,6 @@ SET(GLX_headers
 
 SET(EGL_SRC
     EGL_windows/egl_windows.c
-    GLX_windows/stored_font.c   # shared font — no GLX dependency
   )
 
 SET(EGL_headers
@@ -218,6 +217,33 @@ SET(X_SRC
 #     IrisGL_graphics/windows.c
 #    )
 
+# Bundled monospace font (stb_truetype-rendered), embedded as a compiled-in
+# byte array rather than looked up by path at runtime -- a path baked in at
+# configure time would be fragile under this project's staged (DESTDIR)
+# install model. See font_atlas/font_atlas.h for the rasterisation API and
+# OpenGL_graphics/font_render_gl.c for the (backend-agnostic) GL draw code
+# shared by the GLX, GLFW/EGL, and GLUT windowing backends.
+FIND_PACKAGE(Perl REQUIRED)
+
+SET(FONT_ATLAS_TTF        ${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/JetBrainsMono-Regular.ttf)
+SET(FONT_ATLAS_BIN2C      ${CMAKE_CURRENT_SOURCE_DIR}/font_atlas/bin2c.pl)
+SET(FONT_ATLAS_GEN_C      ${CMAKE_CURRENT_BINARY_DIR}/jetbrains_mono_ttf.c)
+SET(FONT_ATLAS_GEN_H      ${CMAKE_CURRENT_BINARY_DIR}/jetbrains_mono_ttf.h)
+
+ADD_CUSTOM_COMMAND(
+  OUTPUT   ${FONT_ATLAS_GEN_C} ${FONT_ATLAS_GEN_H}
+  COMMAND  ${PERL_EXECUTABLE} ${FONT_ATLAS_BIN2C}
+           ${FONT_ATLAS_TTF} ${FONT_ATLAS_GEN_C} ${FONT_ATLAS_GEN_H} jetbrains_mono_ttf
+  DEPENDS  ${FONT_ATLAS_TTF} ${FONT_ATLAS_BIN2C}
+  COMMENT  "Embedding bundled JetBrains Mono font as a C byte array"
+)
+
+SET(FONT_ATLAS_SRC
+    font_atlas/font_atlas.c
+    ${FONT_ATLAS_GEN_C}
+    OpenGL_graphics/font_render_gl.c
+  )
+
 SET(OPENGL_SRC
     OpenGL_graphics/colour_def.c
     OpenGL_graphics/draw.c
@@ -226,6 +252,7 @@ SET(OPENGL_SRC
     OpenGL_graphics/render.c
     OpenGL_graphics/view.c
     OpenGL_graphics/windows.c
+    ${FONT_ATLAS_SRC}
   )
 
 SET(G_SRC
@@ -399,3 +426,22 @@ INSTALL(FILES
 #IF(BUILD_TESTING)
 #  ADD_SUBDIRECTORY( Testing )
 #ENDIF(BUILD_TESTING)
+
+# Headless unit tests for the platform-agnostic font_atlas module (no GL
+# context / display required, unlike the rest of bicgl's Testing/ programs
+# above). See the font-rendering plan for the red/green TDD cases covered.
+IF(BUILD_TESTING)
+  ADD_EXECUTABLE(test_font_atlas
+    Testing/test_font_atlas.c
+    font_atlas/font_atlas.c
+  )
+  TARGET_INCLUDE_DIRECTORIES(test_font_atlas PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/font_atlas/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party
+  )
+  TARGET_COMPILE_DEFINITIONS(test_font_atlas PRIVATE
+    FONT_ATLAS_TEST_TTF_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/JetBrainsMono-Regular.ttf"
+  )
+  TARGET_LINK_LIBRARIES(test_font_atlas m)
+  ADD_TEST(NAME font_atlas COMMAND test_font_atlas)
+ENDIF(BUILD_TESTING)

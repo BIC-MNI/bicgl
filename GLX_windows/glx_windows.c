@@ -1,37 +1,15 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif //HAVE_CONFIG_H  
+#endif //HAVE_CONFIG_H
 
 #include  <volume_io.h>
 #include  <WS_windows.h>
 
-#if 0
-#define  USE_STORED_FONT_ONLY
-#endif
+#include <font_atlas.h>
+#include <font_render_gl.h>
+#include <jetbrains_mono_ttf.h>  /* generated: embedded font bytes, see CMakeLists.txt */
 
-static  VIO_BOOL  use_stored_font_only( void )
-{
-    static  VIO_BOOL  first = TRUE;
-#ifdef USE_STORED_FONT_ONLY
-    static  VIO_BOOL  use_stored_flag = TRUE;
-#else
-    static  VIO_BOOL  use_stored_flag = FALSE;
-#endif
-
-    if( first )
-    {
-        first = FALSE;
-        if( getenv("USE_STORED_FONT_ONLY") != NULL )
-        {
-            if( equal_strings( getenv("USE_STORED_FONT_ONLY"), "no" ) )
-                use_stored_flag = FALSE;
-            else
-                use_stored_flag = TRUE;
-        }
-    }
-
-    return( use_stored_flag );
-}
+#include <string.h>
 
 static  VIO_BOOL  GLX_supported( void )
 {
@@ -215,19 +193,12 @@ static  VIO_BOOL  GLX_supported( void )
         }
     }
 
-    window->n_fonts = 0;
-
     return( status );
 }
 
   void  WS_delete_window(
     WS_window_struct  *window )
 {
-    if( window->n_fonts > 0 )
-    {
-        FREE( window->font_list_bases );
-    }
-
     glXDestroyContext( X_get_display(), window->graphics_context );
     X_delete_window( &window->x_window );
     if( window->overlay_present )
@@ -355,6 +326,80 @@ static  void  set_window_overlay_planes(
     return( 1 );   /* GLX/X11 has no HiDPI backing-store concept */
 }
 
+/* -----------------------------------------------------------------------
+ * Font / text — shared stb_truetype pipeline (font_atlas + font_render_gl)
+ *
+ * Same bundled JetBrains Mono / font_atlas / font_render_gl pipeline as
+ * the EGL/GLFW and GLUT backends, so text looks identical everywhere.
+ * GLX/X11 has no backing-scale concept (WS_get_window_content_scale is
+ * always 1 above), so unlike the EGL backend there is no runtime DPI
+ * change to react to -- one atlas per nominal size is cached and reused
+ * for the process lifetime.
+ * --------------------------------------------------------------------- */
+
+static FontAtlasCache *s_font_atlas_cache = NULL;
+
+static FontAtlasCache *get_font_atlas_cache( void )
+{
+    if( !s_font_atlas_cache )
+        s_font_atlas_cache = font_atlas_cache_create(
+            jetbrains_mono_ttf, jetbrains_mono_ttf_len, 8 );
+    return s_font_atlas_cache;
+}
+
+/* Callers already pass a real point/pixel size here (e.g. Display's
+ * Slice_readout_text_font_size=12, Colour_bar_text_size=10) -- honour it
+ * directly; do not apply any extra guessed scaling per Font_types here. */
+static float nominal_point_size( Font_types type, VIO_Real size )
+{
+    (void) type;
+    return (float) size;
+}
+
+  void  WS_draw_text(
+    Font_types   type,
+    VIO_Real     size,
+    VIO_STR      string )
+{
+    if( !string )
+        return;
+
+    FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
+                                              nominal_point_size( type, size ) );
+    if( !atlas )
+        return;
+
+    font_render_gl_draw_text( atlas, (const char *) string );
+}
+
+  VIO_Real  WS_get_character_height(
+    Font_types   type,
+    VIO_Real     size )
+{
+    FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
+                                              nominal_point_size( type, size ) );
+    if( !atlas )
+        return (VIO_Real) nominal_point_size( type, size );
+
+    return (VIO_Real) atlas->ascent;
+}
+
+  VIO_Real  WS_get_text_length(
+    VIO_STR      str,
+    Font_types   type,
+    VIO_Real     size )
+{
+    if( !str )
+        return 0.0;
+
+    FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
+                                              nominal_point_size( type, size ) );
+    if( !atlas )
+        return (VIO_Real) strlen(str) * nominal_point_size( type, size ) * 0.6;
+
+    return (VIO_Real) strlen(str) * (VIO_Real) atlas->advance_width;
+}
+
   void  WS_set_colour_map_entry(
     WS_window_struct  *window,
     int               ind,
@@ -381,177 +426,6 @@ static  void  set_window_overlay_planes(
     WS_window_struct  *window )
 {
     glXSwapBuffers( X_get_display(), window->x_window.window_id );
-}
-
-  VIO_BOOL  WS_get_font(
-    Font_types       type,
-    VIO_Real             size,
-    WS_font_info     *font_info )
-{
-    if( use_stored_font_only() )
-    {
-        if( type == FIXED_FONT )
-        {
-            (void) strcpy( font_info->font_name, "stored_fixed_font" );
-            font_info->x_font_info = 0;
-            return( TRUE );
-        }
-        else
-            return( FALSE );
-    }
-    else
-    {
-        Font         x_font;
-
-        if( X_get_font_name( type, (int) size, &font_info->font_name ) )
-        {
-            x_font = XLoadFont( X_get_display(), font_info->font_name );
-            font_info->x_font_info = XQueryFont( X_get_display(), x_font );
-
-            return( TRUE );
-        }
-
-        return( FALSE );
-    }
-}
-
-/* ARGSUSED */
-
-  void  WS_build_font_in_window(
-    WS_window_struct  *window,
-    int               font_index,
-    WS_font_info      *font_info )
-{
-    int      i, first, last, listBase;
-    Font     x_font;
-
-    if( use_stored_font_only() )
-    {
-        first = 0;
-        last = get_fixed_font_n_chars() - 1;
-    }
-    else
-    {
-        first = (int) font_info->x_font_info->min_char_or_byte2;
-        last = (int) font_info->x_font_info->max_char_or_byte2;
-    }
-
-    listBase = (int) glGenLists( last + 1 );
-
-    if( listBase == 0 )
-    {
-        print_error( "WS_build_font_in_window(): out of display lists.\n" );
-    }
-    else
-    {
-        if( use_stored_font_only() )
-            create_fixed_font( (GLuint) listBase, 1 );
-        else
-        {
-            x_font = XLoadFont( X_get_display(), font_info->font_name );
-
-            glXUseXFont( x_font, first, last-first+1, listBase+first );
-        }
-    }
-
-    if( font_index >= window->n_fonts )
-    {
-        SET_ARRAY_SIZE( window->font_list_bases, window->n_fonts, font_index+1,
-                        DEFAULT_CHUNK_SIZE );
-        for_less( i, window->n_fonts, font_index )
-            window->font_list_bases[i] = -1;
-        window->n_fonts = font_index + 1;
-    }
-
-    window->font_list_bases[font_index] = listBase;
-}
-
-/* ARGSUSED */
-
-  void  WS_delete_font_in_window(
-    WS_window_struct     *window,
-    int                  font_index,
-    WS_font_info         *font_info )
-{
-    int   last, listBase;
-
-    if( use_stored_font_only() )
-        last = get_fixed_font_n_chars() - 1;
-    else
-        last = (int) font_info->x_font_info->max_char_or_byte2;
-
-    listBase = window->font_list_bases[font_index];
-
-    if( listBase > 0 )
-        glDeleteLists( (GLuint) listBase, last + 1 );
-
-    window->font_list_bases[font_index] = -1;
-}
-
-/* ARGSUSED */
-
-  VIO_BOOL  WS_set_font(
-    WS_window_struct     *window,
-    int                  font_index )
-{
-    if( window->font_list_bases[font_index] > 0 )
-        glListBase( (GLuint) window->font_list_bases[font_index] );
-
-    return( window->font_list_bases[font_index] > 0 );
-}
-
-  void  WS_delete_font(
-    WS_font_info  *info )
-{
-    if( !use_stored_font_only() )
-    {
-        XFreeFont( X_get_display(), info->x_font_info );
-        delete_string( info->font_name );
-    }
-}
-
-  VIO_Real  WS_get_character_height(
-    WS_font_info  *font_info )
-{
-    if( use_stored_font_only() )
-        return( get_fixed_font_height() );
-    else
-        return( (VIO_Real) font_info->x_font_info->ascent );
-}
-
-  VIO_Real  WS_get_text_length(
-    WS_font_info     *font_info,
-    STRING           str )
-{
-    int    i, len, min_char, max_char;
-
-    if( use_stored_font_only() )
-    {
-        min_char = 0;
-        max_char = get_fixed_font_n_chars()-1;
-    }
-    else
-    {
-        min_char = (int) font_info->x_font_info->min_char_or_byte2;
-        max_char = (int) font_info->x_font_info->max_char_or_byte2;
-    }
-
-    len = 0;
-    for_less( i, 0, (int) strlen( str ) )
-    {
-        if( min_char <= (int) str[i] && (int) str[i] <= max_char )
-        {
-            if( use_stored_font_only() )
-                len += (int) get_fixed_font_width( str[i] );
-            else
-            {
-                len += font_info->x_font_info->
-                         per_char[(int) str[i] - min_char].width;
-            }
-        }
-    }
-
-    return( (VIO_Real) len );
 }
 
   void  WS_get_screen_size(
