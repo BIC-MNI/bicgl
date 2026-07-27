@@ -302,14 +302,8 @@ void font_render_gl_draw_text( const FontAtlas *atlas, const char *s )
     glRasterPos4f( cursor_x, anchor[1], anchor[2], anchor[3] );
 }
 
-float font_render_gl_pixel_height( int is_fixed_font, float size, float dpi_scale )
+float font_render_gl_pixel_height( float size, float dpi_scale )
 {
     if( dpi_scale < 1.0f ) dpi_scale = 1.0f;
-
-    if( is_fixed_font )
-        return FONT_RENDER_GL_FIXED_FONT_PIXELS * dpi_scale;
-
-    if( dpi_scale < FONT_RENDER_GL_REFERENCE_DPI_SCALE )
-        dpi_scale = FONT_RENDER_GL_REFERENCE_DPI_SCALE;
     return size * dpi_scale;
 }

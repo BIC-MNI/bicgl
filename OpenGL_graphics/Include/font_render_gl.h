@@ -13,33 +13,30 @@
  * bicgl windowing backends. */
 void font_render_gl_draw_text( const FontAtlas *atlas, const char *s );
 
-/* FIXED_FONT never honored "size" historically (X11 "fixed" font /
- * GLUT_BITMAP_8_BY_13, flat ~13px) -- used for compact status/
- * coordinate readouts where preserving that old compact size matters
- * more than nominal "size" fidelity. Scaled only by real display
- * density, never by the SIZED_FONT reference-density floor below
- * (FIXED_FONT never went through the Helvetica-style lookup either). */
-#define FONT_RENDER_GL_FIXED_FONT_PIXELS 13.0f
-
-/* SIZED_FONT constants were tuned assuming rendering at Retina-like
- * pixel density (~2x) -- validated true for macOS, where dpi_scale is
- * already ~2.0 on Retina displays. Backends with no real HiDPI
- * detection (GLX, GLUT, and GLFW on Linux/X11, which this codebase can
- * only ever observe at dpi_scale==1.0) must not fall below that
- * reference density merely because they can't detect it. A floor, not
- * a conditional multiplier: genuinely denser displays keep scaling up
- * via their own real dpi_scale past this reference, they just never
- * scale down below it. */
-#define FONT_RENDER_GL_REFERENCE_DPI_SCALE 2.0f
-
 /* Converts a Font_types "size" value (as passed by Display's and
  * Register's global_variables.h font-size constants) plus the window's
  * current dpi_scale into the final pixel height to bake/look up in the
- * font atlas. dpi_scale should be 1.0f for backends with no HiDPI
- * concept (GLX, GLUT). is_fixed_font should be nonzero iff the caller's
- * Font_types is FIXED_FONT -- passed as a plain flag rather than the
- * Font_types enum itself so this otherwise dependency-light module
- * doesn't need to include bicpl's obj_defs.h. */
-float font_render_gl_pixel_height( int is_fixed_font, float size, float dpi_scale );
+ * font atlas: pixel_height = size * dpi_scale, nothing else.
+ *
+ * Deliberately NOT floored, boosted, or branched by Font_types (an
+ * earlier version of this function tried both a reference-density floor
+ * for SIZED_FONT and a flat ignore-"size" constant for FIXED_FONT,
+ * reconstructed from the pre-stb_truetype renderer's old X11/GLUT font
+ * lookups). Both were wrong in practice: Display's and Register's own
+ * scale_ui_geometry() (Display/main/main.c, Register/User_interface/
+ * main/initialize.c) scale surrounding UI geometry -- button/panel/
+ * colour-bar dimensions -- by this exact same real dpi_scale, with no
+ * floor of their own. Flooring only the font size (not the geometry it
+ * has to fit inside) desynced the two on any display where dpi_scale
+ * doesn't already meet the floor (i.e. every non-Retina/non-HiDPI
+ * display) -- e.g. Register's Button_height staying at its base size
+ * while button text rendered at 2x that, visibly overflowing. Font size
+ * must track the same dpi_scale as its container, always, with no
+ * exceptions -- if a particular Font_types/size combination still looks
+ * too small or too large after that, the fix is to edit that specific
+ * named size constant (as already done successfully for
+ * Colour_bar_text_size and Register's button/label/entry/slider sizes),
+ * not to reintroduce a formula-level correction here. */
+float font_render_gl_pixel_height( float size, float dpi_scale );
 
 #endif /* DEF_FONT_RENDER_GL */

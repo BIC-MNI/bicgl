@@ -391,10 +391,11 @@ static FontAtlasCache *get_font_atlas_cache( void )
     VIO_Real        size,
     VIO_STR      string )
 {
+    (void) type;
     if( !string ) return;
 
     FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
-                                              font_render_gl_pixel_height( type == FIXED_FONT, (float) size, 1.0f ) );
+                                              font_render_gl_pixel_height( (float) size, 1.0f ) );
     if( !atlas ) return;
 
     font_render_gl_draw_text( atlas, (const char *) string );
@@ -404,10 +405,11 @@ static FontAtlasCache *get_font_atlas_cache( void )
     Font_types       type,
     VIO_Real             size )
 {
+    (void) type;
     FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
-                                              font_render_gl_pixel_height( type == FIXED_FONT, (float) size, 1.0f ) );
+                                              font_render_gl_pixel_height( (float) size, 1.0f ) );
     if( !atlas )
-        return (VIO_Real) font_render_gl_pixel_height( type == FIXED_FONT, (float) size, 1.0f );
+        return (VIO_Real) font_render_gl_pixel_height( (float) size, 1.0f );
 
     return (VIO_Real) atlas->ascent;
 }
@@ -417,12 +419,13 @@ static FontAtlasCache *get_font_atlas_cache( void )
     Font_types       type,
     VIO_Real             size )
 {
+    (void) type;
     if( !str ) return 0.0;
 
     FontAtlas *atlas = font_atlas_cache_get( get_font_atlas_cache(),
-                                              font_render_gl_pixel_height( type == FIXED_FONT, (float) size, 1.0f ) );
+                                              font_render_gl_pixel_height( (float) size, 1.0f ) );
     if( !atlas )
-        return (VIO_Real) strlen(str) * font_render_gl_pixel_height( type == FIXED_FONT, (float) size, 1.0f ) * 0.6;
+        return (VIO_Real) strlen(str) * font_render_gl_pixel_height( (float) size, 1.0f ) * 0.6;
 
     return (VIO_Real) strlen(str) * (VIO_Real) atlas->advance_width;
 }
