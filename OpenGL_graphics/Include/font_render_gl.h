@@ -13,23 +13,33 @@
  * bicgl windowing backends. */
 void font_render_gl_draw_text( const FontAtlas *atlas, const char *s );
 
-/* Restores the effective pixel density the pre-stb_truetype renderer
- * used to produce on Linux/X11 (deleted in 45a2e81), applied only where
- * that old inflation actually used to apply -- non-Retina/non-HiDPI
- * displays. macOS never exercised that X11 code path (no X11 there) and
- * its dpi_scale-driven sizing already looks correct, so it's left alone.
- * 1.5x, not the ~1.39x the old X11-Helvetica-at-100dpi lookup implied:
- * this is the value two independent manual eyeball corrections (Display's
- * Colour_bar_text_size and Register's button/label/entry/slider font
- * sizes, both 10.0 -> 15.0, reverted once this constant existed) actually
- * converged on -- trust the empirical result over the archaeology. */
-#define FONT_RENDER_GL_LEGACY_POINT_SCALE 1.5f
+/* FIXED_FONT never honored "size" historically (X11 "fixed" font /
+ * GLUT_BITMAP_8_BY_13, flat ~13px) -- used for compact status/
+ * coordinate readouts where preserving that old compact size matters
+ * more than nominal "size" fidelity. Scaled only by real display
+ * density, never by the SIZED_FONT reference-density floor below
+ * (FIXED_FONT never went through the Helvetica-style lookup either). */
+#define FONT_RENDER_GL_FIXED_FONT_PIXELS 13.0f
+
+/* SIZED_FONT constants were tuned assuming rendering at Retina-like
+ * pixel density (~2x) -- validated true for macOS, where dpi_scale is
+ * already ~2.0 on Retina displays. Backends with no real HiDPI
+ * detection (GLX, GLUT, and GLFW on Linux/X11, which this codebase can
+ * only ever observe at dpi_scale==1.0) must not fall below that
+ * reference density merely because they can't detect it. A floor, not
+ * a conditional multiplier: genuinely denser displays keep scaling up
+ * via their own real dpi_scale past this reference, they just never
+ * scale down below it. */
+#define FONT_RENDER_GL_REFERENCE_DPI_SCALE 2.0f
 
 /* Converts a Font_types "size" value (as passed by Display's and
  * Register's global_variables.h font-size constants) plus the window's
  * current dpi_scale into the final pixel height to bake/look up in the
  * font atlas. dpi_scale should be 1.0f for backends with no HiDPI
- * concept (GLX, GLUT). */
-float font_render_gl_pixel_height( float size, float dpi_scale );
+ * concept (GLX, GLUT). is_fixed_font should be nonzero iff the caller's
+ * Font_types is FIXED_FONT -- passed as a plain flag rather than the
+ * Font_types enum itself so this otherwise dependency-light module
+ * doesn't need to include bicpl's obj_defs.h. */
+float font_render_gl_pixel_height( int is_fixed_font, float size, float dpi_scale );
 
 #endif /* DEF_FONT_RENDER_GL */
