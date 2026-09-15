@@ -28,7 +28,10 @@
   void  GS_set_colour(
     VIO_Colour  colour )
 {
-    glColor4ubv( (GLubyte*) &colour );
+    glColor4ub((GLubyte)get_Colour_r(colour),
+               (GLubyte)get_Colour_g(colour),
+               (GLubyte)get_Colour_b(colour),
+               (GLubyte)get_Colour_a(colour));
 }
 
   void  GS_set_colour_index(
