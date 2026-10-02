@@ -1,0 +1,42 @@
+# Citation metadata for bicgl (Citation File Format, https://citation-file-format.github.io/).
+# The author list comes from the commit history and from the history comments in the files.
+
+cff-version: 1.2.0
+title: bicgl
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - given-names: David
+    family-names: MacDonald
+  - given-names: Vladimir
+    family-names: Fonov
+    email: vladimir.fonov@gmail.com
+    affiliation: McGill University
+    orcid: "https://orcid.org/0000-0003-3402-7749"
+  - given-names: Robert D.
+    family-names: Vincent
+  - given-names: Steve M.
+    family-names: Robbins
+  - given-names: Andrew L.
+    family-names: Janke
+    orcid: "https://orcid.org/0000-0003-0547-5171"
+  - given-names: Haz-Edine
+    family-names: Assemlal
+  - given-names: Claude
+    family-names: Lepage
+  - given-names: John G.
+    family-names: Sled
+    orcid: "https://orcid.org/0000-0002-4461-283X"
+repository-code: "https://github.com/BIC-MNI/bicgl"
+abstract: >-
+  BIC Graphics Library: the graphics and window layer that the MNI Display,
+  Register and ray_trace programs use.
+keywords:
+  - MINC
+  - medical imaging
+  - graphics
+  - OpenGL
+  - visualization
+  - library
+license-url: "https://github.com/BIC-MNI/bicgl/blob/master/COPYING"
